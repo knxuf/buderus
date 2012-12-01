@@ -110,8 +110,8 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 5001|3|2|0|1|1
 
 # EN[x]
-5002|1|"Com7"|1 #* IP:Port
-5002|2|0|0 #* Typ
+5002|1|"192.168.178.10:22"|1 #* IP:Port
+5002|2|1|0 #* Typ
 5002|3|""|1 #* Senden
 
 # Speicher
@@ -135,6 +135,7 @@ if EI == 1:
   class buderus_connect(object):
       def __init__(self,localvars):
           self.logik = localvars["pItem"]
+          self.MC = self.logik.MC
           EN = localvars['EN']
           self.device_connector = EN[1]
           self.device_type = EN[2]
@@ -178,60 +179,117 @@ if EI == 1:
           }
           self.connect()
 
+      def debug(self,msg):
+          print "DEBUG: %r" % (msg,)
+
       def connect(self):
-          import threading
+          from hs_queue import hs_threading as threading
           self._thread = threading.Thread(target=self._connect,name='Buderus-Moxa-Connect')
           self._thread.start()
-          
-      def get_socket_functions(self):
-          ## Kommunikationspartner für externe Entwicklungen ist immer eine am ECO-CAN-BUS 
-          ## angeschlossene Kommunikationskarte. Je nach Aufbau handelt es sich hierbei um die Module BS471 
-          ## (Modul zum Einbau ins Regelgerät), das ECO-CAN-Tool (Servicewerkzeug), das Modul M413 
-          ## (Kommunikationskarte des ECOKOM C) oder ein RS232 - Gateway. 
-          ## Das Handling und die Befehle sind bei allen Varianten einer Ausbaustufe identisch      
-
-          if self.device_type == 1 or self.device_type == 2:
-              import socket
-              _ip,_port = self.device_connector.split(":")
-              if self.device_type == 1:
-                  _sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                  _sock.connect( ( _ip, int(_port) ) )
-                  _send = _sock.send
-
-              else:
-                  _sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                  _send = lambda msg,ip=_ip,port=_port,sock=_sock: sock.sendto( msg,( ip , int(port) ) )
-
-              _recv = _sock.recv
-              
-          else:
-              ## Grundlage für den Datenaustausch ist eine Kommunikation auf Basis der 3964R-Prozedur. 
-              ## (siehe hierzu Dokument: 6301 1376) 
-              ## Es handelt sich hierbei um ein RS-232 Übertragungsprotokoll mit einer festen Übertragungs- 
-              ## geschwindigkeit von 9600 Baud.
-              try:
-                  import serial
-              except ImportError:
-                  print "Required http://pypi.python.org/pypi/pyserial"
-                  raise
-              
-              _serial_port = self.device_connector
-              _sock = serial.Serial(port=_serial_port,baudrate=9600)
-              _send = _sock.write
-              _recv = _sock.read
-          return ( _sock, _send, _recv)
 
       def _connect(self):
+          import time,socket,sys
+          MODE_NORMAL = 0xDE
+          MODE_DIRECT = 0xDD
+
           STX = 0x02
           DLE = 0x10
           ETX = 0x03
           NAK = 0x15
-          _sock,_send,_recv = self.get_socket_functions()
+          self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          _ip,_port = self.device_connector.split(":")
+          self.sock.connect( ( _ip, int(_port) ) )
+          try:
+              ## setze nomal mode
+              while True:
+                  if self.set_mode(MODE_NORMAL):
+                      self.debug("Normal Mode gesetzt")
+                      break
+                  time.sleep(2)
+              
+              while True:
+                  packet = self.read_normal_mode()
+                  self.debug("Packet %r" % (packet,))
+          except:
+              self.MC.Debug.setErr(sys.exc_info(),"")
+              time.sleep(10)
+              self.connect()
           
-          ## FIXME: Dummy
-          while True:
-              print "%r" % _recv(1)
-          
+      def set_mode(self,mode,ecocan_addr=0):
+          STX = 0x02
+          DLE = 0x10
+          ETX = 0x03
+          NAK = 0x15
+      
+          self.sock.send( chr(STX) )
+          ## 3 versuche
+          for _loop in xrange(3):
+              data = ord( self.sock.recv(1) )
+              if data == DLE:
+                  self.debug("Request mode %r" % mode)
+                  _checksum = 0
+                  for _msg in [ mode, DLE, ETX ]:
+                      _checksum ^= msg
+                      self.sock.send( chr(_msg) )
+                  self.sock.send( chr(_checksum) )
+                  data = ord( self.sock.recv(1) )
+                  if data == DLE:
+                      self.debug("set mode accepted")
+                      return True
+                  else:
+                      self.debug("set mode rejected with packet %r" % (data,))
+                      continue
+              else:
+                  self.debug("Wrong packet %r received excpected %r" % (data,DLE))
+
+      def read_normal_mode(self):
+          STX = 0x02
+          DLE = 0x10
+          ETX = 0x03
+          NAK = 0x15
+
+          import select
+          ## packet STX / MODE / ECOCAN BUS ADDR / TYP / OFFSET / DATA / DLE / ETX
+          require = [STX, None, None, None, None, None, DLE, ETX]
+          packet = []
+          checksum = 0
+          while len(require) > 0:
+              ## ZVZ 220ms
+              _r,_w,_e = select.select([self.sock],[],[],0.220)
+              if self.sock in _r:
+                  data = ord( self.sock.recv(1) )
+                  _required_packet = require.pop(0)
+
+                  if _required_packet and _required_packet <> data:
+                      self.debug("INVALID DATA %r Received expected %r" % (data,_required_packet))
+                      self.sock.send( chr(NAK) )
+                      return []
+                  
+                  if data == NAK:
+                      return []
+                  
+                  if data == STX:
+                      self.sock.send( chr(DLE) )
+                      continue
+
+                  ## Das Blockprüfzeichen wird durch eine exklusiv-oder-Verknüpfung über alle Datenbytes der
+                  ## Nutzinformation, inclusive der Endekennung DLE, ETX gebildet.
+                  checksum ^= data
+                  
+                  if data == ETX:
+                      ## alle Daten empfangen, die checksumme als weiteren required Wert adden
+                      require.append( checksum )
+
+                  if not _required_packet:
+                      ## alle Datenpackete
+                      packet.append(data)
+              else:
+                  ## timeout
+                  self.sock.send( chr(NAK) )
+                  return []
+                    
+          return packet
+
 
       def direct_read_request(self):
           ## Mit dem Kommando "0xA2 <ECOCAN-BUS-Adresse>" können die Monitordaten des ausgewählten 
@@ -258,6 +316,7 @@ if EI == 1:
           ## zurückgeschaltet werden. 
 
           pass
+
 
       def normal_read(self):
           ## Im "Normal-Modus" werden die Monitordaten nach folgendem Muster übertragen: 
