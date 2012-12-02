@@ -187,6 +187,14 @@ if EI == 1:
           self._thread = threading.Thread(target=self._connect,name='Buderus-Moxa-Connect')
           self._thread.start()
 
+      def to_hex(self,list_of_dec):
+          try:
+              if not type(list_of_dec) == list:
+                  list_of_dec = [list_of_dec]
+              return " ".join( ["%.2x".upper() % x for x in list_of_dec] )
+          except:
+              return list_of_dec
+
       def _connect(self):
           import time,socket,sys
           MODE_NORMAL = 0xDE
@@ -209,7 +217,7 @@ if EI == 1:
               
               while True:
                   packet = self.read_normal_mode()
-                  self.debug("Packet %r" % (packet,))
+                  self.debug("Packet %r" % ( self.to_hex(packet) ) )
           except:
               self.MC.Debug.setErr(sys.exc_info(),"")
               time.sleep(10)
@@ -226,7 +234,7 @@ if EI == 1:
           for _loop in xrange(3):
               data = ord( self.sock.recv(1) )
               if data == DLE:
-                  self.debug("Request mode %r" % mode)
+                  self.debug("Request mode %r" % self.to_hex(mode) )
                   _checksum = 0
                   for _msg in [ mode, DLE, ETX ]:
                       _checksum ^= _msg
@@ -266,6 +274,7 @@ if EI == 1:
                       return []
                   
                   if data == NAK:
+                      self.debug("Received NAK")
                       return []
                   
                   if data == STX:
