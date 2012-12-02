@@ -229,7 +229,7 @@ if EI == 1:
                   self.debug("Request mode %r" % mode)
                   _checksum = 0
                   for _msg in [ mode, DLE, ETX ]:
-                      _checksum ^= msg
+                      _checksum ^= _msg
                       self.sock.send( chr(_msg) )
                   self.sock.send( chr(_checksum) )
                   data = ord( self.sock.recv(1) )
