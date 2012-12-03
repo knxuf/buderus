@@ -233,6 +233,9 @@ if EI == 1:
           
           self.send_to_output( 2, _msg )
 
+      def incomming(self,msg):
+          self.debug("incomming message %r" % msg)
+
       def to_hex(self,list_of_dec):
           try:
               if not type(list_of_dec) == list:
@@ -468,6 +471,7 @@ debugcode = """
 postlogik=[0,"",r"""
 
 5012|0|"EI"|"buderus_connect(locals())"|""|0|0|1|0
+5012|0|"EC[3]"|"SN[1].incomming(EN[3])"|""|0|0|0|0
 
 """]
 
