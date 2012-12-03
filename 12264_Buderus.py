@@ -134,6 +134,9 @@ if EI == 1:
   import socket
   class buderus_connect(object):
       def __init__(self,localvars):
+          from hs_queue import Queue
+          from hs_queue import hs_threading as threading
+          self.id = "buderus_connect"
           self.logik = localvars["pItem"]
           self.MC = self.logik.MC
           EN = localvars['EN']
@@ -177,15 +180,58 @@ if EI == 1:
               0x9D : ("Unterstation", 6),
               0x9E : ("Solarfunktion", 54),
           }
+          self._hs_message_queue = Queue()
+
+          self.hs_queue_thread = threading.Thread(target=self._send_to_hs_consumer,name='buderus_hs_consumer')
+          self.hs_queue_thread.start()
+
           self.connect()
 
       def debug(self,msg):
+          #self.log(msg,severity='debug')
           print "DEBUG: %r" % (msg,)
 
       def connect(self):
           from hs_queue import hs_threading as threading
           self._thread = threading.Thread(target=self._connect,name='Buderus-Moxa-Connect')
           self._thread.start()
+
+      def _send_to_hs_consumer(self):
+          while True:
+              (out,msg) = self._hs_message_queue.get()
+              ## Auf iKO's schreiben
+              for iko in self.logik.Ausgang[out][1]:
+                  try:
+                      ## Logik Lock im HS sperren
+                      self.MC.LogikList.calcLock.acquire()
+                      
+                      ## Wert im iKO beschreiben
+                      iko.setWert(out,msg)
+                      
+                      ## Logik Lock im HS freigeben
+                      self.MC.LogikList.calcLock.release()
+                      
+                      iko.checkLogik(out)
+                  except:
+                      self.MC.Debug.setErr(sys.exc_info(),"%r" % msg)
+
+      def send_to_output(self,out,msg):
+          ## werte fangen bei 0 an also AN[1] == Ausgang[0]#
+          out -= 1
+          self._hs_message_queue.put((out,msg))
+
+      def log(self,msg,severity='info'):
+          import time
+          try:
+              from hashlib import md5
+          except ImportError:
+              import md5 as md5old
+              md5 = lambda x,md5old=md5old: md5old.md5(x)
+          
+          _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
+          _msg = '<log><id>%s</id><facility>hsfusion</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
+          
+          self.send_to_output( 2, _msg )
 
       def to_hex(self,list_of_dec):
           try:
@@ -217,6 +263,8 @@ if EI == 1:
               
               while True:
                   packet = self.read_normal_mode()
+                  ## packet an Ausgang 1
+                  ###self.send_to_output( 1, packet )
                   self.debug("Packet %r" % ( self.to_hex(packet) ) )
           except:
               self.MC.Debug.setErr(sys.exc_info(),"")
