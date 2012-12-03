@@ -1,4 +1,4 @@
-# -*- coding: iso8859-1 -*-
+# -*# -*- coding: iso8859-1 -*-
 ## -----------------------------------------------------
 ## Logik-Generator  V1.5
 ## -----------------------------------------------------
@@ -20,16 +20,20 @@
 
 
 import sys
+import codecs
 import os
 import base64 
 import marshal
 import re
-import md5
+try:
+    from hashlib import md5
+except ImportError:
+    import md5 as md5old
+    md5 = lambda x='': md5old.md5(x)
 import inspect
 import time
 import socket
 import tempfile
-import popen2
 import zlib
 import zipfile
 
