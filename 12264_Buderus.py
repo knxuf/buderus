@@ -307,6 +307,8 @@ if EI == 1:
           import select
           
           ZVZ = 0.200   ## Zeichenverzugszeit  220 ms
+          
+          ## BWZ ?? finde ich nicht in der Doku
           BWZ = 5       ## Blockwartezeit 5 sec
           
           _3964r_ErrCode = 0    ## Fehlercode loeschen
@@ -326,6 +328,7 @@ if EI == 1:
                    ## Zeiche ignorieren und weitere Zeichen lesen
                    continue
              else:
+                ### Wozu?? da wir dann eh in die darüberliegende schleife zurückfallen die wieder diese Funktion aufruft
                 ## kein STX innerhalb der Blockwartezeit empfangen
                 _3964r_ErrCode = 8
                 return _3964r_ErrCode
@@ -345,10 +348,14 @@ if EI == 1:
                 if self.sock in _r:
                    data = ord( self.sock.recv(1) )
                    if (data == DLE) and ( not DLE_merker):
+                      ## das ist jetzt nur der test ob 1 oder 2 DLE's hintereinander sind ?? 
+                      ## wäre schöner durch ein last_received = data am ende die dann prüfen könnte ob data == last_received
                       self.debug("erstes DLE in DATA gefunden")
                       DLE_merker = 1
                       bcc ^= data     ## faellt weg bei "DLE nicht in BCC"
                    elif (data == ETX) and (DLE_merker):
+                      ## hier könnte auch wenn last_received == DLE and data == ETX: break
+                      
                       ## direkt nach einem DLE ist nun das ETX empfange worden, also das Ende ist erreicht
                       ## bcc ist aber nur vom DLE berechnet, noch nicht vom ETX
                       ## wäre das zweite Zeichen nach dem DLE wieder ein DLE, würde es in den nächsten ELSE Zweig
@@ -369,6 +376,8 @@ if EI == 1:
                    _3964r_ErrCode = 9
                    return _3964r_ErrCode
              
+             ## könnte auch direkt oben hinzugefügt werden so wie in receive_normal mit dem required_packet 
+             ## wo die checksumme hinten angefügt wird
              bcc ^= ETX     ## das DLE ist ja schon in bcc, das ETX hiermit nun auch
             
              ## nun BCC lesen       
@@ -379,6 +388,8 @@ if EI == 1:
                    ## erfolgreicher Empfang von BCC
                    self.debug("Received BBC -> OK")
                    ## Bestätigung schicken
+                   
+                   ## das DLE fehlte glaube ich in receive_normal nach dem erfolgreichen checksumm
                    self.sock.send( chr(DLE) )
                    return 0 ## Kein Fehler
                 else:    
