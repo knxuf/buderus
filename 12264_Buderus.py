@@ -54,7 +54,7 @@ LOGIKCAT="www.knx-user-forum.de"
 LOGIKDESC="""
 
 """
-VERSION="V0.1"
+VERSION="V0.2"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -138,9 +138,6 @@ if EI == 1:
   import socket
   class buderus_connect(object):
       def __init__(self,localvars):
-          from hs_queue import Queue
-          from hs_queue import hs_threading as threading
-          self.id = "buderus_connect"
           self.logik = localvars["pItem"]
           self.MC = self.logik.MC
           EN = localvars['EN']
@@ -184,61 +181,15 @@ if EI == 1:
               0x9D : ("Unterstation", 6),
               0x9E : ("Solarfunktion", 54),
           }
-          self._hs_message_queue = Queue()
-
-          self.hs_queue_thread = threading.Thread(target=self._send_to_hs_consumer,name='buderus_hs_consumer')
-          self.hs_queue_thread.start()
-
           self.connect()
 
       def debug(self,msg):
-          #self.log(msg,severity='debug')
           print "DEBUG: %r" % (msg,)
 
       def connect(self):
           from hs_queue import hs_threading as threading
           self._thread = threading.Thread(target=self._connect,name='Buderus-Moxa-Connect')
           self._thread.start()
-
-      def _send_to_hs_consumer(self):
-          while True:
-              (out,msg) = self._hs_message_queue.get()
-              ## Auf iKO's schreiben
-              for iko in self.logik.Ausgang[out][1]:
-                  try:
-                      ## Logik Lock im HS sperren
-                      self.MC.LogikList.calcLock.acquire()
-                      
-                      ## Wert im iKO beschreiben
-                      iko.setWert(out,msg)
-                      
-                      ## Logik Lock im HS freigeben
-                      self.MC.LogikList.calcLock.release()
-                      
-                      iko.checkLogik(out)
-                  except:
-                      self.MC.Debug.setErr(sys.exc_info(),"%r" % msg)
-
-      def send_to_output(self,out,msg):
-          ## werte fangen bei 0 an also AN[1] == Ausgang[0]#
-          out -= 1
-          self._hs_message_queue.put((out,msg))
-
-      def log(self,msg,severity='info'):
-          import time
-          try:
-              from hashlib import md5
-          except ImportError:
-              import md5 as md5old
-              md5 = lambda x,md5old=md5old: md5old.md5(x)
-          
-          _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
-          _msg = '<log><id>%s</id><facility>hsfusion</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
-          
-          self.send_to_output( 2, _msg )
-
-      def incomming(self,msg):
-          self.debug("incomming message %r" % msg)
 
       def to_hex(self,list_of_dec):
           try:
@@ -261,22 +212,221 @@ if EI == 1:
           _ip,_port = self.device_connector.split(":")
           self.sock.connect( ( _ip, int(_port) ) )
           try:
-              ## setze nomal mode
+              print "DEBUG: Try"
+    ##          ## setze nomal mode
               while True:
+                  print "DEBUG: vor set_mode"                  
                   if self.set_mode(MODE_NORMAL):
                       self.debug("Normal Mode gesetzt")
+                      self.debug("Packet %r" % ( self.to_hex(MODE_NORMAL) ) )
+                      self.debug("Normal Mode gesetzt")
+                      break
+                  time.sleep(2)
+              Send_Data = []
+              while True:
+                  print "DEBUG: _3964r_Send: Also im Sende Mode"
+                  Send_Data = [ 0xA2 , 0x01 , 0x23, 0x24, DLE, 0x53, 0x66 ]
+                  if self._3964r_Send(Send_Data) == 0:
+                      print "DEBUG: Daten sind erfolgreich gesendet"
+                      self.debug("Send_Data %r" % ( self.to_hex(Send_Data) ) )
                       break
                   time.sleep(2)
               
               while True:
-                  packet = self.read_normal_mode()
-                  ## packet an Ausgang 1
-                  ###self.send_to_output( 1, packet )
-                  self.debug("Packet %r" % ( self.to_hex(packet) ) )
+                  print "DEBUG: _3964r_Receive: Also in Empfangs Mode"
+                  Receive_Data = []
+                  if self._3964r_Receive(Receive_Data) == 0:   
+                     print "DEBUG: Daten sind erfolgreich empfangen"
+                     self.debug("Reveice_Data %r" % ( self.to_hex(Receive_Data) ) )
+              
           except:
               self.MC.Debug.setErr(sys.exc_info(),"")
               time.sleep(10)
               self.connect()
+       
+      def _3964r_Receive(self, list_of_bytes):
+          
+          STX = 0x02
+          DLE = 0x10
+          ETX = 0x03
+          NAK = 0x15
+          
+          import select
+          
+          ZVZ = 0.200   ## Zeichenverzugszeit  220 ms
+          BWZ = 5       ## Blockwartezeit 5 sec
+          
+          _3964r_ErrCode = 0    ## Fehlercode loeschen
+      
+          while True:
+             _r,_w,_e = select.select([self.sock],[],[],BWZ)
+             if self.sock in _r:
+                data = ord( self.sock.recv(1) )
+                if data == STX:
+                   self.debug("STX <--- empfangen")
+                   ## jetzt ist DLE zurücksenden damit die Daten losgeschickt werden
+                   self.sock.send( chr(DLE))
+                   self.debug("---> DLE gesendet")
+                   break
+                else:
+                   self.debug(" !! KEINE STX: wird ignoriert!! ")
+                   ## Zeiche ignorieren und weitere Zeichen lesen
+                   continue
+             else:
+                ## kein STX innerhalb der Blockwartezeit empfangen
+                _3964r_ErrCode = 8
+                return _3964r_ErrCode
+            
+          ## Nun die DATEN empfangen !
+          
+          
+          for _loop in xrange(6):
+             ## nun sind 6 Versuche erlaubt, die Daten zu empfangen
+             
+             bcc = 0
+             DLE_merker = 0
+             Ende = 0
+             
+             while not (Ende):
+                _r,_w,_e = select.select([self.sock],[],[],ZVZ)
+                if self.sock in _r:
+                   data = ord( self.sock.recv(1) )
+                   if (data == DLE) and ( not DLE_merker):
+                      self.debug("erstes DLE in DATA gefunden")
+                      DLE_merker = 1
+                      bcc ^= data     ## faellt weg bei "DLE nicht in BCC"
+                   elif (data == ETX) and (DLE_merker):
+                      ## direkt nach einem DLE ist nun das ETX empfange worden, also das Ende ist erreicht
+                      ## bcc ist aber nur vom DLE berechnet, noch nicht vom ETX
+                      ## wäre das zweite Zeichen nach dem DLE wieder ein DLE, würde es in den nächsten ELSE Zweig
+                      ## gehen und gespeichert werden. Das erste DLE ist damit wieder entfernt, aber bei BCC 
+                      ## mitgezählt worden, was nach 3964R richtig ist. BCC wird über alle Zeichen gemacht.
+                      Ende = 1
+                   else:
+                      ## Zeichen in list_of_bytes speichern
+                      list_of_bytes.append(data)
+                      bcc ^= data
+                      DLE_merker = 0    ## merker zurücksetzen
+                      self.debug("Data %r" % ( self.to_hex(data) ) )
+                      ## und weitere Zeichen lesen
+                      continue
+                else:
+                   ## NAK rauschicken
+                   self.sock.send( chr(NAK) )
+                   _3964r_ErrCode = 9
+                   return _3964r_ErrCode
+             
+             bcc ^= ETX     ## das DLE ist ja schon in bcc, das ETX hiermit nun auch
+            
+             ## nun BCC lesen       
+             _r,_w,_e = select.select([self.sock],[],[],ZVZ)
+             if self.sock in _r:
+                data = ord( self.sock.recv(1) )
+                if data == bcc:
+                   ## erfolgreicher Empfang von BCC
+                   self.debug("Received BBC -> OK")
+                   ## Bestätigung schicken
+                   self.sock.send( chr(DLE) )
+                   return 0 ## Kein Fehler
+                else:    
+                   ## enpfangenes BCC stimmt nicht
+                   self.debug("Falsches BBC -> NAK")
+                   ## NAK rauschicken
+                   self.sock.send( chr(NAK) )
+             else:
+                ## keine BCC innerhalb von ZVZ empfangen
+                self.debug("kein BBC -> NAK")
+                ## NAK rausschicken    
+                self.sock.send( chr(NAK) )
+                return 5 ## Fehler zurueckgeben
+          else:
+             _3964r_ErrCode = 10
+          
+          return _3964r_ErrCode
+       
+      def _3964r_Send(self, list_of_bytes):
+          
+          STX = 0x02
+          DLE = 0x10
+          ETX = 0x03
+          NAK = 0x15
+          
+          import select
+          
+          QVZ = 0.200      
+
+          _3964r_ErrCode = 0    ## Fehlercode loeschen
+          packet = []
+          checksum = 0
+          self.debug("_3964r_Send")
+          for _loop in xrange(3):
+             self.sock.send( chr(STX) )
+             self.debug("STX gesendet")
+             _r,_w,_e = select.select([self.sock],[],[],QVZ)
+             if self.sock in _r:
+                  data = ord( self.sock.recv(1) )
+                  if data == DLE:
+                      ## jetzt ist FREI zum Senden
+                      self.debug("Received DLE")
+                      break
+             else:
+                ## timeout nächster Versuch machen (von den 3 erlaubten Versuchen)
+                continue
+          else:
+             self.debug("Nach 3 mal STX senden innerhalb von QVZ kein DLE empfangen")
+             _3964r_ErrCode = 1
+             return _3964r_ErrCode
+        
+          ## nun senden der Daten
+          self.debug("Daten senden")
+          ## nun sind 6 Versuche erlaubt
+          for _loop in xrange(6):
+             ## BCC wird schon inklusive DLE und ETX auf 0x13 initialisiert
+             bcc = 0x13   
+             for _byte in list_of_bytes:
+                self.sock.send( chr(_byte))
+                self.debug("Send Data %r" % ( self.to_hex(_byte) ) )
+                bcc ^= _byte
+                ## Wenn das DLE Zeichen in DATA vorkommt ist es nach 3964R zweimal zu senden
+                if _byte == DLE:
+                   self.sock.send( chr(DLE))
+                   self.debug("Send Data ++ %r" % ( self.to_hex(DLE) ) )
+                   bcc ^= DLE
+                 
+             ## nun sind alle Daten raus
+             ## jetzt den ABSCHLUSS anzeigen mit DLE, ETX und zum Nachprüfen für die Gegenseite BCC
+             self.sock.send( chr(DLE))
+             self.debug("Send Abschluss DLE %r" % ( self.to_hex(DLE) ) )
+             ## KEIN BCC, weil schon in Initialisierung geschehen
+             self.sock.send( chr(ETX))
+             self.debug("Send Abschluss ETX %r" % ( self.to_hex(ETX) ) )
+             ## KEIN BCC, weil schon in Initialisierung geschehen
+             self.sock.send( chr(bcc))
+             self.debug("Send Abschluss BCC %r" % ( self.to_hex(bcc) ) )
+             
+             ## Nun ist alles draussen
+             ## jetzt muß noch die Empfangsbestaetigung DLE zurückkommen
+             
+             _r,_w,_e = select.select([self.sock],[],[],QVZ)
+             if self.sock in _r:
+                  data = ord( self.sock.recv(1) )
+                  if data == DLE:
+                      ## jetzt ist der Empfang bestätigt
+                      self.debug("Empfang bestaetigt mit DLE")
+                      break
+             else:
+                ## timeout nächster Versuch machen (von den 6 erlaubten Versuchen)
+                continue
+          else:
+             self.debug("Nach 6 mal Daten senden, kein DLE innerhalb von QVZ empfangen")
+             _3964r_ErrCode = 2
+             return _3964r_ErrCode
+        
+          ## Senden: habe fertig
+          self.debug("Daten senden fertig")
+          ## _3964r_ErrCode zurückgeben (sollt hier 0 sein
+          return _3964r_ErrCode
+          
           
       def set_mode(self,mode,ecocan_addr=0):
           STX = 0x02
@@ -285,8 +435,10 @@ if EI == 1:
           NAK = 0x15
       
           self.sock.send( chr(STX) )
+  ##        print "DEBUG: send STX"
           ## 3 versuche
           for _loop in xrange(3):
+              print "DEBUG: loop xrange"
               data = ord( self.sock.recv(1) )
               if data == DLE:
                   self.debug("Request mode %r" % self.to_hex(mode) )
