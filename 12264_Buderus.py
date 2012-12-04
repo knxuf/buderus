@@ -287,14 +287,16 @@ if EI == 1:
               
               while True:
                   print "DEBUG: _3964r_Send: Also im Sende Mode"
-                  Send_Data = [ 0xA2 , 0x01 , 0x23, 0x24, 0x53, 0x66 ]
+                ##  Send_Data = [ 0xA2 , 0x01 , 0x23, 0x24, 0x53, 0x66 ]
+                  Send_Data = [ MODE_DIRECT ]
+        ##          Send_Data = self.get_to_senden() ## from EN[3]
                   if self._3964r_Send(Send_Data) == 0:
                       print "DEBUG: Daten sind erfolgreich gesendet"
                       self.debug("Send_Data %r" % ( self.to_hex(Send_Data) ) )
                       break
                   time.sleep(2)
               
-              while True:
+   ##           while True:
                   print "DEBUG: _3964r_Receive: Also in Empfangs Mode"
                   Receive_Data = []
                   if self._3964r_Receive(Receive_Data) == 0:   
@@ -328,7 +330,7 @@ if EI == 1:
               
 ## STX = 0x02     ## bedeutet soviel wie "ich möchte senden, darf ich ?"
 ## DLE = 0x10     ## bedeutet soviel wie "ich bestätige, du darfst senden!"
-## ETX = 0x03     ## die beiden Zeichen "DLE ETX" zeigen an, das das Ende der Daten erreicht ist. 
+## ETX = 0x03     ## die beiden Zeichen "DLE ETX" zeigen an, dass das Ende der Daten erreicht ist. 
 ## NAK = 0x15     ## NAK steht für "Not Acknoledge" also soviel wie "Kein Bestätigung" Irgend was 
 ##                ## hat nicht geklappt.
 
@@ -376,7 +378,7 @@ if EI == 1:
 ## Empfang bis zum Verbindungsabbau weitergeführt und NAK an das Peripheriegerät gesendet. Dann wird
 ## eine Wiederholung des Blocks erwartet. Kann der Block auch nach insgesamt sechs Versuchen nicht
 ## fehlerfrei empfangen werden, oder wird die Wiederholung vom Peripheriegerät nicht innerhalb der
-## Blockwartezeit von 4 sec gestartet, bricht die Prozedur 3964R den Empfang ab und meldet den Fehler an
+## Blockwartezeit (BWZ) von 4 sec gestartet, bricht die Prozedur 3964R den Empfang ab und meldet den Fehler an
 ## den Interpreter.
 
               
@@ -409,7 +411,7 @@ if EI == 1:
                    ## Zeiche ignorieren und weitere Zeichen lesen
                    continue
              else:
-                ## kein STX innerhalb der Blockwartezeit empfangen
+                ## kein STX innerhalb der Blockwartezeit (BWZ) empfangen
                 _3964r_ErrCode = 8
                 return _3964r_ErrCode
             
@@ -428,7 +430,7 @@ if EI == 1:
                 if self.sock in _r:
                    data = ord( self.sock.recv(1) )
                    if (data == DLE) and ( not DLE_merker):
-                      self.debug("erstes DLE in DATA gefunden")
+                      ## self.debug("erstes DLE in DATA gefunden")
                       DLE_merker = 1
                       bcc ^= data     ## faellt weg bei "DLE nicht in BCC"
                    elif (data == ETX) and (DLE_merker):
