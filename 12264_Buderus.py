@@ -138,6 +138,9 @@ if EI == 1:
   import socket
   class buderus_connect(object):
       def __init__(self,localvars):
+          from hs_queue import Queue
+          from hs_queue import hs_threading as threading
+          self.id = "buderus_connect"
           self.logik = localvars["pItem"]
           self.MC = self.logik.MC
           EN = localvars['EN']
@@ -181,15 +184,61 @@ if EI == 1:
               0x9D : ("Unterstation", 6),
               0x9E : ("Solarfunktion", 54),
           }
+          self._hs_message_queue = Queue()
+
+          self.hs_queue_thread = threading.Thread(target=self._send_to_hs_consumer,name='buderus_hs_consumer')
+          self.hs_queue_thread.start()
+
           self.connect()
 
       def debug(self,msg):
+          #self.log(msg,severity='debug')
           print "DEBUG: %r" % (msg,)
 
       def connect(self):
           from hs_queue import hs_threading as threading
           self._thread = threading.Thread(target=self._connect,name='Buderus-Moxa-Connect')
           self._thread.start()
+
+      def _send_to_hs_consumer(self):
+          while True:
+              (out,msg) = self._hs_message_queue.get()
+              ## Auf iKO's schreiben
+              for iko in self.logik.Ausgang[out][1]:
+                  try:
+                      ## Logik Lock im HS sperren
+                      self.MC.LogikList.calcLock.acquire()
+                      
+                      ## Wert im iKO beschreiben
+                      iko.setWert(out,msg)
+                      
+                      ## Logik Lock im HS freigeben
+                      self.MC.LogikList.calcLock.release()
+                      
+                      iko.checkLogik(out)
+                  except:
+                      self.MC.Debug.setErr(sys.exc_info(),"%r" % msg)
+
+      def send_to_output(self,out,msg):
+          ## werte fangen bei 0 an also AN[1] == Ausgang[0]#
+          out -= 1
+          self._hs_message_queue.put((out,msg))
+
+      def log(self,msg,severity='info'):
+          import time
+          try:
+              from hashlib import md5
+          except ImportError:
+              import md5 as md5old
+              md5 = lambda x,md5old=md5old: md5old.md5(x)
+          
+          _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
+          _msg = '<log><id>%s</id><facility>hsfusion</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
+          
+          self.send_to_output( 2, _msg )
+
+      def incomming(self,msg):
+          self.debug("incomming message %r" % msg)
 
       def to_hex(self,list_of_dec):
           try:
@@ -213,7 +262,7 @@ if EI == 1:
           self.sock.connect( ( _ip, int(_port) ) )
           try:
               print "DEBUG: Try"
-    ##          ## setze nomal mode
+              ## setze nomal mode
               while True:
                   print "DEBUG: vor set_mode"                  
                   if self.set_mode(MODE_NORMAL):
@@ -237,13 +286,17 @@ if EI == 1:
                   Receive_Data = []
                   if self._3964r_Receive(Receive_Data) == 0:   
                      print "DEBUG: Daten sind erfolgreich empfangen"
+                     
+                     ## packet an Ausgang 1
+                     ###self.send_to_output( 1, packet )
+                     
                      self.debug("Reveice_Data %r" % ( self.to_hex(Receive_Data) ) )
               
           except:
               self.MC.Debug.setErr(sys.exc_info(),"")
               time.sleep(10)
               self.connect()
-       
+
       def _3964r_Receive(self, list_of_bytes):
           
           STX = 0x02
@@ -426,7 +479,8 @@ if EI == 1:
           self.debug("Daten senden fertig")
           ## _3964r_ErrCode zurückgeben (sollt hier 0 sein
           return _3964r_ErrCode
-          
+
+
           
       def set_mode(self,mode,ecocan_addr=0):
           STX = 0x02
@@ -435,10 +489,8 @@ if EI == 1:
           NAK = 0x15
       
           self.sock.send( chr(STX) )
-  ##        print "DEBUG: send STX"
           ## 3 versuche
           for _loop in xrange(3):
-              print "DEBUG: loop xrange"
               data = ord( self.sock.recv(1) )
               if data == DLE:
                   self.debug("Request mode %r" % self.to_hex(mode) )
