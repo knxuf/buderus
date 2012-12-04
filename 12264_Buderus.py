@@ -233,7 +233,7 @@ if EI == 1:
               md5 = lambda x,md5old=md5old: md5old.md5(x)
           
           _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
-          _msg = '<log><id>%s</id><facility>hsfusion</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
+          _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
           
           self.send_to_output( 2, _msg )
 
@@ -248,33 +248,46 @@ if EI == 1:
           except:
               return list_of_dec
 
+              
+              
+
+## Bei dem Kommunikationsmodul wird zwischen einem "Normal-Modus" und einem "Direkt-Modus"
+## unterschieden. 
+## "Normal-Modus" Bei diesem Modus werden laufend alle sich ändernden Monitorwerte 
+## sowie Fehlermeldungen übertragen. 
+## "Direkt-Modus" Bei diesem Modus kann der aktuelle Stand aller bisher vom Regelgerät 
+## generierten Monitordaten en Block abgefragt und ausgelesen werden. 
+## Mittels des Kommandos 0xDD kann von "Normal-Modus" in den "Direkt-Modus" umgeschaltet werden. 
+## In diesem Modus kann auf alle am ECOCAN-BUS angeschlossenen Geräte zugegriffen und es können 
+## geräteweise die Monitorwerte ausgelesen werden. 
+## Der "Direkt-Modus" kann durch das Kommando 0xDC wieder verlassen werden. 
+## Außerdem wird vom "Direkt-Modus" automatisch in den "Normal-Modus" zurückgeschaltet, wenn für die 
+## Zeit von 60 sec kein Protokoll des "Direkt-Modus" mehr gesendet wird. 
+              
       def _connect(self):
           import time,socket,sys
           MODE_NORMAL = 0xDE
           MODE_DIRECT = 0xDD
 
-          STX = 0x02
-          DLE = 0x10
-          ETX = 0x03
-          NAK = 0x15
           self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
           _ip,_port = self.device_connector.split(":")
           self.sock.connect( ( _ip, int(_port) ) )
           try:
               print "DEBUG: Try"
-              ## setze nomal mode
-              while True:
-                  print "DEBUG: vor set_mode"                  
-                  if self.set_mode(MODE_NORMAL):
-                      self.debug("Normal Mode gesetzt")
-                      self.debug("Packet %r" % ( self.to_hex(MODE_NORMAL) ) )
-                      self.debug("Normal Mode gesetzt")
-                      break
-                  time.sleep(2)
-              Send_Data = []
+ ##             ## setze nomal mode
+ ##             while True:
+ ##                 print "DEBUG: Setze set_mode"                  
+ ##                 if self.set_mode(MODE_NORMAL):
+ ##                     self.debug("Normal Mode gesetzt")
+ ##                     self.debug("Packet %r" % ( self.to_hex(MODE_NORMAL) ) )
+ ##                     self.debug("Normal Mode gesetzt")
+ ##                     break
+ ##                 time.sleep(2)
+              
+              
               while True:
                   print "DEBUG: _3964r_Send: Also im Sende Mode"
-                  Send_Data = [ 0xA2 , 0x01 , 0x23, 0x24, DLE, 0x53, 0x66 ]
+                  Send_Data = [ 0xA2 , 0x01 , 0x23, 0x24, 0x53, 0x66 ]
                   if self._3964r_Send(Send_Data) == 0:
                       print "DEBUG: Daten sind erfolgreich gesendet"
                       self.debug("Send_Data %r" % ( self.to_hex(Send_Data) ) )
@@ -288,7 +301,7 @@ if EI == 1:
                      print "DEBUG: Daten sind erfolgreich empfangen"
                      
                      ## packet an Ausgang 1
-                     ###self.send_to_output( 1, packet )
+                     ### self.send_to_output( 1, Receive_Data )
                      
                      self.debug("Reveice_Data %r" % ( self.to_hex(Receive_Data) ) )
               
@@ -297,6 +310,76 @@ if EI == 1:
               time.sleep(10)
               self.connect()
 
+###########################################################################################################
+#####                                      Die 3964R Prozedure !                                      #####
+###########################################################################################################                   
+              
+## Warum diese Prozedure ?
+## Diese Prozedure dient dazu Kollisionen zu verhindern und Störungen zu erkennen.
+## -> Kollisionen werden dadurch verhindert, dass nur dann gesendet werden kann, wenn die Gegenstelle (hier 
+## also das Buderus RS232 Gateway) eingewilligt hat (mit DLE geantwortet hat).
+## -> Störungen: Durch das Mitsenden eine Prüfsumme (BCC) mit dem Datenstrom kann von der Gegenstelle 
+## nachgeprüft werden, ob es zu einer Störung gekommen ist.
+## Dies nur als Motivation.
+              
+## Die Steuerzeichen für die Prozedur 3964R sind der Norm DIN 66003 für den 7-Bit-Code entnommen. Sie
+## werden allerdings mit der Zeichenlänge 8 Bit übertragen (Bit I7 = 0). Am Ende jedes Datenblocks wird zur
+## Datensicherung ein Prüfzeichen(BCC) gesendet.
+              
+## STX = 0x02     ## bedeutet soviel wie "ich möchte senden, darf ich ?"
+## DLE = 0x10     ## bedeutet soviel wie "ich bestätige, du darfst senden!"
+## ETX = 0x03     ## die beiden Zeichen "DLE ETX" zeigen an, das das Ende der Daten erreicht ist. 
+## NAK = 0x15     ## NAK steht für "Not Acknoledge" also soviel wie "Kein Bestätigung" Irgend was 
+##                ## hat nicht geklappt.
+
+
+## Das Blockprüfzeichen BCC wird durch eine exklusiv-oder-Verknüpfung über alle Datenbytes der
+## Nutzinformation, inclusive der Endekennung DLE, ETX gebildet.
+
+## Es gibt noch eine Besonderheit: Befindet sich in Transport Daten selbst ein DLE Zeichen, wird es beim 
+## Senden gedoppelt. Es wird also ein zweites eingefügt und beim BCC berücksichtigt das auch. Somit ist 
+## sichergestellt, dass es nur Paare von "DLE DLE" oder "DLE ETX" geben kann und das "DLE ETX" einzig am 
+## Ende auftauche kann.
+## Damit dadurch die Daten aber nicht verändert werden, ist das zweite DLE auf der Empfangs Seite wieder
+## zu entfernen. Da es aber beim BCC mit gezählt wurde, ist es hierbei aber mit zu Berücksichtigen. 
+
+
+
+
+## Empfangen mit der Prozedur 3964R
+## --------------------------------------------------------------------------------------------------
+##
+## Beispiel für einen fehlerlosen Datenverkehr: bei Empfang
+## Prozedur 3964R                        Peripheriegerät
+##                                <--                 STX
+##      DLE                    -->
+##                                <--          1. Zeichen der zu übertragenden Daten
+##                                <--
+##                                <--
+##                                <--          n. Zeichen der zu übertragenden Daten
+##                                <--               DLE
+##                                <--               ETX
+##                                <--               BCC
+##      DLE                    -->
+##
+## Im Ruhezustand, wenn kein Sendeauftrag und kein Warteauftrag des Interpreters zu bearbeiten ist, wartet
+## die Prozedur auf den Verbindungsaufbau durch das Peripheriegerät. Empfängt die Prozedur ein STX und
+## steht ihr ein leerer Eingabepuffer zur Verfügung, wird mit DLE geantwortet.
+## Nachfolgende Empfangszeichen werden nun in dem Eingabepuffer abgelegt. Werden zwei aufeinander
+## folgende Zeichen DLE empfangen, wird nur ein DLE in den Eingabepuffer übernommen.
+## Nach jedem Empfangszeichen wird während der Zeichenverzugszeit (ZVZ) auf das nächste Zeichen
+## gewartet. Verstreicht die Zeichenverzugszeit ohne Empfang, wird das Zeichen NAK an das
+## Peripheriegerät gesendet und der Fehler an den Interpreter gemeldet.
+## Mit erkennen der Zeichenfolge DLE, ETX und BCC beendet die Prozedur den Empfang und sendet DLE
+## für einen fehlerfrei (oder NAK für einen fehlerhaft) empfangenen Block an das Peripheriegerät.
+## Treten während des Empfangs Übertragungsfehler auf (verlorenes Zeichen, Rahmenfehler), wird der
+## Empfang bis zum Verbindungsabbau weitergeführt und NAK an das Peripheriegerät gesendet. Dann wird
+## eine Wiederholung des Blocks erwartet. Kann der Block auch nach insgesamt sechs Versuchen nicht
+## fehlerfrei empfangen werden, oder wird die Wiederholung vom Peripheriegerät nicht innerhalb der
+## Blockwartezeit von 4 sec gestartet, bricht die Prozedur 3964R den Empfang ab und meldet den Fehler an
+## den Interpreter.
+
+              
       def _3964r_Receive(self, list_of_bytes):
           
           STX = 0x02
@@ -396,7 +479,38 @@ if EI == 1:
              _3964r_ErrCode = 10
           
           return _3964r_ErrCode
-       
+ 
+ ## ENDE _3964r_Receive
+ 
+ 
+## Senden mit der Prozedur 3964R
+## --------------------------------------------------------------------------------------------------
+## 
+## Der Signalfluß ist hier genauso wie beim Empfang (siehe oben), nur das die Richtung anderum ist.
+##
+## Zum Aufbau der Verbindung sendet die Prozedur 3964R das Steuerzeichen STX aus. Antwortet das
+## Peripheriegerät vor Ablauf der Quittungsverzugzeit (QVZ) von 2 sec mit dem Zeichen DLE, so geht die
+## Prozedur in den Sendebetrieb über. Antwortet das Peripheriegerät mit NAK, einem beliebigen anderen
+## Zeichen (außer DLE) oder die Quittungsverzugszeit verstreicht ohne Reaktion, so ist der
+## Verbindungsaufbau gescheitert. Nach insgesamt drei vergeblichen Versuchen bricht die Prozedur das
+## Verfahren ab und meldet dem Interpreter den Fehler im Verbindungsaufbau.
+## Gelingt der Verbindungsaufbau, so werden nun die im aktuellen Ausgabepuffer enthaltenen
+## Nutzinformationszeichen mit der gewählten Übertragungsgeschwindigkeit an das Peripheriegerät
+## gesendet. Das Peripheriegerät soll die ankommenden Zeichen in Ihrem zeitlichen Abstand überwachen.
+## Der Abstand zwischen zwei Zeichen darf nicht mehr als die Zeichenverzugszeit (ZVZ) von 220 ms
+## betragen.
+## Jedes im Puffer vorgefundene Zeichen DLE wird als zwei Zeichen DLE gesendet. Dabei wird das Zeichen
+## DLE zweimal in die Prüfsumme übernommen.
+## Nach erfolgtem senden des Pufferinhalts fügt die Prozedur die Zeichen DLE, ETX und BCC als
+## Endekennung an und wartet auf ein Quittungszeichen. Sendet das Peripheriegerät innerhalb der
+## Quittungsverzugszeit QVZ das Zeichen DLE, so wurde der Datenblock fehlerfrei übernommen. Antwortet
+## das Peripheriegerät mit NAK, einem beliebigen anderen Zeichen (außer DLE), einem gestörten Zeichen
+## oder die Quittungsverzugszeit verstreicht ohne Reaktion, so wiederholt die Prozedur das Senden des
+## Datenblocks. Nach insgesamt sechs vergeblichen Versuchen, den Datenblock zu senden, bricht die
+## Prozedur das Verfahren ab und meldet dem Interpreter den Fehler im Verbindungsaufbau.
+## Sendet das Peripheriegerät während einer laufenden Sendung das Zeichen NAK, so beendet die
+## Prozedur den Block und wiederholt in der oben beschriebenen Weise.
+ 
       def _3964r_Send(self, list_of_bytes):
           
           STX = 0x02
@@ -480,83 +594,11 @@ if EI == 1:
           ## _3964r_ErrCode zurückgeben (sollt hier 0 sein
           return _3964r_ErrCode
 
+## ENDE _3964r_Send
 
           
-      def set_mode(self,mode,ecocan_addr=0):
-          STX = 0x02
-          DLE = 0x10
-          ETX = 0x03
-          NAK = 0x15
-      
-          self.sock.send( chr(STX) )
-          ## 3 versuche
-          for _loop in xrange(3):
-              data = ord( self.sock.recv(1) )
-              if data == DLE:
-                  self.debug("Request mode %r" % self.to_hex(mode) )
-                  _checksum = 0
-                  for _msg in [ mode, DLE, ETX ]:
-                      _checksum ^= _msg
-                      self.sock.send( chr(_msg) )
-                  self.sock.send( chr(_checksum) )
-                  data = ord( self.sock.recv(1) )
-                  if data == DLE:
-                      self.debug("set mode accepted")
-                      return True
-                  else:
-                      self.debug("set mode rejected with packet %r" % (data,))
-                      continue
-              else:
-                  self.debug("Wrong packet %r received excpected %r" % (data,DLE))
 
-      def read_normal_mode(self):
-          STX = 0x02
-          DLE = 0x10
-          ETX = 0x03
-          NAK = 0x15
-
-          import select
-          ## packet STX / MODE / ECOCAN BUS ADDR / TYP / OFFSET / DATA / DLE / ETX
-          require = [STX, None, None, None, None, None, DLE, ETX]
-          packet = []
-          checksum = 0
-          while len(require) > 0:
-              ## ZVZ 220ms
-              _r,_w,_e = select.select([self.sock],[],[],0.220)
-              if self.sock in _r:
-                  data = ord( self.sock.recv(1) )
-                  _required_packet = require.pop(0)
-
-                  if _required_packet and _required_packet <> data:
-                      self.debug("INVALID DATA %r Received expected %r" % (data,_required_packet))
-                      self.sock.send( chr(NAK) )
-                      return []
-                  
-                  if data == NAK:
-                      self.debug("Received NAK")
-                      return []
-                  
-                  if data == STX:
-                      self.sock.send( chr(DLE) )
-                      continue
-
-                  ## Das Blockprüfzeichen wird durch eine exklusiv-oder-Verknüpfung über alle Datenbytes der
-                  ## Nutzinformation, inclusive der Endekennung DLE, ETX gebildet.
-                  checksum ^= data
-                  
-                  if data == ETX:
-                      ## alle Daten empfangen, die checksumme als weiteren required Wert adden
-                      require.append( checksum )
-
-                  if not _required_packet:
-                      ## alle Datenpackete
-                      packet.append(data)
-              else:
-                  ## timeout
-                  self.sock.send( chr(NAK) )
-                  return []
-                    
-          return packet
+ 
 
 
       def direct_read_request(self):
@@ -597,77 +639,6 @@ if EI == 1:
           pass
           
 
-## STX = 0x02
-## DLE = 0x10
-## ETX = 0x03
-## NAK = 0x15
-
-## Die Steuerzeichen für die Prozedur 3964R sind der Norm DIN 66003 für den 7-Bit-Code entnommen. Sie
-## werden allerdings mit der Zeichenlänge 8 Bit übertragen (Bit I7 = 0). Am Ende jedes Datenblocks wird zur
-## Datensicherung ein Prüfzeichen(BCC) gesendet.
-
-
-## Das Blockprüfzeichen wird durch eine exklusiv-oder-Verknüpfung über alle Datenbytes der
-## Nutzinformation, inclusive der Endekennung DLE, ETX gebildet.
-
-
-
-## Bei dem Kommunikationsmodul wird zwischen einem "Normal-Modus" und einem "Direkt-Modus"
-## unterschieden. 
-## "Normal-Modus" Bei diesem Modus werden laufend alle sich ändernden Monitorwerte 
-## sowie Fehlermeldungen übertragen. 
-## "Direkt-Modus" Bei diesem Modus kann der aktuelle Stand aller bisher vom Regelgerät 
-## generierten Monitordaten en Block abgefragt und ausgelesen werden. 
-## Mittels des Kommandos 0xDD kann von "Normal-Modus" in den "Direkt-Modus" umgeschaltet werden. 
-## In diesem Modus kann auf alle am ECOCAN-BUS angeschlossenen Geräte zugegriffen und es können 
-## geräteweise die Monitorwerte ausgelesen werden. 
-## Der "Direkt-Modus" kann durch das Kommando 0xDC wieder verlassen werden. 
-## Außerdem wird vom "Direkt-Modus" automatisch in den "Normal-Modus" zurückgeschaltet, wenn für die 
-## Zeit von 60 sec kein Protokoll des "Direkt-Modus" mehr gesendet wird. 
-
-## Senden mit der Prozedur 3964R
-## -----------------------------
-## Zum Aufbau der Verbindung sendet die Prozedur 3964R das Steuerzeichen STX aus. Antwortet das
-## Peripheriegerät vor Ablauf der Quittungsverzugzeit (QVZ) von 2 sec mit dem Zeichen DLE, so geht die
-## Prozedur in den Sendebetrieb über. Antwortet das Peripheriegerät mit NAK, einem beliebigen anderen
-## Zeichen (außer DLE) oder die Quittungsverzugszeit verstreicht ohne Reaktion, so ist der
-## Verbindungsaufbau gescheitert. Nach insgesamt drei vergeblichen Versuchen bricht die Prozedur das
-## Verfahren ab und meldet dem Interpreter den Fehler im Verbindungsaufbau.
-## Gelingt der Verbindungsaufbau, so werden nun die im aktuellen Ausgabepuffer enthaltenen
-## Nutzinformationszeichen mit der gewählten Übertragungsgeschwindigkeit an das Peripheriegerät
-## gesendet. Das Peripheriegerät soll die ankommenden Zeichen in Ihrem zeitlichen Abstand überwachen.
-## Der Abstand zwischen zwei Zeichen darf nicht mehr als die Zeichenverzugszeit (ZVZ) von 220 ms
-## betragen.
-## Jedes im Puffer vorgefundene Zeichen DLE wird als zwei Zeichen DLE gesendet. Dabei wird das Zeichen
-## DLE zweimal in die Prüfsumme übernommen.
-## Nach erfolgtem senden des Pufferinhalts fügt die Prozedur die Zeichen DLE, ETX und BCC als
-## Endekennung an und wartet auf ein Quittungszeichen. Sendet das Peripheriegerät innerhalb der
-## Quittungsverzugszeit QVZ das Zeichen DLE, so wurde der Datenblock fehlerfrei übernommen. Antwortet
-## das Peripheriegerät mit NAK, einem beliebigen anderen Zeichen (außer DLE), einem gestörten Zeichen
-## oder die Quittungsverzugszeit verstreicht ohne Reaktion, so wiederholt die Prozedur das Senden des
-## Datenblocks. Nach insgesamt sechs vergeblichen Versuchen, den Datenblock zu senden, bricht die
-## Prozedur das Verfahren ab und meldet dem Interpreter den Fehler im Verbindungsaufbau.
-## Sendet das Peripheriegerät während einer laufenden Sendung das Zeichen NAK, so beendet die
-## Prozedur den Block und wiederholt in der oben beschriebenen Weise.
-
-## Empfangen mit der Prozedur 3964R
-## --------------------------------
-## Im Ruhezustand, wenn kein Sendeauftrag und kein Warteauftrag des Interpreters zu bearbeiten ist, wartet
-## die Prozedur auf den Verbindungsaufbau durch das Peripheriegerät. Empfängt die Prozedur ein STX und
-## steht ihr ein leerer Eingabepuffer zur Verfügung, wird mit DLE geantwortet.
-## Nachfolgende Empfangszeichen werden nun in dem Eingabepuffer abgelegt. Werden zwei aufeinander
-## folgende Zeichen DLE empfangen, wird nur ein DLE in den Eingabepuffer übernommen.
-## Nach jedem Empfangszeichen wird während der Zeichenverzugszeit (ZVZ) auf das nächste Zeichen
-## gewartet. Verstreicht die Zeichenverzugszeit ohne Empfang, wird das Zeichen NAK an das
-## Peripheriegerät gesendet und der Fehler an den Interpreter gemeldet.
-## Mit erkennen der Zeichenfolge DLE, ETX und BCC beendet die Prozedur den Empfang und sendet DLE
-## für einen fehlerfrei (oder NAK für einen fehlerhaft) empfangenen Block an das Peripheriegerät.
-## Treten während des Empfangs Übertragungsfehler auf (verlorenes Zeichen, Rahmenfehler), wird der
-## Empfang bis zum Verbindungsabbau weitergeführt und NAK an das Peripheriegerät gesendet. Dann wird
-## eine Wiederholung des Blocks erwartet. Kann der Block auch nach insgesamt sechs Versuchen nicht
-## fehlerfrei empfangen werden, oder wird die Wiederholung vom Peripheriegerät nicht innerhalb der
-## Blockwartezeit von 4 sec gestartet, bricht die Prozedur 3964R den Empfang ab und meldet den Fehler an
-## den Interpreter.
 
 
 
