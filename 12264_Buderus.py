@@ -109,20 +109,20 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|3|"E1 IP:Port"|"E2 Typ"|"E3 senden"|2|"A1 Daten"|"A2 SystemLog"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|3|"E1 IP:Port"|"E2 config"|"E3 senden"|2|"A1 Daten"|"A2 SystemLog"
 
 5001|3|2|0|1|1
 
 # EN[x]
 5002|1|"192.168.178.10:22"|1 #* IP:Port
-5002|2|1|0 #* Typ
+5002|2|""|1 #* config
 5002|3|""|1 #* Senden
 
 # Speicher
 5003|1||0 #* logic
 
 # Ausgänge
-5004|1|""|0|1|0 #* Daten
+5004|1|""|0|1|1 #* Daten
 5004|2|""|0|1|1 #* SystemLog
 
 #################################################
@@ -145,60 +145,86 @@ if EI == 1:
           self.MC = self.logik.MC
           EN = localvars['EN']
           self.device_connector = EN[1]
-          self.device_type = EN[2]
-          self._thread = None
-
-          ## Achtung:
-          ## Die Anzahl der Bytes je Datentyp bezieht sich auf den Stand 01/2009. Bei früheren Regelgeräteversionen 
-          ## kann die Anzahl niedriger sein. 
           
-          ## Funktionstyp / Name / Datenlänge in Bytes
-          
-          self.monitor_data_type = {
-              0x80 : ("Heizkreis 1", 18),
-              0x81 : ("Heizkreis 2", 18),
-              0x82 : ("Heizkreis 3", 18),
-              0x83 : ("Heizkreis 4", 18),
-              0x84 : ("Warmwasser", 12),
-              0x85 : ("Strategie wandhängend", 12),
-              0x87 : ("Fehlerprotokoll", 42),
-              0x88 : ("bodenstehender Kessel", 42),
-              0x89 : ("Konfiguration", 24),
-              0x8A : ("Heizkreis 5", 18),
-              0x8B : ("Heizkreis 6", 18),
-              0x8C : ("Heizkreis 7", 18),
-              0x8D : ("Heizkreis 8", 18),
-              0x8E : ("Heizkreis 9", 18),
-              0x8F : ("Strategie bodenstehend", 30),
-              0x90 : ("LAP", 18),
-              0x92 : ("wandhängende Kessel 1", 60),
-              0x93 : ("wandhängende Kessel 2", 60),
-              0x94 : ("wandhängende Kessel 3", 60),
-              0x95 : ("wandhängende Kessel 4", 60),
-              0x96 : ("wandhängende Kessel 5", 60),
-              0x97 : ("wandhängende Kessel 6", 60),
-              0x98 : ("wandhängende Kessel 7", 60),
-              0x99 : ("wandhängende Kessel 8", 60),
-              0x9B : ("Wärmemenge", 36),
-              0x9C : ("Störmeldemodul", 6),
-              0x9D : ("Unterstation", 6),
-              0x9E : ("Solarfunktion", 54),
+          self.config = {
+              'debug': 0,
           }
-          self._hs_message_queue = Queue()
+          
+          self._constants = {
+              'STX': chr(0x02),
+              'DLE': chr(0x10),
+              'ETX': chr(0x03),
+              'NAK': chr(0x15),
+              'QVZ': 2,             # Quittungsverzugzeit (QVZ) 2 sec
+              'ZVZ': 0.220,         # Der Abstand zwischen zwei Zeichen darf nicht mehr als die Zeichenverzugszeit (ZVZ) von 220 ms
+              'BWZ': 4,             # Blockwartezeit von 4 sec
+          }
 
+          self._thread = None
+          self.sock = None
+          self._buderus_data_lock = threading.RLock()
+
+          self._hs_message_queue = Queue()
+          self._buderus_message_queue = Queue()
+
+          self.readconfig(EN[2])
+          
           self.hs_queue_thread = threading.Thread(target=self._send_to_hs_consumer,name='buderus_hs_consumer')
           self.hs_queue_thread.start()
 
+          self.buderus_queue_thread = threading.Thread(target=self._send_to_buderus_consumer,name='hs_buderus_consumer')
+          self.buderus_queue_thread.start()
+
           self.connect()
 
+      def readconfig(self,configstring):
+          import re
+          for (option,value) in re.findall("(\w+)=(.*?)(?:\*|$)", configstring ):
+              option = option.lower()
+              _configoption = self.config.get(option)
+              _configtype = type(_configoption)
+              if _configtype == type(None):
+                  self.log("unbekannte Konfig Option %s=%s" % (option,value) )
+                  continue
+              try:
+                  _val = _configtype(value)
+                  self.config[option] = _val
+              except ValueError:
+                  self.log("falscher Wert bei Konfig Option %s=%s (erwartet %r)" % (option,value, _configtype ) )
+                  pass
+
+
       def debug(self,msg):
+          import time
           #self.log(msg,severity='debug')
-          print "DEBUG: %r" % (msg,)
+          print "%s DEBUG: %r" % (time.strftime("%H:%M:%S"),msg,)
 
       def connect(self):
           from hs_queue import hs_threading as threading
           self._thread = threading.Thread(target=self._connect,name='Buderus-Moxa-Connect')
           self._thread.start()
+
+      def _send_to_buderus_consumer(self):
+          import select,time
+          while True:
+              if not self.sock:
+                  time.sleep(1)
+                  continue
+              msg = self._buderus_message_queue.get()
+              self._buderus_data_lock.acquire()
+              self.debug("sende Queue exklusiv lock erhalten")
+              try:
+                  try:
+                      if self.wait_for_dle():
+                          self.send_payload(msg)
+                      else:
+                          self.debug("payload %r verworfen" % (msg,) )
+                  
+                  except:
+                      self.MC.Debug.setErr(sys.exc_info(),"%r" % msg)
+              finally:
+                  self._buderus_data_lock.release()
+                  self.debug("sende Queue exklusiv lock released")
 
       def _send_to_hs_consumer(self):
           while True:
@@ -233,12 +259,17 @@ if EI == 1:
               md5 = lambda x,md5old=md5old: md5old.md5(x)
           
           _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
-          _msg = '<log><id>%s</id><facility>hsfusion</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
+          _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
           
           self.send_to_output( 2, _msg )
 
       def incomming(self,msg):
           self.debug("incomming message %r" % msg)
+          ## mit * getrennte messages hinzufügen
+          for _msg in msg.split("*"):
+              ## leerzeciehn entfernen 
+              _msg = _msg.replace(' ','')
+              self._buderus_message_queue.put( _msg )
 
       def to_hex(self,list_of_dec):
           try:
@@ -248,326 +279,177 @@ if EI == 1:
           except:
               return list_of_dec
 
-      def _connect(self):
-          import time,socket,sys
-          MODE_NORMAL = 0xDE
-          MODE_DIRECT = 0xDD
-
-          STX = 0x02
-          DLE = 0x10
-          ETX = 0x03
-          NAK = 0x15
-          self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-          _ip,_port = self.device_connector.split(":")
-          self.sock.connect( ( _ip, int(_port) ) )
-          try:
-              print "DEBUG: Try"
-              ## setze nomal mode
-              while True:
-                  print "DEBUG: vor set_mode"                  
-                  if self.set_mode(MODE_NORMAL):
-                      self.debug("Normal Mode gesetzt")
-                      self.debug("Packet %r" % ( self.to_hex(MODE_NORMAL) ) )
-                      self.debug("Normal Mode gesetzt")
-                      break
-                  time.sleep(2)
-              Send_Data = []
-              while True:
-                  print "DEBUG: _3964r_Send: Also im Sende Mode"
-                  Send_Data = [ 0xA2 , 0x01 , 0x23, 0x24, DLE, 0x53, 0x66 ]
-                  if self._3964r_Send(Send_Data) == 0:
-                      print "DEBUG: Daten sind erfolgreich gesendet"
-                      self.debug("Send_Data %r" % ( self.to_hex(Send_Data) ) )
-                      break
-                  time.sleep(2)
-              
-              while True:
-                  print "DEBUG: _3964r_Receive: Also in Empfangs Mode"
-                  Receive_Data = []
-                  if self._3964r_Receive(Receive_Data) == 0:   
-                     print "DEBUG: Daten sind erfolgreich empfangen"
-                     
-                     ## packet an Ausgang 1
-                     ###self.send_to_output( 1, packet )
-                     
-                     self.debug("Reveice_Data %r" % ( self.to_hex(Receive_Data) ) )
-              
-          except:
-              self.MC.Debug.setErr(sys.exc_info(),"")
-              time.sleep(10)
-              self.connect()
-
-      def _3964r_Receive(self, list_of_bytes):
-          
-          STX = 0x02
-          DLE = 0x10
-          ETX = 0x03
-          NAK = 0x15
-          
-          import select
-          
-          ZVZ = 0.200   ## Zeichenverzugszeit  220 ms
-          
-          ## BWZ ?? finde ich nicht in der Doku
-          BWZ = 5       ## Blockwartezeit 5 sec
-          
-          _3964r_ErrCode = 0    ## Fehlercode loeschen
-      
-          while True:
-             _r,_w,_e = select.select([self.sock],[],[],BWZ)
-             if self.sock in _r:
-                data = ord( self.sock.recv(1) )
-                if data == STX:
-                   self.debug("STX <--- empfangen")
-                   ## jetzt ist DLE zurücksenden damit die Daten losgeschickt werden
-                   self.sock.send( chr(DLE))
-                   self.debug("---> DLE gesendet")
-                   break
-                else:
-                   self.debug(" !! KEINE STX: wird ignoriert!! ")
-                   ## Zeiche ignorieren und weitere Zeichen lesen
-                   continue
-             else:
-                ### Wozu?? da wir dann eh in die darüberliegende schleife zurückfallen die wieder diese Funktion aufruft
-                ## kein STX innerhalb der Blockwartezeit empfangen
-                _3964r_ErrCode = 8
-                return _3964r_ErrCode
-            
-          ## Nun die DATEN empfangen !
-          
-          
-          for _loop in xrange(6):
-             ## nun sind 6 Versuche erlaubt, die Daten zu empfangen
-             
-             bcc = 0
-             DLE_merker = 0
-             Ende = 0
-             
-             while not (Ende):
-                _r,_w,_e = select.select([self.sock],[],[],ZVZ)
-                if self.sock in _r:
-                   data = ord( self.sock.recv(1) )
-                   if (data == DLE) and ( not DLE_merker):
-                      ## das ist jetzt nur der test ob 1 oder 2 DLE's hintereinander sind ?? 
-                      ## wäre schöner durch ein last_received = data am ende die dann prüfen könnte ob data == last_received
-                      self.debug("erstes DLE in DATA gefunden")
-                      DLE_merker = 1
-                      bcc ^= data     ## faellt weg bei "DLE nicht in BCC"
-                   elif (data == ETX) and (DLE_merker):
-                      ## hier könnte auch wenn last_received == DLE and data == ETX: break
-                      
-                      ## direkt nach einem DLE ist nun das ETX empfange worden, also das Ende ist erreicht
-                      ## bcc ist aber nur vom DLE berechnet, noch nicht vom ETX
-                      ## wäre das zweite Zeichen nach dem DLE wieder ein DLE, würde es in den nächsten ELSE Zweig
-                      ## gehen und gespeichert werden. Das erste DLE ist damit wieder entfernt, aber bei BCC 
-                      ## mitgezählt worden, was nach 3964R richtig ist. BCC wird über alle Zeichen gemacht.
-                      Ende = 1
-                   else:
-                      ## Zeichen in list_of_bytes speichern
-                      list_of_bytes.append(data)
-                      bcc ^= data
-                      DLE_merker = 0    ## merker zurücksetzen
-                      self.debug("Data %r" % ( self.to_hex(data) ) )
-                      ## und weitere Zeichen lesen
-                      continue
-                else:
-                   ## NAK rauschicken
-                   self.sock.send( chr(NAK) )
-                   _3964r_ErrCode = 9
-                   return _3964r_ErrCode
-             
-             ## könnte auch direkt oben hinzugefügt werden so wie in receive_normal mit dem required_packet 
-             ## wo die checksumme hinten angefügt wird
-             bcc ^= ETX     ## das DLE ist ja schon in bcc, das ETX hiermit nun auch
-            
-             ## nun BCC lesen       
-             _r,_w,_e = select.select([self.sock],[],[],ZVZ)
-             if self.sock in _r:
-                data = ord( self.sock.recv(1) )
-                if data == bcc:
-                   ## erfolgreicher Empfang von BCC
-                   self.debug("Received BBC -> OK")
-                   ## Bestätigung schicken
-                   
-                   ## das DLE fehlte glaube ich in receive_normal nach dem erfolgreichen checksumm
-                   self.sock.send( chr(DLE) )
-                   return 0 ## Kein Fehler
-                else:    
-                   ## enpfangenes BCC stimmt nicht
-                   self.debug("Falsches BBC -> NAK")
-                   ## NAK rauschicken
-                   self.sock.send( chr(NAK) )
-             else:
-                ## keine BCC innerhalb von ZVZ empfangen
-                self.debug("kein BBC -> NAK")
-                ## NAK rausschicken    
-                self.sock.send( chr(NAK) )
-                return 5 ## Fehler zurueckgeben
-          else:
-             _3964r_ErrCode = 10
-          
-          return _3964r_ErrCode
-       
-      def _3964r_Send(self, list_of_bytes):
-          
-          STX = 0x02
-          DLE = 0x10
-          ETX = 0x03
-          NAK = 0x15
-          
-          import select
-          
-          QVZ = 0.200      
-
-          _3964r_ErrCode = 0    ## Fehlercode loeschen
-          packet = []
-          checksum = 0
-          self.debug("_3964r_Send")
-          for _loop in xrange(3):
-             self.sock.send( chr(STX) )
-             self.debug("STX gesendet")
-             _r,_w,_e = select.select([self.sock],[],[],QVZ)
-             if self.sock in _r:
-                  data = ord( self.sock.recv(1) )
-                  if data == DLE:
-                      ## jetzt ist FREI zum Senden
-                      self.debug("Received DLE")
-                      break
-             else:
-                ## timeout nächster Versuch machen (von den 3 erlaubten Versuchen)
-                continue
-          else:
-             self.debug("Nach 3 mal STX senden innerhalb von QVZ kein DLE empfangen")
-             _3964r_ErrCode = 1
-             return _3964r_ErrCode
-        
-          ## nun senden der Daten
-          self.debug("Daten senden")
-          ## nun sind 6 Versuche erlaubt
-          for _loop in xrange(6):
-             ## BCC wird schon inklusive DLE und ETX auf 0x13 initialisiert
-             bcc = 0x13   
-             for _byte in list_of_bytes:
-                self.sock.send( chr(_byte))
-                self.debug("Send Data %r" % ( self.to_hex(_byte) ) )
-                bcc ^= _byte
-                ## Wenn das DLE Zeichen in DATA vorkommt ist es nach 3964R zweimal zu senden
-                if _byte == DLE:
-                   self.sock.send( chr(DLE))
-                   self.debug("Send Data ++ %r" % ( self.to_hex(DLE) ) )
-                   bcc ^= DLE
-                 
-             ## nun sind alle Daten raus
-             ## jetzt den ABSCHLUSS anzeigen mit DLE, ETX und zum Nachprüfen für die Gegenseite BCC
-             self.sock.send( chr(DLE))
-             self.debug("Send Abschluss DLE %r" % ( self.to_hex(DLE) ) )
-             ## KEIN BCC, weil schon in Initialisierung geschehen
-             self.sock.send( chr(ETX))
-             self.debug("Send Abschluss ETX %r" % ( self.to_hex(ETX) ) )
-             ## KEIN BCC, weil schon in Initialisierung geschehen
-             self.sock.send( chr(bcc))
-             self.debug("Send Abschluss BCC %r" % ( self.to_hex(bcc) ) )
-             
-             ## Nun ist alles draussen
-             ## jetzt muß noch die Empfangsbestaetigung DLE zurückkommen
-             
-             _r,_w,_e = select.select([self.sock],[],[],QVZ)
-             if self.sock in _r:
-                  data = ord( self.sock.recv(1) )
-                  if data == DLE:
-                      ## jetzt ist der Empfang bestätigt
-                      self.debug("Empfang bestaetigt mit DLE")
-                      break
-             else:
-                ## timeout nächster Versuch machen (von den 6 erlaubten Versuchen)
-                continue
-          else:
-             self.debug("Nach 6 mal Daten senden, kein DLE innerhalb von QVZ empfangen")
-             _3964r_ErrCode = 2
-             return _3964r_ErrCode
-        
-          ## Senden: habe fertig
-          self.debug("Daten senden fertig")
-          ## _3964r_ErrCode zurückgeben (sollt hier 0 sein
-          return _3964r_ErrCode
-
-
-          
-      def set_mode(self,mode,ecocan_addr=0):
-          STX = 0x02
-          DLE = 0x10
-          ETX = 0x03
-          NAK = 0x15
-      
-          self.sock.send( chr(STX) )
+      def wait_for_dle(self):
           ## 3 versuche
           for _loop in xrange(3):
-              data = ord( self.sock.recv(1) )
-              if data == DLE:
-                  self.debug("Request mode %r" % self.to_hex(mode) )
-                  _checksum = 0
-                  for _msg in [ mode, DLE, ETX ]:
-                      _checksum ^= _msg
-                      self.sock.send( chr(_msg) )
-                  self.sock.send( chr(_checksum) )
-                  data = ord( self.sock.recv(1) )
-                  if data == DLE:
-                      self.debug("set mode accepted")
-                      return True
-                  else:
-                      self.debug("set mode rejected with packet %r" % (data,))
-                      continue
-              else:
-                  self.debug("Wrong packet %r received excpected %r" % (data,DLE))
-
-      def read_normal_mode(self):
-          STX = 0x02
-          DLE = 0x10
-          ETX = 0x03
-          NAK = 0x15
-
-          import select
-          ## packet STX / MODE / ECOCAN BUS ADDR / TYP / OFFSET / DATA / DLE / ETX
-          require = [STX, None, None, None, None, None, DLE, ETX]
-          packet = []
-          checksum = 0
-          while len(require) > 0:
-              ## ZVZ 220ms
-              _r,_w,_e = select.select([self.sock],[],[],0.220)
+              ## STX senden
+              self.sock.send( self._constants['STX'] )
+              self.debug("STX gesendet / warten auf DLE")
+              ## auf daten warten, timeout ist QVZ
+              _r,_w,_e = select.select( [ self.sock ],[],[], self._constants['QVZ'] )
               if self.sock in _r:
-                  data = ord( self.sock.recv(1) )
-                  _required_packet = require.pop(0)
+                  data = self.sock.recv(1)
+                  if data == self._constants['DLE']:
+                      self.debug("DLE empfangen")
+                      return True
+                  elif data == self._constants['DLE']:
+                      ## FIXME
+                      self.debug("STX empfangen Initialisierungskonflikt")
+                      self.sock.send( self._constants['DLE'] )
+                      self.debug("DLE gesendet")
+                      self.read_payload()
+                      
+          self.debug("Nach 3x STX senden innerhalb QVZ kein DLE")
+          return False
+        
 
-                  if _required_packet and _required_packet <> data:
-                      self.debug("INVALID DATA %r Received expected %r" % (data,_required_packet))
-                      self.sock.send( chr(NAK) )
-                      return []
+      ## Verbindung zum Moxa (gethreadet)
+      def _connect(self):
+          import time,socket,sys,select
+          try:
+              self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+              _ip,_port = self.device_connector.split(":")
+              self.sock.connect( ( _ip, int(_port) ) )
+              self.debug("connect zu moxa an %s:%s" % (_ip,_port))
+              while True:
+                  ## wir warten einfach nur auf Daten beim timeout überprüfen wir die send queue
+                  if not self.sock:
+                      break
+                  _r,_w,_e = select.select( [ self.sock ],[],[], 0.200 )
+                  if self.sock in _r and self._buderus_data_lock.acquire(blocking=False):
+                      self.debug("empfang exklusiv lock erhalten")
+                      try:
+                          ## wenn Daten da sind, ein zeichen lesen
+                          data = self.sock.recv(1)
+                          if not data:
+                              self.debug("Verbindung abgebrochen")
+                              break
+                          if data == self._constants['STX']:
+                              self.debug("STX empfangen sende DLE")
+                              self.sock.send( self._constants['DLE'] )
+                              self.debug("DLE gesendet")
+                              
+                              self.read_payload()
+                          else:
+                              self.debug("ungültiges Zeichen %r empfangen" % (data,) )
+                      
+                      finally:
+                          ## den lock auf jedenfall relasen
+                          self._buderus_data_lock.release()
+                          self.debug("empfang exklusiv lock releasen")
+
+          except:
+              ## fehler auf die HS Debugseite
+              self.MC.Debug.setErr(sys.exc_info(),"")
+              ## 10 sekunden pause
+              time.sleep(10)
+          ## dann reconnect
+          self.connect()
+
+      def send_payload(self,payload):
+          import select,binascii
+          ## 6 versuche
+          for _loop in xrange(6):
+              self.debug("exklusiv senden / versuch %d" % _loop)
+              _bcc = 0
+              for _byte in binascii.unhexlify(payload):
+                  self.sock.send( _byte )
+                  self.debug("Byte %r versendet" % binascii.hexlify(_byte))
+                  _bcc ^= ord(_byte)
+                  if _byte == self._constants['DLE']:
+                      ## wenn DLE dann in der payload verdoppeln
+                      self.debug("Payload enthällt DLE, ersetzt mit DLE DLE" ) 
+                      self.sock.send( _byte )
+                      _bcc ^= ord(_byte)
+              self.debug("Alle Daten gesendet, jetzt DLE und ETX")
+              self.sock.send( self._constants['DLE'] )
+              _bcc ^= ord( self._constants['DLE'] )
+              self.sock.send( self._constants['ETX'] )
+              _bcc ^= ord( self._constants['ETX'] )
+              
+              self.debug("jetzt checksumme %r senden" % (_bcc) )
+              self.sock.send( chr(_bcc) )
+
+              ## auf daten warten, timeout ist QVZ
+              self.debug("warten auf DLE")
+              _r,_w,_e = select.select( [ self.sock ],[],[], self._constants['QVZ'] )
+              if self.sock in _r:
+                  data = self.sock.recv(1)
+                  if data == self._constants['DLE']:
+                      self.debug("DLE erhalten")
+                      return True
+              self.debug("Kein DLE erhalten loop")
+          self.debug("Nach 6x STX senden innerhalb QVZ kein DLE")
+
+
+      def read_payload(self):
+          import select,binascii,time
+          ## 6 versuche sind erlaubt
+          for _loop in xrange(6):
+              self.debug("exklusiv lesen / versuch %d" % _loop)
+              _lastchar = ""
+              _bcc = 0
+              _payload = []
+              _wait_for_checksum = False
+              _bwz_timer = time.time() + self._constants['BWZ']
+              while True:
+                  _r,_w,_e = select.select( [ self.sock ],[],[], self._constants['ZVZ'] )
+                  if not self.sock in _r:
+                      ## wenn schon Daten da nur zeichenverzugszeit/ wenn keine Daten dann Blockwartezeit
+                      if len(_payload) > 0 or _bwz_timer <= time.time():
+                          ## kein zeichen innerhalb ZVZ bzw BWZ
+                          self.debug("abbruch ZVZ oder BWZ")
+                          self.send( self._constants['NAK'] )
+                          ## gegenseite zeit geben
+                          time.sleep( self._constants['ZVZ'] )
+                          break
+                      ## wenn noch keine daten und blockwartezeit nicht überschritten
+                      else:
+                          self.debug("weiter warten auf daten noch kein ZVZ/BWZ timeout")
+                          continue
+                  ## ein Zeichen lesen
+                  data = self.sock.recv(1)
+                  if not data:
+                      self.debug("Keine Daten / verbindung verloren")
+                      return
+                  self.debug("Data: %r empfangen" % (data,) )
+                  ## wenn checksumme erwartet wird
+                  if _wait_for_checksum:
+                      _bcc_recv = ord(data)
+                      self.debug("berechnete checksumme = %r empfange checksumme = %r" % ( _bcc,_bcc_recv) )
+                      if _bcc == _bcc_recv:
+                          _hexpayload = "".join( _payload )
+                          self.debug("Payload %r erfolgreich empfangen" % (_hexpayload))
+                          self.send_to_output(1, _hexpayload)
+                          self.sock.send( self._constants['DLE'] )
+                          return
+                      else:
+                          self.debug("Checksum nicht korrekt %r != %r" % (_bcc, _bcc_recv) )
+                          self.sock.send( self._constants['NAK'] )
+                          ## FIXME BREAK heißt nochmal in die 6 versuche oder return wäre zurück zum mainloop warten auf STX
+                          break
                   
-                  if data == NAK:
-                      self.debug("Received NAK")
-                      return []
-                  
-                  if data == STX:
-                      self.sock.send( chr(DLE) )
+                  ## checksum von jedem packet berechnen
+                  _bcc ^= ord(data)
+
+                  ## wenn 2mal DLE hintereinander bcc berechnen aber nur eins zum packet
+                  if data == _lastchar == self._constants['DLE']:
+                      self.debug("entferne doppeltes DLE")
                       continue
-
-                  ## Das Blockprüfzeichen wird durch eine exklusiv-oder-Verknüpfung über alle Datenbytes der
-                  ## Nutzinformation, inclusive der Endekennung DLE, ETX gebildet.
-                  checksum ^= data
                   
-                  if data == ETX:
-                      ## alle Daten empfangen, die checksumme als weiteren required Wert adden
-                      require.append( checksum )
-
-                  if not _required_packet:
-                      ## alle Datenpackete
-                      packet.append(data)
-              else:
-                  ## timeout
-                  self.sock.send( chr(NAK) )
-                  return []
-                    
-          return packet
+                  ## WENN DLE ETX dann Ende
+                  if _lastchar == self._constants['DLE'] and data ==  self._constants['ETX']:
+                      self.debug("DLE/ETX empfangen warte auf checksumme")
+                      _wait_for_checksum = True
+                      ## letztes DLE entfernen
+                      _payload = _payload[:-1]
+                      continue
+                      
+                  ## daten zum packet hinzu
+                  self.debug("Daten %r empfangen" % (binascii.hexlify(data))  )
+                  _payload.append( binascii.hexlify(data) )
+                  ## letztes zeichen speichern
+                  _lastchar = data
 
 
       def direct_read_request(self):
