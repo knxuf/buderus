@@ -435,6 +435,7 @@ if EI == 1:
                   ## wenn 2mal DLE hintereinander bcc berechnen aber nur eins zum packet
                   if data == _lastchar == self._constants['DLE']:
                       self.debug("entferne doppeltes DLE")
+                      _last_char = ""
                       continue
                   
                   ## WENN DLE ETX dann Ende
