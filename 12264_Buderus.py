@@ -54,7 +54,7 @@ LOGIKCAT="www.knx-user-forum.de"
 LOGIKDESC="""
 
 """
-VERSION="V0.2"
+VERSION="V0.3"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
