@@ -194,7 +194,7 @@ if EI == 1:
                   
           self.found_devices = []
           
-          self.payload_regex = re.compile("(?P<id>AB|A7)(?P<busnr>[0-9a-fA-F]{2})(?P<type>[0-9a-fA-F]{2})(?P<data>[0-9a-fA-F]+)")
+          self.payload_regex = re.compile("(?P<id>AB|A7)(?P<busnr>[0-9a-fA-F]{2})(?P<type>[0-9a-fA-F]{2})(?P:<offset>[0-9a-fA-F]{2}(?P<data>[0-9a-fA-F]+)")
 
           self._thread = None
           self.sock = None
@@ -231,6 +231,8 @@ if EI == 1:
 
 
       def debug(self,msg):
+          if not self.config("debug"):
+              return
           import time
           #self.log(msg,severity='debug')
           print "%s DEBUG: %r" % (time.strftime("%H:%M:%S"),msg,)
@@ -469,7 +471,7 @@ if EI == 1:
                       self.debug("berechnete checksumme = %.2x empfange checksumme = %.2x" % ( _bcc,_bcc_recv) )
                       if _bcc == _bcc_recv:
                           _hexpayload = "".join( _payload ).upper()
-                          self.debug("Payload %r erfolgreich empfangen" % (_hexpayload))
+                          self.log("Payload %r erfolgreich empfangen" % (_hexpayload),severity='debug')
                           
                           self.parse_device_type( _hexpayload )
                           
