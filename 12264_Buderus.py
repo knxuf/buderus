@@ -316,7 +316,9 @@ if EI == 1:
                   if not self.sock:
                       break
                   _r,_w,_e = select.select( [ self.sock ],[],[], 0.200 )
-                  if self.sock in _r and self._buderus_data_lock.acquire(blocking=False):
+                  if not self._buderus_data_lock.acquire(blocking=False):
+                      continue
+                  if self.sock in _r:
                       self.debug("empfang exklusiv lock erhalten")
                       try:
                           ## wenn Daten da sind, ein zeichen lesen
