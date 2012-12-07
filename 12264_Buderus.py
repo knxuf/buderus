@@ -553,11 +553,17 @@ if EI == 1:
               _busnr = _error.group("busnr")
               # nur fehlerstatus > 0
               _error_slots = filter(lambda x: x > 0,[ _error.group("slot1"), _error.group("slot2"), _error.group("slot3"), _error.group("slot4") ])
+              _active_errors = filter(lambda x,busnr=_busnr: x[0] == busnr, self.active_errors)
               for _err in _error_slots:
                   if (_busnr,_err) not in self.active_errors:
                       self.active_errors.append( (_busnr,_err) )
                       _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
                       self.log( "%s an Bus %s" % (_err_message,_busnr), severity='error' )
+              for (busnr,_err) in _active_errors:
+                  if _err not in _error_slots:
+                      _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
+                      self.log( "%s an Bus %s (behoben)" % (_err_message,_busnr), severity='info' )
+                      self.active_errors.remove( (busnr,_err) )
 
       def wait_for_dle(self):
           ## 3 versuche
