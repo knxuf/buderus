@@ -468,7 +468,7 @@ if EI == 1:
                       _bcc_recv = ord(data)
                       self.debug("berechnete checksumme = %.2x empfange checksumme = %.2x" % ( _bcc,_bcc_recv) )
                       if _bcc == _bcc_recv:
-                          _hexpayload = "".join( _payload )
+                          _hexpayload = "".join( _payload ).upper()
                           self.debug("Payload %r erfolgreich empfangen" % (_hexpayload))
                           
                           self.parse_device_type( _hexpayload )
