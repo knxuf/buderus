@@ -140,6 +140,7 @@ if EI == 1:
       def __init__(self,localvars):
           from hs_queue import Queue
           from hs_queue import hs_threading as threading
+          import re
           self.id = "buderus_connect"
           self.logik = localvars["pItem"]
           self.MC = self.logik.MC
@@ -159,6 +160,41 @@ if EI == 1:
               'ZVZ': 0.220,         # Der Abstand zwischen zwei Zeichen darf nicht mehr als die Zeichenverzugszeit (ZVZ) von 220 ms
               'BWZ': 4,             # Blockwartezeit von 4 sec
           }
+
+          self.device_types = {
+              "80" : ("Heizkreis 1", 18),
+              "81" : ("Heizkreis 2", 18),
+              "82" : ("Heizkreis 3", 18),
+              "83" : ("Heizkreis 4", 18),
+              "84" : ("Warmwasser", 12),
+              "85" : ("Strategie wandhängend", 12),
+              "87" : ("Fehlerprotokoll", 42),
+              "88" : ("bodenstehender Kessel", 42),
+              "89" : ("Konfiguration", 24),
+              "8A" : ("Heizkreis 5", 18),
+              "8B" : ("Heizkreis 6", 18),
+              "8C" : ("Heizkreis 7", 18),
+              "8D" : ("Heizkreis 8", 18),
+              "8E" : ("Heizkreis 9", 18),
+              "8F" : ("Strategie bodenstehend", 30),
+              "90" : ("LAP", 18),
+              "92" : ("wandhängende Kessel 1", 60),
+              "93" : ("wandhängende Kessel 2", 60),
+              "94" : ("wandhängende Kessel 3", 60),
+              "95" : ("wandhängende Kessel 4", 60),
+              "96" : ("wandhängende Kessel 5", 60),
+              "97" : ("wandhängende Kessel 6", 60),
+              "98" : ("wandhängende Kessel 7", 60),
+              "99" : ("wandhängende Kessel 8", 60),
+              "9B" : ("Wärmemenge", 36),
+              "9C" : ("Störmeldemodul", 6),
+              "9D" : ("Unterstation", 6),
+              "9E" : ("Solarfunktion", 54),
+          }
+                  
+          self.found_devices = []
+          
+          self.payload_regex = re.compile("(?P<id>AB|A7)(?P<busnr>[0-9a-fA-F]{2})(?P<type>[0-9a-fA-F]{2})(?P<data>[0-9a-fA-F]+)")
 
           self._thread = None
           self.sock = None
@@ -280,6 +316,16 @@ if EI == 1:
               return " ".join( ["%.2x".upper() % x for x in list_of_dec] )
           except:
               return list_of_dec
+
+      def parse_device_type(self,payload):
+          _payload = self.payload_regex.search(payload)
+          if _payload:
+              _type = _payload.group("type")
+              if _type not in self.found_devices:
+                  self.found_devices.append( _type )
+                  (_devicename, _datalen) = self.device_types.get( _type, ("unbekanntes Gerät (%s)" % _type, 0) )
+                  self.debug("Gerät %r an ECOCAN %s gefunden" % ( _devicename, _payload.group("busnr") ) )
+
 
       def wait_for_dle(self):
           ## 3 versuche
@@ -424,6 +470,9 @@ if EI == 1:
                       if _bcc == _bcc_recv:
                           _hexpayload = "".join( _payload )
                           self.debug("Payload %r erfolgreich empfangen" % (_hexpayload))
+                          
+                          self.parse_device_type( _hexpayload )
+                          
                           self.send_to_output(1, _hexpayload)
                           self.sock.send( self._constants['DLE'] )
                           return
