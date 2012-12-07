@@ -208,6 +208,7 @@ if EI == 1:
           import select,time
           while True:
               if not self.sock:
+                  self.debug("Socket nicht bereit ... warten")
                   time.sleep(1)
                   continue
               msg = self._buderus_message_queue.get()
@@ -216,6 +217,7 @@ if EI == 1:
               try:
                   try:
                       if self.wait_for_dle():
+                          self.debug("jetzt payload %r senden" % (msg,) )
                           self.send_payload(msg)
                       else:
                           self.debug("payload %r verworfen" % (msg,) )
@@ -283,6 +285,7 @@ if EI == 1:
           ## 3 versuche
           for _loop in xrange(3):
               ## STX senden
+              self.debug("STX senden")
               self.sock.send( self._constants['STX'] )
               self.debug("STX gesendet / warten auf DLE")
               ## auf daten warten, timeout ist QVZ
@@ -414,11 +417,10 @@ if EI == 1:
                   if not data:
                       self.debug("Keine Daten / verbindung verloren")
                       return
-                  self.debug("Data: %r empfangen" % (data,) )
                   ## wenn checksumme erwartet wird
                   if _wait_for_checksum:
                       _bcc_recv = ord(data)
-                      self.debug("berechnete checksumme = %r empfange checksumme = %r" % ( _bcc,_bcc_recv) )
+                      self.debug("berechnete checksumme = %.2x empfange checksumme = %.2x" % ( _bcc,_bcc_recv) )
                       if _bcc == _bcc_recv:
                           _hexpayload = "".join( _payload )
                           self.debug("Payload %r erfolgreich empfangen" % (_hexpayload))
