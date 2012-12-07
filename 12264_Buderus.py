@@ -231,7 +231,7 @@ if EI == 1:
 
 
       def debug(self,msg):
-          if not self.config("debug"):
+          if not self.config.get("debug"):
               return
           import time
           #self.log(msg,severity='debug')
