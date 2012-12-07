@@ -194,7 +194,7 @@ if EI == 1:
                   
           self.found_devices = []
           
-          self.payload_regex = re.compile("(?P<id>AB|A7)(?P<busnr>[0-9a-fA-F]{2})(?P<type>[0-9a-fA-F]{2})(?P:<offset>[0-9a-fA-F]{2}(?P<data>[0-9a-fA-F]+)")
+          self.payload_regex = re.compile("(?P<id>AB|A7)(?P<busnr>[0-9a-fA-F]{2})(?P<type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2}(?P<data>(?:[0-9A-F]{2})+)")
 
           self._thread = None
           self.sock = None
