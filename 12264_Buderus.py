@@ -341,7 +341,7 @@ if EI == 1:
               try:
                   if self.wait_for_dle():
                       self.debug("jetzt payload %r senden" % (payload,) )
-                      self.send_payload(msg)
+                      self.send_payload(payload)
                       _ret = True
                   else:
                       self.debug("payload %r verworfen" % (payload,) )
