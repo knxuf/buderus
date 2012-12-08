@@ -193,7 +193,14 @@ if EI == 1:
           }
           self.found_devices = []
           
+          self.waiting_direct_bus = []
+          
+          self.directmode_lock = threading.RLock()
+          self._is_directmode = False
+          
           self.payload_regex = re.compile("(?P<id>AB|A7)(?P<busnr>[0-9a-fA-F]{2})(?P<type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{2})+)")
+          self.directmode_regex = re.compile("(?P<id>A2|B0)(?P<busnr>[0-9a-fA-F]{2})")
+          self.directmode_finish_regex = re.compile("AC(?P<busnr>[0-9a-fA-F]{2})")
           
           self._thread = None
           self.sock = None
@@ -249,21 +256,102 @@ if EI == 1:
                   time.sleep(1)
                   continue
               msg = self._buderus_message_queue.get()
-              self._buderus_data_lock.acquire()
-              self.debug("sende Queue exklusiv lock erhalten")
+              _direct_mode = self.directmode_regex.search(msg)
+              if not _direct_mode:
+                  self.debug("ungültige sende Nachricht %r" % (msg,) )
+                  continue
+              _cmdid = _direct_mode.group("id")
+              _busnr = _direct_mode.group("busnr")
+              
+              if _cmdid == "A2":
+                  if _busnr not in self.waiting_direct_bus:
+                      self.add_direct_waiting(_busnr)
+                  else:
+                      ## Bus wird schon abgefragt
+                      continue
+
+              if not self.set_directmode(True):
+                  continue
+              self._send3964r(msg)
+              
+              self.check_directmode_needed()
+
+      def add_direct_waiting(self,busnr):
+          try:
+              self.directmode_lock.acquire()
+              self.waiting_direct_bus.append(busnr)
+          finally:
+              self.directmode_lock.release()
+
+      def remove_direct_waiting(self,busnr=None):
+          try:
+              self.directmode_lock.acquire()
+              if not busnr:
+                  ## Flush
+                  self.waiting_direct_bus =[]
+                  self._is_directmode = False
+              elif busnr in self.waiting_direct_bus:
+                  self.waiting_direct_bus.remove(busnr)
+          finally:
+              self.directmode_lock.release()
+
+      def get_direct_waiting(self):
+          try:
+              self.directmode_lock.acquire()
+              return self.waiting_direct_bus
+          finally:
+              self.directmode_lock.release()
+
+      def is_directmode(self):
+          try:
+              self.directmode_lock.acquire()
+              return self._is_directmode
+          finally:
+              self.directmode_lock.release()
+          
+      def check_directmode_needed(self):
+          if not self.is_directmode():
+              return
+          if self._buderus_message_queue.empty() and not self.get_direct_waiting():
+              self.set_directmode(False)
+
+      def set_directmode(self,mode):
+          import time
+          _setmode = "DC"
+          if mode:
+              _setmode = "DD"
+          try:
+              self.directmode_lock.acquire()
+              _loop = 0
+              while not self._is_directmode == mode:
+                  if _loop == 2:
+                      break
+                  self._is_directmode = (self._send3964r(_setmode) == mode)
+                  time.sleep(1)
+                  _loop += 1
+              return (self._is_directmode == mode)
+          finally:
+              self.directmode_lock.release()
+        
+      def _send3964r(self,payload):
+          _ret = False
+          self._buderus_data_lock.acquire()
+          self.debug("sende Queue exklusiv lock erhalten")
+          try:
               try:
-                  try:
-                      if self.wait_for_dle():
-                          self.debug("jetzt payload %r senden" % (msg,) )
-                          self.send_payload(msg)
-                      else:
-                          self.debug("payload %r verworfen" % (msg,) )
-                  
-                  except:
-                      self.MC.Debug.setErr(sys.exc_info(),"%r" % msg)
-              finally:
-                  self._buderus_data_lock.release()
-                  self.debug("sende Queue exklusiv lock released")
+                  if self.wait_for_dle():
+                      self.debug("jetzt payload %r senden" % (payload,) )
+                      self.send_payload(msg)
+                      _ret = True
+                  else:
+                      self.debug("payload %r verworfen" % (payload,) )
+              
+              except:
+                  self.MC.Debug.setErr(sys.exc_info(),"%r" % (payload,))
+          finally:
+              self._buderus_data_lock.release()
+              self.debug("sende Queue exklusiv lock released")
+              return _ret
 
       def _send_to_hs_consumer(self):
           while True:
@@ -321,12 +409,22 @@ if EI == 1:
       def parse_device_type(self,payload):
           _payload = self.payload_regex.search(payload)
           if _payload:
+              if _payload.group("id") == "A7" and self.is_directmode():
+                  self.remove_direct_waiting()
+                  self.log("Directmode timeout")
               _type = _payload.group("type")
               if _type not in self.found_devices:
                   self.found_devices.append( _type )
                   (_devicename, _datalen) = self.device_types.get( _type, ("unbekanntes Gerät (%s)" % _type, 0) )
                   self.debug("Gerät %r an ECOCAN %s gefunden" % ( _devicename, _payload.group("busnr") ) )
               return
+          _direct = self.directmode_finish_regex.search(payload)
+          if _direct:
+              _busnr = _direct.group("busnr")
+              self.remove_direct_waiting(_busnr)
+              
+              
+              
 
       def wait_for_dle(self):
           ## 3 versuche
@@ -389,6 +487,8 @@ if EI == 1:
                       ## den lock auf jedenfall relasen
                       self._buderus_data_lock.release()
                       self.debug("empfang exklusiv lock releasen")
+                      self.check_directmode_needed()
+                      
 
           except:
               ## fehler auf die HS Debugseite
