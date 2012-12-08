@@ -554,7 +554,7 @@ if EI == 1:
           if _error:
               _busnr = _error.group("busnr")
               # nur fehlerstatus > 0
-              _error_slots = filter(lambda x: x > 0,[ _error.group("slot1"), _error.group("slot2"), _error.group("slot3"), _error.group("slot4") ])
+              _error_slots = filter(lambda x: int(x,16) > 0,[ _error.group("slot1"), _error.group("slot2"), _error.group("slot3"), _error.group("slot4") ])
               _active_errors = filter(lambda x,busnr=_busnr: x[0] == busnr, self.active_errors)
               for _err in _error_slots:
                   if (_busnr,_err) not in self.active_errors:
