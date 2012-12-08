@@ -148,7 +148,8 @@ if EI == 1:
           self.device_connector = EN[1]
           
           self.config = {
-              'debug': 0,
+              'debug': 2,
+              'ecocanmode' :0,
           }
           
           self._constants = {
@@ -159,6 +160,7 @@ if EI == 1:
               'QVZ': 2,             # Quittungsverzugzeit (QVZ) 2 sec
               'ZVZ': 0.220,         # Der Abstand zwischen zwei Zeichen darf nicht mehr als die Zeichenverzugszeit (ZVZ) von 220 ms
               'BWZ': 4,             # Blockwartezeit von 4 sec
+              'ECOCANTRANSMODE' : "\xdd\x00\x00\x04",
           }
 
           self.device_types = {
@@ -450,8 +452,8 @@ if EI == 1:
                   pass
 
 
-      def debug(self,msg):
-          if not self.config.get("debug"):
+      def debug(self,msg,lvl=5):
+          if self.config.get("debug") < lvl:
               return
           import time
           #self.log(msg,severity='debug')
@@ -598,6 +600,10 @@ if EI == 1:
               _ip,_port = self.device_connector.split(":")
               self.sock.connect( ( _ip, int(_port) ) )
               self.debug("connect zu moxa an %s:%s" % (_ip,_port))
+              
+              ## ecocan-c modem mode
+              if self.config.get("ecocanmode"):
+                  self.set_transparent_mode()
               while True:
                   ## wir warten einfach nur auf Daten beim timeout überprüfen wir die send queue
                   if not self.sock:
@@ -620,7 +626,7 @@ if EI == 1:
                               
                               self.read_payload()
                           else:
-                              self.debug("ungültiges Zeichen %r empfangen" % (data,) )
+                              self.debug("ungültiges Zeichen %r empfangen" % (data,) ,lvl=4)
                       
                       finally:
                           ## den lock auf jedenfall relasen
@@ -634,6 +640,9 @@ if EI == 1:
               time.sleep(10)
           ## dann reconnect
           self.connect()
+
+      def set_transparent_mode(self):
+          self.sock.send(  self._constants['ECOCANTRANSMODE'] )
 
       def send_payload(self,payload):
           import select,binascii
@@ -666,9 +675,10 @@ if EI == 1:
                   data = self.sock.recv(1)
                   if data == self._constants['DLE']:
                       self.debug("DLE erhalten")
+                      self.debug("Daten %r erfolgreich gesendet" % (payload,),lvl=2)
                       return True
               self.debug("Kein DLE erhalten loop")
-          self.debug("Nach 6x STX senden innerhalb QVZ kein DLE")
+          self.debug("Nach 6x STX senden innerhalb QVZ kein DLE",lvl=1)
 
 
       def read_payload(self):
@@ -687,7 +697,7 @@ if EI == 1:
                       ## wenn schon Daten da nur zeichenverzugszeit/ wenn keine Daten dann Blockwartezeit
                       if len(_payload) > 0 or _bwz_timer <= time.time():
                           ## kein zeichen innerhalb ZVZ bzw BWZ
-                          self.debug("abbruch ZVZ oder BWZ")
+                          self.debug("abbruch ZVZ oder BWZ",lvl=1)
                           self.send( self._constants['NAK'] )
                           ## gegenseite zeit geben
                           time.sleep( self._constants['ZVZ'] )
@@ -707,7 +717,7 @@ if EI == 1:
                       self.debug("berechnete checksumme = %.2x empfange checksumme = %.2x" % ( _bcc,_bcc_recv) )
                       if _bcc == _bcc_recv:
                           _hexpayload = "".join( _payload ).upper()
-                          self.log("Payload %r erfolgreich empfangen" % (_hexpayload),severity='debug')
+                          self.debug("Payload %r erfolgreich empfangen" % (_hexpayload),lvl=2)
                           
                           self.parse_device_type( _hexpayload )
                           
@@ -715,7 +725,7 @@ if EI == 1:
                           self.sock.send( self._constants['DLE'] )
                           return
                       else:
-                          self.debug("Checksum nicht korrekt %r != %r" % (_bcc, _bcc_recv) )
+                          self.debug("Checksum nicht korrekt %r != %r" % (_bcc, _bcc_recv) ,lvl=1)
                           self.sock.send( self._constants['NAK'] )
                           ## FIXME BREAK heißt nochmal in die 6 versuche oder return wäre zurück zum mainloop warten auf STX
                           break
@@ -738,7 +748,7 @@ if EI == 1:
                       continue
                       
                   ## daten zum packet hinzu
-                  self.debug("Daten %r empfangen" % (binascii.hexlify(data))  )
+                  self.debug("Daten %r empfangen" % (binascii.hexlify(data)),lvl=3)
                   _payload.append( binascii.hexlify(data) )
                   ## letztes zeichen speichern
                   _lastchar = data
