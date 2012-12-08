@@ -609,7 +609,7 @@ if EI == 1:
                   ## wir warten einfach nur auf Daten beim timeout überprüfen wir die send queue
                   if not self.sock:
                       break
-                  _r,_w,_e = select.select( [ self.sock ],[],[], 0.200 )
+                  _r,_w,_e = select.select( [ self.sock ],[],[], 10 )
                   if not self._buderus_data_lock.acquire(blocking=False):
                       continue
                   self.debug("empfang exklusiv lock erhalten")
