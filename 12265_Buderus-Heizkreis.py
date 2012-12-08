@@ -109,14 +109,17 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|3|"E1 Payload IN"|"E2 ECOCAN Bus"|"E3 Heizkreis"|2|"A1 Payload OUT"|"A2 SystemLog"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|6|"E1 Payload IN"|"E2 ECOCAN Bus"|"E3 Heizkreis"|"E4 Tagsoll"|"E5 Nachtsoll"|"E6 Betriebsmode"|2|"A1 Payload OUT"|"A2 SystemLog"
 
-5001|3|2|0|1|1
+5001|6|2|0|1|1
 
 # EN[x]
 5002|1|""|1 #* Payload IN
 5002|2|0|0 #* ECOCAN Bus ID
 5002|3|1|0 #* Heizkreis Nr
+5002|4|1|0 #* Tagsoll 0.5° genau Stellbereich: 10 - 30 °C
+5002|5|1|0 #* Nachtsoll 0.5° genau Stellbereich: 10 - 30 °C
+5002|6|1|0 #* Betriebsmode 0 = manuell Nacht / 1 manuell Tag / 2 Automatik
 
 # Speicher
 5003|1||0 #* logic
@@ -161,15 +164,18 @@ if EI == 1:
               "8E" : "Heizkreis 9",
           }
 
-          self.selector =  ["8A","80","81","82","83","8A","8B","8C","8D","8E"] ## Heizkreis 0 bei 4221 ist Heizkreis 5 
-          
+          self.recv_selector = ["8A","80","81","82","83","8A","8B","8C","8D","8E"] ## Heizkreis 0 bei 4221 ist Heizkreis 5 
+          self.send_selector = ["16","07","08","09","0A","16","18","1A","1C","1E"] ## Heizkreis 0 bei 4221 ist 5 ##FIXME: Heizkreis 9 1E??? DOKU ??
           
           if EN[3] < 0 or EN[3] > 9:
               self.debug("Ungültige Heizkreisnummer %d" % EN[3])
               _id = "XX"
+              self.send_prefix = None
           else:
-              _id = self.selector[ int(EN[3]) ]
+              _id = self.recv_selector[ int(EN[3]) ]
+              self.send_prefix = "%.2x%s" % (int(EN[2]),self.send_selector [ int(EN[3]) ])
           
+          self.bus_id = int(EN[3])
           self.id = self.device_types.get(_id)
           self.payload_regex = re.compile( "(?P<mode>AB|A7)%.2x%s(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( int(EN[2]) ,_id) )
 
@@ -179,8 +185,8 @@ if EI == 1:
 
       def send_to_output(self,out,msg):
           ## werte fangen bei 0 an also AN[1] == Ausgang[0]#
-          out -= 1
-          self._hs_message_queue.put((out,msg))
+          self.localvars["AN"][out] = msg
+          self.localvars["AC"][out] = 1
 
       def log(self,msg,severity='info'):
           import time
@@ -210,6 +216,21 @@ if EI == 1:
           if _data:
               self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
 
+      def set_tagsoll(self, val):
+          _val = round(val*2)
+          self.send_to_output(1,"DD*B0%s006565%.2x656565*DC" % (self.send_prefix,_val) )
+          self.log("Tagsoll von %s an %s auf %s" % (self.id,self.bus_id,val) )
+          
+      def set_nachtsoll(self, val):
+          _val = round(val*2)
+          self.send_to_output(1,"DD*B0%s00656565%.2x6565*DC" % (self.send_prefix,_val) )
+          self.log("Nachtsoll von %s an %s auf %s" % (self.id,self.bus_id,val) )
+          
+      def set_mode(self, val):
+          _mode = ["Nacht","Tag","Automatik"]
+          self.send_to_output(1,"DD*B0%s0065656565%.2x65*DC" % (self.send_prefix,val) )
+          self.log("Betriebsmode von %s an %s auf %s" % (self.id,self.bus_id,_mode[val]) )
+          
 
 ## 2.3.1 Monitorwerte für Heizkreise
 ## Die Monitorwerte für einen Heizkreis setzen sich aus zur Zeit insgesamt 18 Werte zusammen
@@ -225,9 +246,11 @@ debugcode = """
 
 """
 postlogik=[0,"",r"""
-
 5012|0|"EI"|"buderus_heizkreis(locals())"|""|0|0|1|0
 5012|0|"EC[1]"|"SN[1].incomming(EN[1])"|""|0|0|0|0
+5012|0|"EC[4]"|"SN[1].set_tagsoll(EN[4])"|""|0|0|0|0
+5012|0|"EC[5]"|"SN[1].set_nachtsoll(EN[5])"|""|0|0|0|0
+5012|0|"EC[6]"|"SN[1].set_mode(EN[6])"|""|0|0|0|0
 
 """]
 
