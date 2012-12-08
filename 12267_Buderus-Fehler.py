@@ -400,6 +400,7 @@ if EI == 1:
           self.active_errors = []
           self.readconfig(EN[2])
           
+          self.log_queue = ""
 
           self.error_regex = re.compile("AE(?P<busnr>[0-9a-fA-F]{2})(?P<slot1>[0-9a-fA-F]{2})(?P<slot2>[0-9a-fA-F]{2})(?P<slot3>[0-9a-fA-F]{2})(?P<slot4>[0-9a-fA-F]{2})")
 
@@ -442,17 +443,16 @@ if EI == 1:
           
           _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
           _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
-          self.send_to_output( 1, _msg )
+          self.log_queue += _msg 
 
       def parse(self,payload):
           _error = self.error_regex.search( payload )
           if _error:
-              _busnr = _error.group("busnr")
+              _busnr = int(_error.group("busnr"),16)
               # nur fehlerstatus > 0
-              _error_slots = filter(lambda x: int(x,16) > 0,[ _error.group("slot1"), _error.group("slot2"), _error.group("slot3"), _error.group("slot4") ])
+              _error_slots = filter(lambda x: x > 0,[ int(_error.group("slot1"),16), int(_error.group("slot2"),16), int(_error.group("slot3"),16), int(_error.group("slot4"),16) ])
               _active_errors = filter(lambda x,busnr=_busnr: x[0] == busnr, self.active_errors)
               for _err in _error_slots:
-                  _err = int(_err,16)
                   if (_busnr,_err) not in self.active_errors:
                       self.active_errors.append( (_busnr,_err) )
                       _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
@@ -464,8 +464,11 @@ if EI == 1:
                       self.active_errors.remove( (busnr,_err) )
 
       def incomming(self, payload):
+          self.log_queue = ""
           self.debug("incomming message %r" % payload)
           self.parse(payload)
+          if self.log_queue:
+              self.send_to_output( 1,self.log_queue)
 
 
 
