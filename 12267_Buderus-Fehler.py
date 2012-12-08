@@ -42,9 +42,9 @@ import zipfile
 ##############
 
 ## Name der Logik
-LOGIKNAME="Buderus"
+LOGIKNAME="Buderus-Fehler"
 ## Logik ID
-LOGIKID="12264"
+LOGIKID="12267"
 
 ## Ordner im GLE
 LOGIKCAT="www.knx-user-forum.de"
@@ -54,7 +54,7 @@ LOGIKCAT="www.knx-user-forum.de"
 LOGIKDESC="""
 
 """
-VERSION="V0.3"
+VERSION="V0.1"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -109,21 +109,19 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|3|"E1 IP:Port"|"E2 config"|"E3 senden"|2|"A1 Daten"|"A2 SystemLog"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|2|"E1 Payload IN"|"E2 Config"|1|"A2 SystemLog"
 
-5001|3|2|0|1|1
+5001|2|1|0|1|1
 
 # EN[x]
-5002|1|"192.168.178.10:22"|1 #* IP:Port
+5002|1|""|1 #* Payload IN
 5002|2|""|1 #* config
-5002|3|""|1 #* Senden
 
 # Speicher
 5003|1||0 #* logic
 
 # Ausgänge
-5004|1|""|0|1|1 #* Daten
-5004|2|""|0|1|1 #* SystemLog
+5004|1|""|0|1|1 #* SystemLog
 
 #################################################
 '''
@@ -134,33 +132,23 @@ code=[]
 
 code.append([3,"EI",r"""
 if EI == 1:
-  global socket
-  import socket
-  class buderus_connect(object):
+  class buderus_fehler(object):
       def __init__(self,localvars):
-          from hs_queue import Queue
-          from hs_queue import hs_threading as threading
           import re
-          self.id = "buderus_connect"
+
           self.logik = localvars["pItem"]
           self.MC = self.logik.MC
+
           EN = localvars['EN']
-          self.device_connector = EN[1]
-          
+
+          self.id = "buderus_fehler"
+
+          self.localvars = localvars
+
           self.config = {
               'debug': 2,
           }
           
-          self._constants = {
-              'STX': chr(0x02),
-              'DLE': chr(0x10),
-              'ETX': chr(0x03),
-              'NAK': chr(0x15),
-              'QVZ': 2,             # Quittungsverzugzeit (QVZ) 2 sec
-              'ZVZ': 0.220,         # Der Abstand zwischen zwei Zeichen darf nicht mehr als die Zeichenverzugszeit (ZVZ) von 220 ms
-              'BWZ': 4,             # Blockwartezeit von 4 sec
-          }
-
           self.device_types = {
               "80" : ("Heizkreis 1", 18),
               "81" : ("Heizkreis 2", 18),
@@ -191,26 +179,229 @@ if EI == 1:
               "9D" : ("Unterstation", 6),
               "9E" : ("Solarfunktion", 54),
           }
-          self.found_devices = []
-          
-          self.payload_regex = re.compile("(?P<id>AB|A7)(?P<busnr>[0-9a-fA-F]{2})(?P<type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{2})+)")
-          
-          self._thread = None
-          self.sock = None
-          self._buderus_data_lock = threading.RLock()
 
-          self._hs_message_queue = Queue()
-          self._buderus_message_queue = Queue()
-
+          self.error_messages = {
+              0 : "kein Fehler",
+              1 : "Strategievorlauffühler defekt !",
+              2 : "Aussenfühler defekt !",
+              3 : "Vorlauffühler HK1 defekt !",
+              4 : "Vorlauffühler HK2 defekt !",
+              5 : "Vorlauffühler HK3 defekt !",
+              6 : "Vorlauffühler HK4 defekt !",
+              7 : "nicht belegt !",
+              8 : "Warmwasserfühler defekt !",
+              9 : "Warmwasser bleibt kalt !",
+              10 : "Störung Therm. Desinfektion !",
+              11 : "Fernbedienung HK 1 defekt !",
+              12 : "Fernbedienung HK 2 defekt !",
+              13 : "Fernbedienung HK 3 defekt !",
+              14 : "Fernbedienung HK 4 defekt !",
+              15 : "keine Kommun. mit Fernbed. HK 1!",
+              16 : "keine Kommun. mit Fernbed. HK 2!",
+              17 : "keine Kommun. mit Fernbed. HK 3!",
+              18 : "keine Kommun. mit Fernbed. HK 4!",
+              19 : "nicht belegt !",
+              20 : "Störung Brenner 1",
+              21 : "Störung Brenner 2",
+              22 : "Störung Brenner 3",
+              23 : "Störung Brenner 4",
+              24 : "keine Verbindung mit Kessel 1 !",
+              25 : "keine Verbindung mit Kessel 2 !",
+              26 : "keine Verbindung mit Kessel 3 !",
+              27 : "nicht belegt !",
+              28 : "nicht belegt !",
+              29 : "nicht belegt !",
+              30 : "Interner Fehler Nr. 1 !",
+              31 : "Interner Fehler Nr. 2 !",
+              32 : "Interner Fehler Nr. 3 !",
+              33 : "Interner Fehler Nr. 4 !",
+              34 : "Vorlauffühler HK5 defekt !",
+              35 : "Vorlauffühler HK6 defekt !",
+              36 : "Vorlauffühler HK7 defekt !",
+              37 : "Vorlauffühler HK8 defekt !",
+              38 : "nicht belegt !",
+              39 : "Fernbedienung HK 5 defekt !",
+              40 : "Fernbedienung HK 6 defekt !",
+              41 : "Fernbedienung HK 7 defekt !",
+              42 : "Fernbedienung HK 8 defekt !",
+              43 : "nicht belegt !",
+              44 : "keine Kommun. mit Fernbed. HK 5!",
+              45 : "keine Kommun. mit Fernbed. HK 6!",
+              46 : "keine Kommun. mit Fernbed. HK 7!",
+              47 : "keine Kommun. mit Fernbed. HK 8!",
+              48 : "nicht belegt !",
+              49 : "Kesselvorlauffühler defekt !",
+              50 : "Kesselzusatzfühler defekt !",
+              51 : "Kessel bleibt kalt !",
+              52 : "Brennerstörung !",
+              53 : "Störung Sicherheitskette !",
+              54 : "Externe Störung Kessel !",
+              55 : "Abgasfühler defekt !",
+              56 : "Abgasgrenze überschritten !",
+              57 : "Externer Störeing. (Pumpe) HK1 !",
+              58 : "Externer Störeing. (Pumpe) HK2 !",
+              59 : "Externer Störeing. (Pumpe) HK3 !",
+              60 : "Externer Störeing. (Pumpe) HK4 !",
+              61 : "Externer Störeing. (Pumpe) HK5 !",
+              62 : "Externer Störeing. (Pumpe) HK6 !",
+              63 : "Externer Störeing. (Pumpe) HK7 !",
+              64 : "Externer Störeing. (Pumpe) HK8 !",
+              65 : "nicht belegt !",
+              66 : "Interner Fehler Nr. 5 !",
+              67 : "Interner Fehler Nr. 6 !",
+              68 : "Interner Fehler Nr. 7 !",
+              69 : "Interner Fehler Nr. 8 !",
+              70 : "Kein Master (Adr. 1) vorhanden !",
+              71 : "Adresskonflikt auf CAN-Bus !",
+              72 : "Adr.konflikt auf Steckplatz 1 !",
+              73 : "Adr.konflikt auf Steckplatz 2 !",
+              74 : "Adr.konflikt auf Steckplatz 3 !",
+              75 : "Adr.konflikt auf Steckplatz 4 !",
+              76 : "Adr.konflikt auf Steckplatz A !",
+              77 : "Falsches Modul auf Steckplatz 1 !",
+              78 : "Falsches Modul auf Steckplatz 2 !",
+              79 : "Falsches Modul auf Steckplatz 3 !",
+              80 : "Falsches Modul auf Steckplatz 4 !",
+              81 : "Falsches Modul auf Steckplatz A !",
+              82 : "Unbekanntes Modul auf Steckplatz 1 !",
+              83 : "Unbekanntes Modul auf Steckplatz 2 !",
+              84 : "Unbekanntes Modul auf Steckplatz 3 !",
+              85 : "Unbekanntes Modul auf Steckplatz 4 !",
+              86 : "Unbekanntes Modul auf Steckplatz A !",
+              87 : "Rücklauffühler defekt !",
+              88 : "Ext. Störeingang (Inertanode) WW !",
+              89 : "Ext. Störeingang (Pumpe) WW !",
+              90 : "Konfig. Rücklauf bei Strategie!",
+              91 : "Konfig. Vorlauf bei Strategie !",
+              92 : "RESET !",
+              93 : "Handschalter Heizkreis 1 !",
+              94 : "Handschalter Heizkreis 2 !",
+              95 : "Handschalter Heizkreis 3 !",
+              96 : "Handschalter Heizkreis 4 !",
+              97 : "Handschalter Heizkreis 5 !",
+              98 : "Handschalter Heizkreis 6 !",
+              99 : "Handschalter Heizkreis 7 !",
+              100 : "Handschalter Heizkreis 8 !",
+              101 : "Handschalter Warmwasser !",
+              102 : "Handschalter Brenner !",
+              103 : "Handschalter Kesselkreis !",
+              104 : "Strategiemodul fehlt !",
+              105 : "Handschalter LAP Primärpumpe !",
+              106 : "Handschalter LAP Sekundärpumpe !",
+              107 : "Wärmetauscherfühler LAP defekt !",
+              108 : "Speicher unten Fühler LAP defekt !",
+              109 : "Warmwasser Solarfühler defekt !",
+              110 : "Kollektorfühler defekt !",
+              111 : "Störung Brenner 5",
+              112 : "Störung Brenner 6",
+              113 : "Störung Brenner 7",
+              114 : "Störung Brenner 8",
+              115 : "keine Verbindung mit Brennerautomat 1",
+              116 : "keine Verbindung mit Brennerautomat 2",
+              117 : "keine Verbindung mit Brennerautomat 3",
+              118 : "keine Verbindung mit Brennerautomat 4",
+              119 : "keine Verbindung mit Brennerautomat 5",
+              120 : "keine Verbindung mit Brennerautomat 6",
+              121 : "keine Verbindung mit Brennerautomat 7",
+              122 : "keine Verbindung mit Brennerautomat 8",
+              123 : "Flaschenvorlauffühler defekt",
+              124 : "3-Wegeumschaltventil defekt",
+              125 : "Füllstand: Grenze unterschritten",
+              126 : "Unterstation Wärme Unterversorgung !",
+              127 : "Unterstation Vorlauffühler defekt !",
+              128 : "Kollektorfühler defekt !",
+              129 : "Bypass-Rücklauffühler defekt !",
+              130 : "Bypass-Vorlauffühler defekt !",
+              131 : "Wärmemengenzähler Vorlauf defekt !",
+              132 : "Wärmemengenzähler Rücklauf defekt !",
+              133 : "Speicher 1 Fühler unten defekt !",
+              134 : "Speicher 2 Fühler unten defekt !",
+              135 : "Wärmemengenzähler Volumenstrommesser !",
+              136 : "Fehlerhafte Einstellung Solarmodul !",
+              137 : "Heizkreis 1 EIB-Fehler !",
+              138 : "Heizkreis 2 EIB-Fehler !",
+              139 : "Heizkreis 3 EIB-Fehler !",
+              140 : "Heizkreis 4 EIB-Fehler !",
+              141 : "Heizkreis 5 EIB-Fehler !",
+              142 : "Heizkreis 6 EIB-Fehler !",
+              143 : "Heizkreis 7 EIB-Fehler !",
+              144 : "Heizkreis 8 EIB-Fehler !",
+              145 : "Heizkreis 9 EIB-Fehler !",
+              146 : "allgemeiner EIB - Fehler !",
+              147 : "Blockierender Fehler UBA !",
+              148 : "Verriegelnder Fehler UBA !",
+              149 : "Handbetrieb Solar Speicher 1 !",
+              150 : "Handbetrieb Solar Speicher 2 !",
+              151 : "Handbetrieb Heizkreis 0 !",
+              152 : "Wartung erforderlich Betriebsstunden !",
+              153 : "Wartung erforderlich Datum !",
+              154 : "Warmwasser ist kalt !",
+              155 : "Handbetrieb Zubringerpumpe (PZB)!",
+              156 : "Handbetrieb EMS - Kessel 1 !",
+              157 : "Handbetrieb EMS - Kessel 2 !",
+              158 : "Handbetrieb EMS - Kessel 3 !",
+              159 : "Handbetrieb EMS - Kessel 4 !",
+              160 : "Handbetrieb EMS - Kessel 5 !",
+              161 : "Handbetrieb EMS - Kessel 6 !",
+              162 : "Handbetrieb EMS - Kessel 7 !",
+              163 : "Handbetrieb EMS - Kessel 8 !",
+              164 : "Störung EMS - Kessel 1 !",
+              165 : "Störung EMS - Kessel 2 !",
+              166 : "Störung EMS - Kessel 3 !",
+              167 : "Störung EMS - Kessel 4 !",
+              168 : "Störung EMS - Kessel 5 !",
+              169 : "Störung EMS - Kessel 6 !",
+              170 : "Störung EMS - Kessel 7 !",
+              171 : "Störung EMS - Kessel 8 !",
+              172 : "Störung EMS - Warmwasser !",
+              173 : "Wartung erforderlich EMS - Kessel 1 !",
+              174 : "Wartung erforderlich EMS - Kessel 2 !",
+              175 : "Wartung erforderlich EMS - Kessel 3 !",
+              176 : "Wartung erforderlich EMS - Kessel 4 !",
+              177 : "Wartung erforderlich EMS - Kessel 5 !",
+              178 : "Wartung erforderlich EMS - Kessel 6 !",
+              179 : "Wartung erforderlich EMS - Kessel 7 !",
+              180 : "Wartung erforderlich EMS - Kessel 8 !",
+              181 : "Alternativer WE Pumpe im Handbetrieb !",
+              182 : "Alternativer WE im Handbetrieb !",
+              183 : "Alternativer WE Rücklauffühler defekt !",
+              184 : "Alternativer WE Vorlauffühler defekt !",
+              185 : "Alternativer WE Fühler Puffer mitte !",
+              186 : "Alternativer WE Fühler Puffer unten !",
+              187 : "Alternativer WE Fühler Puffer oben !",
+              188 : "Alternativer WE Anl. Rücklauffühler !",
+              189 : "Alternativer WE Abgasfühler defekt !",
+              190 : "Alternativer WE Kommunikation Brennerautomat !",
+              191 : "Alternativer WE Brennerautomat verriegelt !",
+              192 : "Alternativer WE Notkühlung ausgelöst !",
+              193 : "FM458 Zuordnung Kessel 1 !",
+              194 : "FM458 Zuordnung Kessel 2 !",
+              195 : "FM458 Zuordnung Kessel 3 !",
+              196 : "FM458 Zuordnung Kessel 4 !",
+              197 : "FM458 Zuordnung Kessel 5 !",
+              198 : "FM458 Zuordnung Kessel 6 !",
+              199 : "FM458 Zuordnung Kessel 7 !",
+              200 : "FM458 Zuordnung Kessel 8 !",
+              201 : "FM458 Keine Verbindung zu Kessel 1 !",
+              202 : "FM458 Keine Verbindung zu Kessel 2 !",
+              203 : "FM458 Keine Verbindung zu Kessel 3 !",
+              204 : "FM458 Keine Verbindung zu Kessel 4 !",
+              205 : "FM458 Keine Verbindung zu Kess",
+              206 : "FM458 Keine Verbindung zu Kessel 6 !",
+              207 : "FM458 Keine Verbindung zu Kessel 7 !",
+              208 : "FM458 Keine Verbindung zu Kessel 8 !",
+              209 : "FM458 Fühler Vorlauf Strategie !",
+              210 : "FM458 Fühler Rücklauf Strategie !",
+              211 : "FM458 Konfiguration Rücklauf Strategie!",
+              212 : "FM458 Konfiguration Vorlauf Strategie !",
+              213 : "FM458 Leistungsangabe für Kessel fehlt !",
+          }
+          
+          self.active_errors = []
           self.readconfig(EN[2])
           
-          self.hs_queue_thread = threading.Thread(target=self._send_to_hs_consumer,name='buderus_hs_consumer')
-          self.hs_queue_thread.start()
 
-          self.buderus_queue_thread = threading.Thread(target=self._send_to_buderus_consumer,name='hs_buderus_consumer')
-          self.buderus_queue_thread.start()
-
-          self.connect()
+          self.error_regex = re.compile("AE(?P<busnr>[0-9a-fA-F]{2})(?P<slot1>[0-9a-fA-F]{2})(?P<slot2>[0-9a-fA-F]{2})(?P<slot3>[0-9a-fA-F]{2})(?P<slot4>[0-9a-fA-F]{2})")
 
       def readconfig(self,configstring):
           import re
@@ -236,58 +427,10 @@ if EI == 1:
           #self.log(msg,severity='debug')
           print "%s DEBUG: %r" % (time.strftime("%H:%M:%S"),msg,)
 
-      def connect(self):
-          from hs_queue import hs_threading as threading
-          self._thread = threading.Thread(target=self._connect,name='Buderus-Moxa-Connect')
-          self._thread.start()
-
-      def _send_to_buderus_consumer(self):
-          import select,time
-          while True:
-              if not self.sock:
-                  self.debug("Socket nicht bereit ... warten")
-                  time.sleep(1)
-                  continue
-              msg = self._buderus_message_queue.get()
-              self._buderus_data_lock.acquire()
-              self.debug("sende Queue exklusiv lock erhalten")
-              try:
-                  try:
-                      if self.wait_for_dle():
-                          self.debug("jetzt payload %r senden" % (msg,) )
-                          self.send_payload(msg)
-                      else:
-                          self.debug("payload %r verworfen" % (msg,) )
-                  
-                  except:
-                      self.MC.Debug.setErr(sys.exc_info(),"%r" % msg)
-              finally:
-                  self._buderus_data_lock.release()
-                  self.debug("sende Queue exklusiv lock released")
-
-      def _send_to_hs_consumer(self):
-          while True:
-              (out,msg) = self._hs_message_queue.get()
-              ## Auf iKO's schreiben
-              for iko in self.logik.Ausgang[out][1]:
-                  try:
-                      ## Logik Lock im HS sperren
-                      self.MC.LogikList.calcLock.acquire()
-                      
-                      ## Wert im iKO beschreiben
-                      iko.setWert(out,msg)
-                      
-                      ## Logik Lock im HS freigeben
-                      self.MC.LogikList.calcLock.release()
-                      
-                      iko.checkLogik(out)
-                  except:
-                      self.MC.Debug.setErr(sys.exc_info(),"%r" % msg)
-
       def send_to_output(self,out,msg):
           ## werte fangen bei 0 an also AN[1] == Ausgang[0]#
-          out -= 1
-          self._hs_message_queue.put((out,msg))
+          self.localvars["AN"][out] = msg
+          self.localvars["AC"][out] = 1
 
       def log(self,msg,severity='info'):
           import time
@@ -299,324 +442,30 @@ if EI == 1:
           
           _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
           _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
-          
-          self.send_to_output( 2, _msg )
+          self.send_to_output( 1, _msg )
 
-      def incomming(self,msg):
-          self.debug("incomming message %r" % msg)
-          ## mit * getrennte messages hinzufügen
-          for _msg in msg.split("*"):
-              ## leerzeichen entfernen 
-              _msg = _msg.replace(' ','')
-              self._buderus_message_queue.put( _msg )
+      def parse(self,payload):
+          _error = self.error_regex.search( payload )
+          if _error:
+              _busnr = _error.group("busnr")
+              # nur fehlerstatus > 0
+              _error_slots = filter(lambda x: int(x,16) > 0,[ _error.group("slot1"), _error.group("slot2"), _error.group("slot3"), _error.group("slot4") ])
+              _active_errors = filter(lambda x,busnr=_busnr: x[0] == busnr, self.active_errors)
+              for _err in _error_slots:
+                  _err = int(_err,16)
+                  if (_busnr,_err) not in self.active_errors:
+                      self.active_errors.append( (_busnr,_err) )
+                      _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
+                      self.log( "%s an Bus %s" % (_err_message,_busnr), severity='error' )
+              for (busnr,_err) in _active_errors:
+                  if _err not in _error_slots:
+                      _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
+                      self.log( "%s an Bus %s (behoben)" % (_err_message,_busnr), severity='info' )
+                      self.active_errors.remove( (busnr,_err) )
 
-      def to_hex(self,list_of_dec):
-          try:
-              if not type(list_of_dec) == list:
-                  list_of_dec = [list_of_dec]
-              return " ".join( ["%.2x".upper() % x for x in list_of_dec] )
-          except:
-              return list_of_dec
-
-      def parse_device_type(self,payload):
-          _payload = self.payload_regex.search(payload)
-          if _payload:
-              _type = _payload.group("type")
-              if _type not in self.found_devices:
-                  self.found_devices.append( _type )
-                  (_devicename, _datalen) = self.device_types.get( _type, ("unbekanntes Gerät (%s)" % _type, 0) )
-                  self.debug("Gerät %r an ECOCAN %s gefunden" % ( _devicename, _payload.group("busnr") ) )
-              return
-
-      def wait_for_dle(self):
-          ## 3 versuche
-          for _loop in xrange(3):
-              ## STX senden
-              self.debug("STX senden")
-              self.sock.send( self._constants['STX'] )
-              self.debug("STX gesendet / warten auf DLE")
-              ## auf daten warten, timeout ist QVZ
-              _r,_w,_e = select.select( [ self.sock ],[],[], self._constants['QVZ'] )
-              if self.sock in _r:
-                  data = self.sock.recv(1)
-                  if data == self._constants['DLE']:
-                      self.debug("DLE empfangen")
-                      return True
-                  elif data == self._constants['DLE']:
-                      ## FIXME
-                      self.debug("STX empfangen Initialisierungskonflikt")
-                      self.sock.send( self._constants['DLE'] )
-                      self.debug("DLE gesendet")
-                      self.read_payload()
-                      
-          self.debug("Nach 3x STX senden innerhalb QVZ kein DLE")
-          return False
-        
-
-      ## Verbindung zum Moxa (gethreadet)
-      def _connect(self):
-          import time,socket,sys,select
-          try:
-              self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-              _ip,_port = self.device_connector.split(":")
-              self.sock.connect( ( _ip, int(_port) ) )
-              self.debug("connect zu moxa an %s:%s" % (_ip,_port))
-              
-              while True:
-                  ## wir warten einfach nur auf Daten beim timeout überprüfen wir die send queue
-                  if not self.sock:
-                      break
-                  _r,_w,_e = select.select( [ self.sock ],[],[], 10 )
-                  if not self._buderus_data_lock.acquire(blocking=False):
-                      continue
-                  self.debug("empfang exklusiv lock erhalten")
-                  try:
-                      if self.sock in _r:
-                          ## wenn Daten da sind, ein zeichen lesen
-                          data = self.sock.recv(1)
-                          if not data:
-                              self.debug("Verbindung abgebrochen")
-                              break
-                          if data == self._constants['STX']:
-                              self.debug("STX empfangen sende DLE")
-                              self.sock.send( self._constants['DLE'] )
-                              self.debug("DLE gesendet")
-                              
-                              self.read_payload()
-                          else:
-                              self.debug("ungültiges Zeichen %r empfangen" % (data,) ,lvl=4)
-                  finally:
-                      ## den lock auf jedenfall relasen
-                      self._buderus_data_lock.release()
-                      self.debug("empfang exklusiv lock releasen")
-
-          except:
-              ## fehler auf die HS Debugseite
-              self.MC.Debug.setErr(sys.exc_info(),"")
-              ## 10 sekunden pause
-              time.sleep(10)
-          ## dann reconnect
-          self.connect()
-
-      def send_payload(self,payload):
-          import select,binascii
-          ## 6 versuche
-          for _loop in xrange(6):
-              self.debug("exklusiv senden / versuch %d" % _loop)
-              _bcc = 0
-              for _byte in binascii.unhexlify(payload):
-                  self.sock.send( _byte )
-                  self.debug("Byte %r versendet" % binascii.hexlify(_byte))
-                  _bcc ^= ord(_byte)
-                  if _byte == self._constants['DLE']:
-                      ## wenn DLE dann in der payload verdoppeln
-                      self.debug("Payload enthällt DLE, ersetzt mit DLE DLE" ) 
-                      self.sock.send( _byte )
-                      _bcc ^= ord(_byte)
-              self.debug("Alle Daten gesendet, jetzt DLE und ETX")
-              self.sock.send( self._constants['DLE'] )
-              _bcc ^= ord( self._constants['DLE'] )
-              self.sock.send( self._constants['ETX'] )
-              _bcc ^= ord( self._constants['ETX'] )
-              
-              self.debug("jetzt checksumme %r senden" % (_bcc) )
-              self.sock.send( chr(_bcc) )
-
-              ## auf daten warten, timeout ist QVZ
-              self.debug("warten auf DLE")
-              _r,_w,_e = select.select( [ self.sock ],[],[], self._constants['QVZ'] )
-              if self.sock in _r:
-                  data = self.sock.recv(1)
-                  if data == self._constants['DLE']:
-                      self.debug("DLE erhalten")
-                      self.debug("Daten %r erfolgreich gesendet" % (payload,),lvl=2)
-                      return True
-              self.debug("Kein DLE erhalten loop")
-          self.debug("Nach 6x STX senden innerhalb QVZ kein DLE",lvl=1)
-
-
-      def read_payload(self):
-          import select,binascii,time
-          ## 6 versuche sind erlaubt
-          for _loop in xrange(6):
-              self.debug("exklusiv lesen / versuch %d" % _loop)
-              _lastchar = ""
-              _bcc = 0
-              _payload = []
-              _wait_for_checksum = False
-              _bwz_timer = time.time() + self._constants['BWZ']
-              while True:
-                  _r,_w,_e = select.select( [ self.sock ],[],[], self._constants['ZVZ'] )
-                  if not self.sock in _r:
-                      ## wenn schon Daten da nur zeichenverzugszeit/ wenn keine Daten dann Blockwartezeit
-                      if len(_payload) > 0 or _bwz_timer <= time.time():
-                          ## kein zeichen innerhalb ZVZ bzw BWZ
-                          self.debug("abbruch ZVZ oder BWZ",lvl=1)
-                          self.send( self._constants['NAK'] )
-                          ## gegenseite zeit geben
-                          time.sleep( self._constants['ZVZ'] )
-                          break
-                      ## wenn noch keine daten und blockwartezeit nicht überschritten
-                      else:
-                          self.debug("weiter warten auf daten noch kein ZVZ/BWZ timeout")
-                          continue
-                  ## ein Zeichen lesen
-                  data = self.sock.recv(1)
-                  if not data:
-                      self.debug("Keine Daten / verbindung verloren")
-                      return
-                  ## wenn checksumme erwartet wird
-                  if _wait_for_checksum:
-                      _bcc_recv = ord(data)
-                      self.debug("berechnete checksumme = %.2x empfange checksumme = %.2x" % ( _bcc,_bcc_recv) )
-                      if _bcc == _bcc_recv:
-                          _hexpayload = "".join( _payload ).upper()
-                          self.debug("Payload %r erfolgreich empfangen" % (_hexpayload),lvl=2)
-                          
-                          self.parse_device_type( _hexpayload )
-                          
-                          self.send_to_output(1, _hexpayload)
-                          self.sock.send( self._constants['DLE'] )
-                          return
-                      else:
-                          self.debug("Checksum nicht korrekt %r != %r" % (_bcc, _bcc_recv) ,lvl=1)
-                          self.sock.send( self._constants['NAK'] )
-                          ## FIXME BREAK heißt nochmal in die 6 versuche oder return wäre zurück zum mainloop warten auf STX
-                          break
-                  
-                  ## checksum von jedem packet berechnen
-                  _bcc ^= ord(data)
-
-                  ## wenn 2mal DLE hintereinander bcc berechnen aber nur eins zum packet
-                  if data == _lastchar == self._constants['DLE']:
-                      self.debug("entferne doppeltes DLE")
-                      _lastchar = ""
-                      continue
-                  
-                  ## WENN DLE ETX dann Ende
-                  if _lastchar == self._constants['DLE'] and data ==  self._constants['ETX']:
-                      self.debug("DLE/ETX empfangen warte auf checksumme")
-                      _wait_for_checksum = True
-                      ## letztes DLE entfernen
-                      _payload = _payload[:-1]
-                      continue
-                      
-                  ## daten zum packet hinzu
-                  self.debug("Daten %r empfangen" % (binascii.hexlify(data)),lvl=3)
-                  _payload.append( binascii.hexlify(data) )
-                  ## letztes zeichen speichern
-                  _lastchar = data
-
-
-      def direct_read_request(self):
-          ## Mit dem Kommando "0xA2 <ECOCAN-BUS-Adresse>" können die Monitordaten des ausgewählten 
-          ## ECOCAN-BUS-Gerätes von der Kommunikationskarte ausgelesen werden. 
-          pass
-      
-      def direct_read_answer(self):
-          ## Die Kommunikationskarte antwortet mit : 
-          ## 0xAB <ECOCAN-BUS-Adresse> <TYP> <OFFSET> <6 Daten-Byte> 
-          ## 0xAB = Kennung für Monitordaten 
-          ## ECOCAN-BUS-Adresse = die abgefragte Adresse zur Bestätigung 
-          ## TYP = Typ der gesendeten Monitordaten
-
-          ## Daten unter dem entsprechenden Typ werden nur gesendet wenn auch die entsprechende Funktionalität 
-          ## im Regelgerät eingebaut ist. 
-          ## OFFSET = Offset zur Einsortierung der Daten eines Typ´s
-
-          ## Als Endekennung für das abgefragte Regelgerät oder falls keine Daten vorhanden sind, wird der 
-          ## nachfolgende String 
-          ## 0xAC <ECOCAN-BUS-Adresse> gesendet          
-
-          ## Die Abfrage der gesamten Monitordaten braucht nur zu Beginn oder nach einem Reset zu erfolgen. 
-          ## Nach erfolgter Abfrage der Monitordaten sollte wieder mit dem Kommando 0xDC in den "Normal-Modus" 
-          ## zurückgeschaltet werden. 
-
-          pass
-
-
-      def normal_read(self):
-          ## Im "Normal-Modus" werden die Monitordaten nach folgendem Muster übertragen: 
-          ## 0xA7 <ECOCAN-BUS-Adresse> <TYP> <OFFSET> <DATUM> 
-          ## 0xA7 = Kennung für einzelne Monitordaten 
-          ## ECOCAN-BUS-Adresse = Herkunft´s Adresse des Monitordatum´s (hier Regelgeräteadresse) 
-          ## TYP = Typ der empfangenen Monitordaten       
-          ## OFFSET = Offset zur Einsortierung der Daten eines Typ´s 
-          ## DATUM = eigentlicher Messwert 
-          pass
-          
-
-## STX = 0x02
-## DLE = 0x10
-## ETX = 0x03
-## NAK = 0x15
-
-## Die Steuerzeichen für die Prozedur 3964R sind der Norm DIN 66003 für den 7-Bit-Code entnommen. Sie
-## werden allerdings mit der Zeichenlänge 8 Bit übertragen (Bit I7 = 0). Am Ende jedes Datenblocks wird zur
-## Datensicherung ein Prüfzeichen(BCC) gesendet.
-
-
-## Das Blockprüfzeichen wird durch eine exklusiv-oder-Verknüpfung über alle Datenbytes der
-## Nutzinformation, inclusive der Endekennung DLE, ETX gebildet.
-
-
-
-## Bei dem Kommunikationsmodul wird zwischen einem "Normal-Modus" und einem "Direkt-Modus"
-## unterschieden. 
-## "Normal-Modus" Bei diesem Modus werden laufend alle sich ändernden Monitorwerte 
-## sowie Fehlermeldungen übertragen. 
-## "Direkt-Modus" Bei diesem Modus kann der aktuelle Stand aller bisher vom Regelgerät 
-## generierten Monitordaten en Block abgefragt und ausgelesen werden. 
-## Mittels des Kommandos 0xDD kann von "Normal-Modus" in den "Direkt-Modus" umgeschaltet werden. 
-## In diesem Modus kann auf alle am ECOCAN-BUS angeschlossenen Geräte zugegriffen und es können 
-## geräteweise die Monitorwerte ausgelesen werden. 
-## Der "Direkt-Modus" kann durch das Kommando 0xDC wieder verlassen werden. 
-## Außerdem wird vom "Direkt-Modus" automatisch in den "Normal-Modus" zurückgeschaltet, wenn für die 
-## Zeit von 60 sec kein Protokoll des "Direkt-Modus" mehr gesendet wird. 
-
-## Senden mit der Prozedur 3964R
-## -----------------------------
-## Zum Aufbau der Verbindung sendet die Prozedur 3964R das Steuerzeichen STX aus. Antwortet das
-## Peripheriegerät vor Ablauf der Quittungsverzugzeit (QVZ) von 2 sec mit dem Zeichen DLE, so geht die
-## Prozedur in den Sendebetrieb über. Antwortet das Peripheriegerät mit NAK, einem beliebigen anderen
-## Zeichen (außer DLE) oder die Quittungsverzugszeit verstreicht ohne Reaktion, so ist der
-## Verbindungsaufbau gescheitert. Nach insgesamt drei vergeblichen Versuchen bricht die Prozedur das
-## Verfahren ab und meldet dem Interpreter den Fehler im Verbindungsaufbau.
-## Gelingt der Verbindungsaufbau, so werden nun die im aktuellen Ausgabepuffer enthaltenen
-## Nutzinformationszeichen mit der gewählten Übertragungsgeschwindigkeit an das Peripheriegerät
-## gesendet. Das Peripheriegerät soll die ankommenden Zeichen in Ihrem zeitlichen Abstand überwachen.
-## Der Abstand zwischen zwei Zeichen darf nicht mehr als die Zeichenverzugszeit (ZVZ) von 220 ms
-## betragen.
-## Jedes im Puffer vorgefundene Zeichen DLE wird als zwei Zeichen DLE gesendet. Dabei wird das Zeichen
-## DLE zweimal in die Prüfsumme übernommen.
-## Nach erfolgtem senden des Pufferinhalts fügt die Prozedur die Zeichen DLE, ETX und BCC als
-## Endekennung an und wartet auf ein Quittungszeichen. Sendet das Peripheriegerät innerhalb der
-## Quittungsverzugszeit QVZ das Zeichen DLE, so wurde der Datenblock fehlerfrei übernommen. Antwortet
-## das Peripheriegerät mit NAK, einem beliebigen anderen Zeichen (außer DLE), einem gestörten Zeichen
-## oder die Quittungsverzugszeit verstreicht ohne Reaktion, so wiederholt die Prozedur das Senden des
-## Datenblocks. Nach insgesamt sechs vergeblichen Versuchen, den Datenblock zu senden, bricht die
-## Prozedur das Verfahren ab und meldet dem Interpreter den Fehler im Verbindungsaufbau.
-## Sendet das Peripheriegerät während einer laufenden Sendung das Zeichen NAK, so beendet die
-## Prozedur den Block und wiederholt in der oben beschriebenen Weise.
-
-## Empfangen mit der Prozedur 3964R
-## --------------------------------
-## Im Ruhezustand, wenn kein Sendeauftrag und kein Warteauftrag des Interpreters zu bearbeiten ist, wartet
-## die Prozedur auf den Verbindungsaufbau durch das Peripheriegerät. Empfängt die Prozedur ein STX und
-## steht ihr ein leerer Eingabepuffer zur Verfügung, wird mit DLE geantwortet.
-## Nachfolgende Empfangszeichen werden nun in dem Eingabepuffer abgelegt. Werden zwei aufeinander
-## folgende Zeichen DLE empfangen, wird nur ein DLE in den Eingabepuffer übernommen.
-## Nach jedem Empfangszeichen wird während der Zeichenverzugszeit (ZVZ) auf das nächste Zeichen
-## gewartet. Verstreicht die Zeichenverzugszeit ohne Empfang, wird das Zeichen NAK an das
-## Peripheriegerät gesendet und der Fehler an den Interpreter gemeldet.
-## Mit erkennen der Zeichenfolge DLE, ETX und BCC beendet die Prozedur den Empfang und sendet DLE
-## für einen fehlerfrei (oder NAK für einen fehlerhaft) empfangenen Block an das Peripheriegerät.
-## Treten während des Empfangs Übertragungsfehler auf (verlorenes Zeichen, Rahmenfehler), wird der
-## Empfang bis zum Verbindungsabbau weitergeführt und NAK an das Peripheriegerät gesendet. Dann wird
-## eine Wiederholung des Blocks erwartet. Kann der Block auch nach insgesamt sechs Versuchen nicht
-## fehlerfrei empfangen werden, oder wird die Wiederholung vom Peripheriegerät nicht innerhalb der
-## Blockwartezeit von 4 sec gestartet, bricht die Prozedur 3964R den Empfang ab und meldet den Fehler an
-## den Interpreter.
+      def incomming(self, payload):
+          self.debug("incomming message %r" % payload)
+          self.parse(payload)
 
 
 
@@ -627,8 +476,8 @@ debugcode = """
 """
 postlogik=[0,"",r"""
 
-5012|0|"EI"|"buderus_connect(locals())"|""|0|0|1|0
-5012|0|"EC[3]"|"SN[1].incomming(EN[3])"|""|0|0|0|0
+5012|0|"EI"|"buderus_fehler(locals())"|""|0|0|1|0
+5012|0|"EC[1]"|"SN[1].incomming(EN[1])"|""|0|0|0|0
 
 """]
 

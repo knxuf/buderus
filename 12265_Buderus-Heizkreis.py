@@ -178,6 +178,10 @@ if EI == 1:
           self.bus_id = int(EN[3])
           self.id = self.device_types.get(_id)
           self.payload_regex = re.compile( "(?P<mode>AB|A7)%.2x%s(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( int(EN[2]) ,_id) )
+          self.get_monitor_data()
+
+      def get_monitor_data(self):
+          self.send_to_output(1,"A2%s" % self.bus_id)
 
       def debug(self,msg):
           #self.log(msg,severity='debug')
@@ -204,9 +208,58 @@ if EI == 1:
           offset = int(offset,16)
           if offset > len(self.current_status):
               self.debug("Daten offset größer als vorhandene Daten")
+              return
           _len = len(data)
           self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
           self.debug("Zustand: %r" % (self.current_status,) )
+
+      def parse_status(self):
+          ## Offset Name Auflösung
+          ## 0     Betriebswerte 1 
+          ##           1. Bit = Ausschaltoptimierung
+          ##           2. Bit = Einschaltoptimierung
+          ##           3. Bit = Automatik
+          ##           4. Bit = Warmwasservorrang
+          ##           5. Bit = Estrichtrocknung
+          ##           6. Bit = Ferien
+          ##           7. Bit = Frostschutz
+          ##           8.Bit
+          ## 1     Betriebswerte 2 = Manuell
+          ##           1. Bit = Sommer
+          ##           2. Bit = Tag
+          ##           3. Bit = keine Kommunikation mit FB
+          ##           4. Bit = FB fehlerhaft
+          ##           5. Bit = Fehler Vorlauffühler
+          ##           6. Bit = maximaler Vorlauf
+          ##           7. Bit = externer Störeingang
+          ##           8. Bit = Party / Pause
+          ## 2     Vorlaufsolltemperatur 1 °C
+          ## 3     Vorlaufistwert 1 °C
+          ## 4     Raumsollwert 0,5 °C
+          ## 5     Raumistwert 0,5 °C
+          ## 6     Einschaltoptimierung 1 min
+          ## 7     Ausschaltoptimierung 1 min
+          ## 8     Pumpe 1%
+          ## 9     Stellglied 1% * (Puls-Pausen Ansteuerung)
+          ## 10    HK- Eingang
+          ##           1. Bit = Eingang WF2
+          ##           2. Bit = Eingang WF3
+          ##           3. Bit = frei
+          ##           4. Bit = frei
+          ##           5. Bit = frei
+          ##           6. Bit = Schalter 0
+          ##           7. Bit = Schalter Hand
+          ##           8. Bit = Schalter AUT
+          ## 11    FREI *
+          ## 12    Heizkennlinie + 10 °C 1 °C *
+          ## 13    Heizkennlinie 0 °C 1 °C *
+          ## 14    Heizkennlinie - 10 °C 1 °C *
+          ## 15    FREI *
+          ## 16    FREI *
+          ## 17    FREI 
+          ##
+          ## Die mit * gekennzeichneten Werte können nur im "Direkt-Modus" empfangen werden.
+          return
 
       def incomming(self,msg):
           import binascii
@@ -217,18 +270,27 @@ if EI == 1:
               self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
 
       def set_tagsoll(self, val):
+          if val < 10 or val > 30:
+              self.log("%s an %s ungültiger Tagsoll %s (10-30)" % (self.id,self.bus_id,val) )
+              return
           _val = round(val*2)
-          self.send_to_output(1,"DD*B0%s006565%.2x656565*DC" % (self.send_prefix,_val) )
+          self.send_to_output(1,"B0%s006565%.2x656565" % (self.send_prefix,_val) )
           self.log("Tagsoll von %s an %s auf %s" % (self.id,self.bus_id,val) )
           
       def set_nachtsoll(self, val):
+          if val < 10 or val > 30:
+              self.log("%s an %s ungültiger Nachtsoll %s (10-30)" % (self.id,self.bus_id,val) )
+              return
           _val = round(val*2)
-          self.send_to_output(1,"DD*B0%s00656565%.2x6565*DC" % (self.send_prefix,_val) )
+          self.send_to_output(1,"B0%s00656565%.2x6565" % (self.send_prefix,_val) )
           self.log("Nachtsoll von %s an %s auf %s" % (self.id,self.bus_id,val) )
           
       def set_mode(self, val):
+          if val < 0 or val > 2:
+              self.log("%s an %s ungültiger Betriebsmode %s (0-2)" % (self.id,self.bus_id,val) )
+              return
           _mode = ["Nacht","Tag","Automatik"]
-          self.send_to_output(1,"DD*B0%s0065656565%.2x65*DC" % (self.send_prefix,val) )
+          self.send_to_output(1,"B0%s0065656565%.2x65" % (self.send_prefix,val) )
           self.log("Betriebsmode von %s an %s auf %s" % (self.id,self.bus_id,_mode[val]) )
           
 
