@@ -147,6 +147,16 @@ if EI == 1:
 
           self.config = {
               'debug': 2,
+              'errormsg' : 'Störmeldung an Regelgerät %(bus)s: %(msg)s',
+              'errorclearmsg' : 'Störmeldung an Regelgerät %(bus)s: %(msg)s (behoben)',
+              'emerg'    : '',
+              'alert'    : '',
+              'crit'     : '',
+              'error'    : '',
+              'warn'     : '',
+              'info'     : '',
+              'none'     : '',
+              'default'  : 'error',
           }
           
           self.device_types = {
@@ -400,6 +410,8 @@ if EI == 1:
           self.active_errors = []
           self.readconfig(EN[2])
           
+          self.build_severitydict()
+          
           self.log_queue = ""
 
           self.error_regex = re.compile("AE(?P<busnr>[0-9a-fA-F]{2})(?P<slot1>[0-9a-fA-F]{2})(?P<slot2>[0-9a-fA-F]{2})(?P<slot3>[0-9a-fA-F]{2})(?P<slot4>[0-9a-fA-F]{2})")
@@ -420,6 +432,21 @@ if EI == 1:
                   self.log("falscher Wert bei Konfig Option %s=%s (erwartet %r)" % (option,value, _configtype ) )
                   pass
 
+      def build_severitydict(self):
+          self.severitydict = {}
+          for _errno in self.config.get("none").split(","):
+              if _errno:
+                  self.severitydict[_errno] = None
+          for _sev in ['emerg','alert','crit','error','warn','info']:
+              for _errno in self.config.get(_sev).split(","):
+                  if _errno:
+                      self.severitydict[_errno] = _sev
+          if self.config.get("default") not in ['emerg','alert','crit','error','warn','info','notice','debug']:
+              self.config['default'] = None
+      
+      def get_severity(self,errno):
+          print "get %r" % errno
+          return self.severitydict.get( str(errno), self.config.get("default") )
 
       def debug(self,msg,lvl=5):
           if self.config.get("debug") < lvl:
@@ -456,11 +483,25 @@ if EI == 1:
                   if (_busnr,_err) not in self.active_errors:
                       self.active_errors.append( (_busnr,_err) )
                       _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
-                      self.log( "Störmeldung an Regelgerät %s: %s" % (_busnr,_err_message), severity='error' )
+                      _errdict = {
+                          'nr'  : _err,
+                          'msg' : _err_message,
+                          'bus' : _busnr,
+                       }
+                      _severity = self.get_severity(_err)
+                      if _severity:
+                          self.log( self.config.get("errormsg") % (_errdict), severity=_severity )
               for (busnr,_err) in _active_errors:
                   if _err not in _error_slots:
                       _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
-                      self.log( "Störmeldung an Regelgerät %s: %s (behoben)" % (_busnr,_err_message), severity='info' )
+                      _errdict = {
+                          'nr'  : _err,
+                          'msg' : _err_message,
+                          'bus' : _busnr,
+                       }
+                      _severity = self.get_severity(_err)
+                      if _severity:
+                          self.log( self.config.get("errorclearmsg") % (_errdict), severity='info' )
                       self.active_errors.remove( (busnr,_err) )
 
       def incomming(self, payload):
