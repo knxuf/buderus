@@ -612,9 +612,9 @@ if EI == 1:
                   _r,_w,_e = select.select( [ self.sock ],[],[], 0.200 )
                   if not self._buderus_data_lock.acquire(blocking=False):
                       continue
-                  if self.sock in _r:
-                      self.debug("empfang exklusiv lock erhalten")
-                      try:
+                  self.debug("empfang exklusiv lock erhalten")
+                  try:
+                      if self.sock in _r:
                           ## wenn Daten da sind, ein zeichen lesen
                           data = self.sock.recv(1)
                           if not data:
@@ -628,11 +628,10 @@ if EI == 1:
                               self.read_payload()
                           else:
                               self.debug("ungültiges Zeichen %r empfangen" % (data,) ,lvl=4)
-                      
-                      finally:
-                          ## den lock auf jedenfall relasen
-                          self._buderus_data_lock.release()
-                          self.debug("empfang exklusiv lock releasen")
+                  finally:
+                      ## den lock auf jedenfall relasen
+                      self._buderus_data_lock.release()
+                      self.debug("empfang exklusiv lock releasen")
 
           except:
               ## fehler auf die HS Debugseite
