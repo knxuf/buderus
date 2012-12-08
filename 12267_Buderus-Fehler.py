@@ -456,11 +456,11 @@ if EI == 1:
                   if (_busnr,_err) not in self.active_errors:
                       self.active_errors.append( (_busnr,_err) )
                       _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
-                      self.log( "%s an Bus %s" % (_err_message,_busnr), severity='error' )
+                      self.log( "Störmeldung an Regelgerät %s: %s" % (_busnr,_err_message), severity='error' )
               for (busnr,_err) in _active_errors:
                   if _err not in _error_slots:
                       _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
-                      self.log( "%s an Bus %s (behoben)" % (_err_message,_busnr), severity='info' )
+                      self.log( "Störmeldung an Regelgerät %s: %s (behoben)" % (_busnr,_err_message), severity='info' )
                       self.active_errors.remove( (busnr,_err) )
 
       def incomming(self, payload):
