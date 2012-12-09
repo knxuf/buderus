@@ -261,15 +261,17 @@ if EI == 1:
           ## Die mit * gekennzeichneten Werte können nur im "Direkt-Modus" empfangen werden.
           return
 
-      def incomming(self,msg):
+      def incomming(self,msg, localvars):
           import binascii
+          self.localvars = localvars
           self.debug("incomming message %r" % msg)
           ## mit * getrennte messages hinzufügen
           _data = self.payload_regex.search(msg)
           if _data:
               self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
 
-      def set_tagsoll(self, val):
+      def set_tagsoll(self, val, localvars):
+          self.localvars = localvars
           if val < 10 or val > 30:
               self.log("%s an %s ungültiger Tagsoll %s (10-30)" % (self.id,self.bus_id,val) )
               return
@@ -277,7 +279,8 @@ if EI == 1:
           self.send_to_output(1,"B0%s006565%.2x656565" % (self.send_prefix,_val) )
           self.log("Tagsoll von %s an %s auf %s" % (self.id,self.bus_id,val) )
           
-      def set_nachtsoll(self, val):
+      def set_nachtsoll(self, val, localvars):
+          self.localvars = localvars
           if val < 10 or val > 30:
               self.log("%s an %s ungültiger Nachtsoll %s (10-30)" % (self.id,self.bus_id,val) )
               return
@@ -285,7 +288,8 @@ if EI == 1:
           self.send_to_output(1,"B0%s00656565%.2x6565" % (self.send_prefix,_val) )
           self.log("Nachtsoll von %s an %s auf %s" % (self.id,self.bus_id,val) )
           
-      def set_mode(self, val):
+      def set_mode(self, val, localvars):
+          self.localvars = localvars
           if val < 0 or val > 2:
               self.log("%s an %s ungültiger Betriebsmode %s (0-2)" % (self.id,self.bus_id,val) )
               return
@@ -309,10 +313,10 @@ debugcode = """
 """
 postlogik=[0,"",r"""
 5012|0|"EI"|"buderus_heizkreis(locals())"|""|0|0|1|0
-5012|0|"EC[1]"|"SN[1].incomming(EN[1])"|""|0|0|0|0
-5012|0|"EC[4]"|"SN[1].set_tagsoll(EN[4])"|""|0|0|0|0
-5012|0|"EC[5]"|"SN[1].set_nachtsoll(EN[5])"|""|0|0|0|0
-5012|0|"EC[6]"|"SN[1].set_mode(EN[6])"|""|0|0|0|0
+5012|0|"EC[1]"|"SN[1].incomming(EN[1],locals())"|""|0|0|0|0
+5012|0|"EC[4]"|"SN[1].set_tagsoll(EN[4],locals())"|""|0|0|0|0
+5012|0|"EC[5]"|"SN[1].set_nachtsoll(EN[5],locals())"|""|0|0|0|0
+5012|0|"EC[6]"|"SN[1].set_mode(EN[6],locals())"|""|0|0|0|0
 
 """]
 

@@ -504,7 +504,8 @@ if EI == 1:
                           self.log( self.config.get("errorclearmsg") % (_errdict), severity='info' )
                       self.active_errors.remove( (busnr,_err) )
 
-      def incomming(self, payload):
+      def incomming(self, payload, localvars):
+          self.localvars = localvars
           self.log_queue = ""
           self.debug("incomming message %r" % payload)
           self.parse(payload)
@@ -521,7 +522,7 @@ debugcode = """
 postlogik=[0,"",r"""
 
 5012|0|"EI"|"buderus_fehler(locals())"|""|0|0|1|0
-5012|0|"EC[1]"|"SN[1].incomming(EN[1])"|""|0|0|0|0
+5012|0|"EC[1]"|"SN[1].incomming(EN[1],locals())"|""|0|0|0|0
 
 """]
 
