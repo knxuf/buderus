@@ -485,11 +485,13 @@ if EI == 1:
                               self.read_payload()
                           else:
                               self.debug("ungültiges Zeichen %r empfangen" % (data,) ,lvl=4)
+                          
+                      self.check_directmode_needed()
+                  
                   finally:
                       ## den lock auf jedenfall relasen
                       self._buderus_data_lock.release()
                       self.debug("empfang exklusiv lock releasen")
-                      self.check_directmode_needed()
                       
 
           except:
