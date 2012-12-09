@@ -270,11 +270,19 @@ if EI == 1:
                       ## Bus wird schon abgefragt
                       continue
 
-              if not self.set_directmode(True):
-                  continue
-              self._send3964r(msg)
-              
-              self.check_directmode_needed()
+              self._buderus_data_lock.acquire()
+              self.debug("sende Queue exklusiv lock erhalten")
+              try:
+                  if not self.set_directmode(True):
+                      continue
+                  self._send3964r(msg)
+                  
+                  self.check_directmode_needed()
+              finally:
+                  self._buderus_data_lock.release()
+                  self.debug("sende Queue exklusiv lock released")
+
+
 
       def add_direct_waiting(self,busnr):
           try:
@@ -335,23 +343,17 @@ if EI == 1:
         
       def _send3964r(self,payload):
           _ret = False
-          self._buderus_data_lock.acquire()
-          self.debug("sende Queue exklusiv lock erhalten")
           try:
-              try:
-                  if self.wait_for_dle():
-                      self.debug("jetzt payload %r senden" % (payload,) )
-                      self.send_payload(payload)
-                      _ret = True
-                  else:
-                      self.debug("payload %r verworfen" % (payload,) )
-              
-              except:
-                  self.MC.Debug.setErr(sys.exc_info(),"%r" % (payload,))
-          finally:
-              self._buderus_data_lock.release()
-              self.debug("sende Queue exklusiv lock released")
-              return _ret
+              if self.wait_for_dle():
+                  self.debug("jetzt payload %r senden" % (payload,) )
+                  self.send_payload(payload)
+                  _ret = True
+              else:
+                  self.debug("payload %r verworfen" % (payload,) )
+          
+          except:
+              self.MC.Debug.setErr(sys.exc_info(),"%r" % (payload,))
+          return _ret
 
       def _send_to_hs_consumer(self):
           while True:
@@ -552,7 +554,7 @@ if EI == 1:
                       if len(_payload) > 0 or _bwz_timer <= time.time():
                           ## kein zeichen innerhalb ZVZ bzw BWZ
                           self.debug("abbruch ZVZ oder BWZ",lvl=1)
-                          self.send( self._constants['NAK'] )
+                          self.sock.send( self._constants['NAK'] )
                           ## gegenseite zeit geben
                           time.sleep( self._constants['ZVZ'] )
                           break
