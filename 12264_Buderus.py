@@ -556,6 +556,7 @@ if EI == 1:
               self.remove_direct_waiting(_busnr)
 
       def wait_for_ready_to_receive(self):
+          import time
           ## 3 versuche warten bis wir auf ein STX ein DLE erhalten
           for _loop in xrange(3):
               ## STX senden
@@ -581,7 +582,7 @@ if EI == 1:
                   ## Wenn wir beim warten auf ein DLE ein STX der Gegenseite erhalten stellen wir unsere Sendung zurück und lassen das andere Gerät seine Daten erstmal senden
                   elif data == self._constants['STX']:
                       self.debug("STX empfangen Initialisierungskonflikt")
-                      
+                      time.sleep(self._constants['ZVZ'])
                       ## DLE senden, dass wir Daten vom anderen Gerät akzeptieren senden
                       self.sock.send( self._constants['DLE'] )
                       self.debug("DLE gesendet")
