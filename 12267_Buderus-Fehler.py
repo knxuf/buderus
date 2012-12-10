@@ -54,7 +54,7 @@ LOGIKCAT="www.knx-user-forum.de"
 LOGIKDESC="""
 
 """
-VERSION="V0.1"
+VERSION="V0.9"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -145,12 +145,15 @@ if EI == 1:
 
           self.id = "buderus_fehler"
 
+          ## Speicher für lokale Variablen (muss eingehend immer wieder aktualisiert werden für AN/AC....
           self.localvars = localvars
 
+          ## Default Konfiguration
           self.config = {
-              'debug': 2,
-              'errormsg' : 'Störmeldung an Regelgerät %(bus)s: %(msg)s',
+              'debug'         : 2,
+              'errormsg'      : 'Störmeldung an Regelgerät %(bus)s: %(msg)s',
               'errorclearmsg' : 'Störmeldung an Regelgerät %(bus)s: %(msg)s (behoben)',
+              'timeformat'    : '%H:%M:%S %d.%m.%Y',
               'emerg'    : '',
               'alert'    : '',
               'crit'     : '',
@@ -161,6 +164,7 @@ if EI == 1:
               'default'  : 'error',
           }
           
+          ## Gerätetypen
           self.device_types = {
               "80" : ("Heizkreis 1", 18),
               "81" : ("Heizkreis 2", 18),
@@ -192,6 +196,7 @@ if EI == 1:
               "9E" : ("Solarfunktion", 54),
           }
 
+          ## Buderus Fehlermeldungen
           self.error_messages = {
               0 : "kein Fehler",
               1 : "Strategievorlauffühler defekt !",
@@ -409,16 +414,23 @@ if EI == 1:
               213 : "FM458 Leistungsangabe für Kessel fehlt !",
           }
           
+          ## derzeit aktive Fehler
           self.active_errors = []
           
+          ## Status für ausgaben je Bus/Slot/Fehlernummer
           self.output_bus_error_status = {}
           
+          ## Konfiguration an Eingang 2 parsen
           self.readconfig(EN[2])
           
+          ## Ein Dict für default Severity's je Buderus Fehlermeldung erstellen
           self.build_severitydict()
           
+          ## Queue um mehrere Logmeldungen auf den Ausgang zu schreiben
           self.log_queue = ""
 
+          ## Regex für Fehlermeldungen
+          ## <Kennung Fehlerstatus(0xAE)> <Geräteadresse> < Fehler 1> < Fehler 2> < Fehler 3> < Fehler 4>
           self.error_regex = re.compile("AE(?P<busnr>[0-9a-fA-F]{2})(?P<slot1>[0-9a-fA-F]{2})(?P<slot2>[0-9a-fA-F]{2})(?P<slot3>[0-9a-fA-F]{2})(?P<slot4>[0-9a-fA-F]{2})")
 
       def readconfig(self,configstring):
@@ -439,57 +451,107 @@ if EI == 1:
 
       def get_status_xml(self):
           import time
+          ## leere List für alle Ausgaben
           _xml = []
+          
+          ## alle derzeitigen items des dicts durchlaufen (enthalten je busnr ein Dict mit Fehlernummern)
           for _busnr,_errno_status_dict in self.output_bus_error_status.iteritems():
+              
+              ## leere Liste für ausgaben des Bus
               _bus_xml = []
+              
+              ## Alle Fehler, Zeit werte des Dicts durchlaufen
               for _errno,_val in _errno_status_dict.iteritems():
+                  
+                  ## wenn wert(zeit des Fehlers als timestamp) <> 0 dann Fehler aktiv
                   _bus_xml.append("<errno_%s>%s</errno_%s>" % (_errno, int(_val <> 0), _errno) )
+              
+              ## alle derzeit aktiven Fehler für diesen Bus
               _active_errors = filter(lambda x,busnr=_busnr: x[0] == busnr, self.active_errors)
+              
+              ## Alle 4 Fehlerslots
               for _slot in xrange(4):
+                  
+                  ## default status ist alle wert für die xml2test/xml2num Bausteine löschen
                   _status = "<errno></errno><errmsg></errmsg><errtime></errtime>"
+                  
+                  ## Wenn Slotnummer gefüllt
                   if len(_active_errors) > _slot:
+                      ## nur die Fehlernummer des Slots holen
                       (_dummy, _err) = _active_errors[_slot]
+                      
+                      ## Fehlertext aus dem Dict dazu
                       _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
+                      
+                      ## Fehlerzeit steht im dict
                       _err_time = self.get_error_status(_busnr,_err)
                       if _err_time > 0:
-                          _err_time = time.strftime("%H:%M:%S %d.%m.%Y",time.localtime(_err_time) )
+                          ## Fehlerzeit als lesbaren Wert wie in Config
+                          _err_time = time.strftime(self.config.get('timeformat'),time.localtime(_err_time) )
                       else:
                           _err_time = "unbekannt"
+                      
+                      ## Werte ins XML füllen
                       _status ="<errno>%s</errno><errmsg>%s</errmsg><errtime>%s</errtime>" % (_err,_err_message,_err_time) 
+                  
+                  ## xml zum jeweiligen Slot dazu schrieben
                   _bus_xml.append("<slot_%s>%s</slot_%s>" % (_slot,_status ,_slot) )
+              
+              ## List mit Text für den Bus zum allgemeinen xml schreiben
               _xml.append( "<busnr_%s>%s</busnr_%s>" % (_busnr, "".join(_bus_xml) ,_busnr) )
+          
+          ## Auf Ausgang 3 schreiben
           self.send_to_output( 3, "".join(_xml) )
 
       def set_error_status(self,busnr,errno, val):
+          ## wenn es noch keinen Eintrag für das Gerät gibt
           if not self.output_bus_error_status.get(busnr):
+              ## dict für Bus
               self.output_bus_error_status[busnr] = {}
+          
+          ## Wert setzen auf Wert 
           self.output_bus_error_status[busnr][errno] = val
 
       def get_error_status(self,busnr,errno):
+          ## Wert abfragen leeres dict zurück wenn nicht gefunden für nächstes .get
           _bus_dict = self.output_bus_error_status.get(busnr,{})
+          ## 0 oder Wert zurück
           return _bus_dict.get(errno,0)
 
       def build_severitydict(self):
+          ## dict für severity je Buderus Fehler
           self.severitydict = {}
+          
+          ## alle Werte von Konfig none auslesen und zum dict
           for _errno in self.config.get("none").split(","):
               if _errno:
                   self.severitydict[_errno] = None
+          
+          ## für genannte Severity die Konfig durchsuchen
           for _sev in ['emerg','alert','crit','error','warn','info']:
+              
+              ## Konfig splitten mit ,
               for _errno in self.config.get(_sev).split(","):
+                  ## wenn Wert
                   if _errno:
+                      ## die jeweilige severity allen Werten in der config zu ordnen
                       self.severitydict[_errno] = _sev
+          
+          # wenn keine gültiger wert in default dann logging auf None
           if self.config.get("default") not in ['emerg','alert','crit','error','warn','info','notice','debug']:
               self.config['default'] = None
       
       def get_severity(self,errno):
-          print "get %r" % errno
           return self.severitydict.get( str(errno), self.config.get("default") )
 
       def debug(self,msg,lvl=5):
           if self.config.get("debug") < lvl:
               return
           import time
+          
+          ## FIXME später auf syslog
           #self.log(msg,severity='debug')
+          
           print "%s DEBUG: %r" % (time.strftime("%H:%M:%S"),msg,)
 
       def send_to_output(self,out,msg):
@@ -511,47 +573,102 @@ if EI == 1:
 
       def parse(self,payload):
           import time
+          
+          ## Payload nach Fehlerregex ## <Kennung Fehlerstatus(0xAE)> <Geräteadresse> < Fehler 1> < Fehler 2> < Fehler 3> < Fehler 4> durchsuchen
           _error = self.error_regex.search( payload )
           if _error:
+              
+              ## Busnr ist Hex wandeln in Int Base 10
               _busnr = int(_error.group("busnr"),16)
-              # nur fehlerstatus > 0
+
+              # Slots auch in Int Base 10 wandeln und nur die mit Fehlerstatus > 0 in die Fehlerliste
               _error_slots = filter(lambda x: x > 0,[ int(_error.group("slot1"),16), int(_error.group("slot2"),16), int(_error.group("slot3"),16), int(_error.group("slot4"),16) ])
+              
+              ## Derzeit schon bekannte Fehler
               _active_errors = filter(lambda x,busnr=_busnr: x[0] == busnr, self.active_errors)
+              
+              ## alle Fehler >0 in den Slots durchgehen
               for _err in _error_slots:
+                  ## wenn jetziger Fehler noch nicht bekannt
                   if (_busnr,_err) not in self.active_errors:
+                      ## Fehler zur Liste bereits bekannter Fehler hinzu
                       self.active_errors.append( (_busnr,_err) )
+                      
+                      ## Die Uhrzeit des Fehlers setzen
                       self.set_error_status(_busnr,_err, time.time())
+                      
+                      ## Fehlertext suchen
                       _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
+                      
+                      ## dict für die Textausgabe erstellen im %(nr)s in der Konfig verwenden zu können
                       _errdict = {
                           'nr'  : _err,
                           'msg' : _err_message,
                           'bus' : _busnr,
                        }
+                      
+                      ## Severity für die Fehlernummer holen
                       _severity = self.get_severity(_err)
+                      
+                      ## Wenn diese nicht None ist
                       if _severity:
+                          ## Auf den Log schreiben
                           self.log( self.config.get("errormsg") % (_errdict), severity=_severity )
+              
+              ## in den aktiven Fehlern nach Clears suchen
               for (busnr,_err) in _active_errors:
+                  ## wenn der Fehler nicht mehr im Slot ist
                   if _err not in _error_slots:
+                      ## Fehlertext holen
                       _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
+                      ## dict für Textausgabe erstellen
                       _errdict = {
                           'nr'  : _err,
                           'msg' : _err_message,
                           'bus' : _busnr,
                        }
+                      ## Severity holen um zu gucken ob überhaupt geloggt werden soll
                       _severity = self.get_severity(_err)
+                      ## Wenn nicht None
                       if _severity:
+                          ## Fehler Clear loggen
                           self.log( self.config.get("errorclearmsg") % (_errdict), severity='info' )
+                      
+                      ## Fehler von der Liste aktiver Fehler entfernen
                       self.active_errors.remove( (busnr,_err) )
+                      
+                      ## Fehlerstatus auf 0 setzen
                       self.set_error_status( _busnr,_err, 0 )
     
       def incomming(self, payload, localvars):
+          ## 3. Auswerten von Fehlerprotokollen des "Normal-Modus"
+          ## Ein Regelgerät am ECOCAN-BUS kann zur Zeit ca. 213 verschiedene Fehler erzeugen. Bei der Zahl von
+          ## 15 Regelgeräten am ECOCAN-BUS müßten somit ca. 1500 Fehlerquellen auf "Kommen" bzw. "Gehen"
+          ## untersucht werden. Da die Verarbeitung einer so großen Zahl von Fehlermeldungen unrealistisch
+          ## erscheint, werden nur die zur Zeit offenen Fehler aus dem Fehlerprotokoll (z. Zt. 4 Stück) an die
+          ## Kommunikationskarte übergeben. Das Protokoll hat folgendes Format:
+          ## <Kennung Fehlerstatus(0xAE)> <Geräteadresse> < Fehler 1> < Fehler 2> < Fehler 3> < Fehler 4>
+          ## Ist der Inhalt von "Fehler 1" bis "Fehler 4" ungleich 0x00, dann ist der entsprechende Fehler offen. (Fehler aktiv)
+          
+          ## locals() der Logik neu übergeben um auf AN/AC zugreifen zu können
           self.localvars = localvars
+          
           self.log_queue = ""
+          
           self.debug("incomming message %r" % payload)
+          
+          ## Die Payload parsen
           self.parse(payload)
+          
+          ## Wenn es Meldungen im log_queue gibt 
           if self.log_queue:
+              ## log auf AUsgang 1
               self.send_to_output( 1,self.log_queue)
+          
+          ## Wenn es aktive Fehler gibt dann Ausgang 2 auf 1
           self.send_to_output( 2, int(len(self.active_errors) >0) )
+          
+          ## Status XML für Ausgang 3
           self.get_status_xml()
 
 
@@ -562,7 +679,6 @@ debugcode = """
 
 """
 postlogik=[0,"",r"""
-
 5012|0|"EI"|"buderus_fehler(locals())"|""|0|0|1|0
 5012|0|"EC[1]"|"SN[1].incomming(EN[1],locals())"|""|0|0|0|0
 
