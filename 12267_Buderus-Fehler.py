@@ -109,9 +109,9 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|2|"E1 Payload IN"|"E2 Config"|1|"A2 SystemLog"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|2|"E1 Payload IN"|"E2 Config"|3|"A1 SystemLog"|"A2 Störung"|"A2 Störstatus XML"
 
-5001|2|1|0|1|1
+5001|2|3|0|1|1
 
 # EN[x]
 5002|1|""|1 #* Payload IN
@@ -122,6 +122,8 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 
 # Ausgänge
 5004|1|""|0|1|1 #* SystemLog
+5004|2|0|1|1|0 #* SystemLog
+5004|3|""|0|1|1 #* SystemLog
 
 #################################################
 '''
@@ -408,6 +410,9 @@ if EI == 1:
           }
           
           self.active_errors = []
+          
+          self.output_bus_error_status = {}
+          
           self.readconfig(EN[2])
           
           self.build_severitydict()
@@ -431,6 +436,22 @@ if EI == 1:
               except ValueError:
                   self.log("falscher Wert bei Konfig Option %s=%s (erwartet %r)" % (option,value, _configtype ) )
                   pass
+
+      def get_status_xml(self):
+          import time
+          _xml = []
+          for _busnr,_errno_status_dict in self.output_bus_error_status.iteritems():
+              _bus_xml = []
+              for _errno,_val in _errno_status_dict.iteritems():
+                  _bus_xml.append("<errno_%s>%s</errno_%s>" % (_errno, int(_val <> 0), _errno) )
+              _xml.append( "<busnr_%s>%s</busnr_%s>" % (_busnr, "".join(_bus_xml) ,_busnr) )
+          
+          self.send_to_output( 3, "".join(_xml) )
+
+      def set_error_status(self,busnr,errno, val):
+          if not self.output_bus_error_status.get(busnr):
+              self.output_bus_error_status[busnr] = {}
+          self.output_bus_error_status[busnr][errno] = val
 
       def build_severitydict(self):
           self.severitydict = {}
@@ -473,6 +494,7 @@ if EI == 1:
           self.log_queue += _msg 
 
       def parse(self,payload):
+          import time
           _error = self.error_regex.search( payload )
           if _error:
               _busnr = int(_error.group("busnr"),16)
@@ -482,6 +504,7 @@ if EI == 1:
               for _err in _error_slots:
                   if (_busnr,_err) not in self.active_errors:
                       self.active_errors.append( (_busnr,_err) )
+                      self.set_error_status(_busnr,_err, time.time())
                       _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
                       _errdict = {
                           'nr'  : _err,
@@ -503,7 +526,8 @@ if EI == 1:
                       if _severity:
                           self.log( self.config.get("errorclearmsg") % (_errdict), severity='info' )
                       self.active_errors.remove( (busnr,_err) )
-
+                      self.set_error_status( _busnr,_err, 0 )
+    
       def incomming(self, payload, localvars):
           self.localvars = localvars
           self.log_queue = ""
@@ -511,6 +535,7 @@ if EI == 1:
           self.parse(payload)
           if self.log_queue:
               self.send_to_output( 1,self.log_queue)
+          self.get_status_xml()
 
 
 
