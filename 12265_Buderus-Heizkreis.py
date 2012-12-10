@@ -228,8 +228,9 @@ if EI == 1:
           #self.log(msg,severity='debug')
           print "DEBUG: %r" % (msg,)
 
-      def send_to_output(self,out,msg):
-          ## werte fangen bei 0 an also AN[1] == Ausgang[0]#
+      def send_to_output(self,out,msg,sbc=False):
+          if sbc and msg == self.localvars["AN"]:
+              return
           self.localvars["AN"][out] = msg
           self.localvars["AC"][out] = 1
 
@@ -254,47 +255,50 @@ if EI == 1:
           self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
           self.debug("Zustand: %r" % (self.current_status,) )
 
-      def parse_status(self):
+      def to_bits(self,byte):
+         return [(byte >> i) & 1 for i in xrange(8)]
+
+      def parse_status(self,data, offset):
           ## Offset Name Auflösung
           ## 0     Betriebswerte 1 
-          ##           1. Bit = Ausschaltoptimierung
-          ##           2. Bit = Einschaltoptimierung
-          ##           3. Bit = Automatik
-          ##           4. Bit = Warmwasservorrang
-          ##           5. Bit = Estrichtrocknung
-          ##           6. Bit = Ferien
-          ##           7. Bit = Frostschutz
-          ##           8. Bit = Manuell
+          ##           1. Bit = Ausschaltoptimierung ## Ausgang 3
+          ##           2. Bit = Einschaltoptimierung ## Ausgang 4
+          ##           3. Bit = Automatik            ## Ausgang 5
+          ##           4. Bit = Warmwasservorrang    ## Ausgang 6
+          ##           5. Bit = Estrichtrocknung     ## Ausgang 7
+          ##           6. Bit = Ferien               ## Ausgang 8
+          ##           7. Bit = Frostschutz          ## Ausgang 9
+          ##           8. Bit = Manuell              ## Ausgang 10
           ## 1     Betriebswerte 2 
-          ##           1. Bit = Sommer
-          ##           2. Bit = Tag
-          ##           3. Bit = keine Kommunikation mit FB
-          ##           4. Bit = FB fehlerhaft
-          ##           5. Bit = Fehler Vorlauffühler
-          ##           6. Bit = maximaler Vorlauf
-          ##           7. Bit = externer Störeingang
-          ##           8. Bit = Party / Pause
-          ## 2     Vorlaufsolltemperatur 1 °C
-          ## 3     Vorlaufistwert 1 °C
-          ## 4     Raumsollwert 0,5 °C
-          ## 5     Raumistwert 0,5 °C
-          ## 6     Einschaltoptimierung 1 min
-          ## 7     Ausschaltoptimierung 1 min
-          ## 8     Pumpe 1%
-          ## 9     Stellglied 1% * (Puls-Pausen Ansteuerung)
+          ##           1. Bit = Sommer                      ## Ausgang 11
+          ##           2. Bit = Tag                         ## Ausgang 12
+          ##           3. Bit = keine Kommunikation mit FB  ## Ausgang 13
+          ##           4. Bit = FB fehlerhaft               ## Ausgang 14
+          ##           5. Bit = Fehler Vorlauffühler        ## Ausgang 15
+          ##           6. Bit = maximaler Vorlauf           ## Ausgang 16 
+          ##           7. Bit = externer Störeingang        ## Ausgang 17 
+          ##           8. Bit = Party / Pause               ## Ausgang 18
+          ## 2     Vorlaufsolltemperatur 1 °C  ## Ausgang 19
+          ## 3     Vorlaufistwert 1 °C         ## Ausgang 20
+          ## 4     Raumsollwert 0,5 °C         ## Ausgang 21
+          ## 5     Raumistwert 0,5 °C          ## Ausgang 22
+          ## 6     Einschaltoptimierung 1 min  ## Ausgang 23
+          ## 7     Ausschaltoptimierung 1 min  ## Ausgang 24
+          ## 8     Pumpe 1%                    ## Ausgang 25
+          ## 9     Stellglied 1% * (Puls-Pausen Ansteuerung)   ## Ausgang 26
           ## 10    HK- Eingang
-          ##           1. Bit = Eingang WF2
-          ##           2. Bit = Eingang WF3
-          ##           3. Bit = frei
-          ##           4. Bit = frei
+          ##           1. Bit = Eingang WF2    ## Ausgang 27
+          ##           2. Bit = Eingang WF3    ## Ausgang 28
+          ##           3. Bit = frei           
+          ##           4. Bit = frei  
           ##           5. Bit = frei
-          ##           6. Bit = Schalter 0
-          ##           7. Bit = Schalter Hand
-          ##           8. Bit = Schalter AUT
+          ##           6. Bit = Schalter 0     ## Ausgang 29
+          ##           7. Bit = Schalter Hand  ## Ausgang 30
+          ##           8. Bit = Schalter AUT   ## Ausgang 31
           ## 11    FREI *
-          ## 12    Heizkennlinie + 10 °C 1 °C *
-          ## 13    Heizkennlinie 0 °C 1 °C *
-          ## 14    Heizkennlinie - 10 °C 1 °C *
+          ## 12    Heizkennlinie + 10 °C 1 °C *  ## Ausgang 32
+          ## 13    Heizkennlinie 0 °C 1 °C *     ## Ausgang 33
+          ## 14    Heizkennlinie - 10 °C 1 °C *  ## Ausgang 34
           ## 15    FREI *
           ## 16    FREI *
           ## 17    FREI 

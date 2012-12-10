@@ -571,7 +571,6 @@ if EI == 1:
               if self.sock in _r:
                   # 1 Zeichen lesen
                   data = self.sock.recv(1)
-                  
                   ## wenn wir ein DLE empfangen
                   if data == self._constants['DLE']:
                       self.debug("DLE empfangen")
@@ -591,6 +590,8 @@ if EI == 1:
                       self.read_payload()
                       
                       ### danach loop und erneuter sende Versuch
+                  else:
+                      self.debug("%r empfangen" % (data,) )
                       
           self.debug("Nach 3x STX senden innerhalb QVZ kein DLE")
           return False
