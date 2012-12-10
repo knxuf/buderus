@@ -109,9 +109,9 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|6|"E1 Payload IN"|"E2 ECOCAN Bus"|"E3 Heizkreis"|"E4 Tagsoll"|"E5 Nachtsoll"|"E6 Betriebsmode"|2|"A1 Payload OUT"|"A2 SystemLog"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|6|"E1 Payload IN"|"E2 ECOCAN Bus"|"E3 Heizkreis"|"E4 Tagsoll"|"E5 Nachtsoll"|"E6 Betriebsmode"|34|"A1 Payload OUT"|"A2 SystemLog"|"A3 Ausschaltoptimierung Status"|"A4 Einschaltoptimierung Status"|"A5 Automatik"|"A6 Warmwasservorrang"|"A7 Estrichtrocknung"|"A8 Ferien"|"A9 Frostschutz"|"A10 Manuell"|"A11 Sommer"|"A12 Tag"|"A13 keine Kommunikation mit FB"|"A14 FB fehlerhaft"|"A15 Fehler Vorlauffühler"|"A16 maximaler Vorlauf"|"A17 externer Störeingang"|"A18 Party / Pause"|A19 Vorlaufsolltemperatur"|"A20 Vorlaufistwert"|"A21 Raumsollwert"|"A22 Raumistwert"|"A23 Einschaltoptimierung"|"A24 Ausschaltoptimierung"|"A25 Pumpe"|"A26 Stellglied"|"A27 HK-Eingang WF2"|"A28 HK-Eingang WF3"|"A29 HK-Schalter 0"|"A30 Schalter Hand"|"A31 Schalter AUTO"|"A32 Heizkennlinie + 10"|"A33 Heizkennlinie 0"|"34 Heizkennlinie - 10"
 
-5001|6|2|0|1|1
+5001|6|34|0|1|1
 
 # EN[x]
 5002|1|""|1 #* Payload IN
@@ -127,6 +127,39 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 # Ausgänge
 5004|1|""|0|1|1 #* Payload OUT
 5004|2|""|0|1|1 #* SystemLog
+5004|3|0|1|1|0 #* SystemLog
+5004|3|0|1|1|0 #* Ausschaltoptimierung Status
+5004|4|0|1|1|0 #* Einschaltoptimierung Status
+5004|5|0|1|1|0 #* Automatik
+5004|6|0|1|1|0 #* Warmwasservorrang
+5004|7|0|1|1|0 #* Estrichtrocknung
+5004|8|0|1|1|0 #* Ferien
+5004|9|0|1|1|0 #* Frostschutz
+5004|10|0|1|1|0 #* Manuell
+5004|11|0|1|1|0 #* Sommer
+5004|12|0|1|1|0 #* Tag
+5004|13|0|1|1|0 #* keine Kommunikation mit FB
+5004|14|0|1|1|0 #* FB fehlerhaft
+5004|15|0|1|1|0 #* Fehler Vorlauffühler
+5004|16|0|1|1|0 #* maximaler Vorlauf
+5004|17|0|1|1|0 #* externer Störeingang
+5004|18|0|1|1|0 #* Party / Pause
+5004|19|0|0|1|0 #* Vorlaufsolltemperatur 1 °C
+5004|20|0|0|1|0 #* Vorlaufistwert 1 °C
+5004|21|0|0|1|0 #* Raumsollwert 0,5 °C
+5004|22|0|0|1|0 #* Raumistwert 0,5 °C
+5004|23|0|0|1|0 #* Einschaltoptimierung 1 min
+5004|24|0|0|1|0 #* Ausschaltoptimierung 1 min
+5004|25|0|0|1|0 #* Pumpe 1%
+5004|26|0|0|1|0 #* Stellglied 1% * (Puls-Pausen Ansteuerung)
+5004|27|0|1|1|0 #* HK-Eingang WF2
+5004|28|0|1|1|0 #* HK-Eingang WF3
+5004|29|0|1|1|0 #* HK-Schalter 0
+5004|30|0|1|1|0 #* HK-Schalter Hand
+5004|31|0|1|1|0 #* HK-Schalter AUT
+5004|32|0|0|1|0 #* Heizkennlinie + 10 °C 1 °C *
+5004|33|0|0|1|0 #* Heizkennlinie 0 °C 1 °C *
+5004|34|0|0|1|0 #* Heizkennlinie - 10 °C 1 °C *
 
 #################################################
 '''
@@ -150,7 +183,15 @@ if EI == 1:
           
           self.current_status = [ ]
           self.status_length = 18
-          
+
+          ## 2.3.1 Monitorwerte für Heizkreise
+          ## Die Monitorwerte für einen Heizkreis setzen sich aus zur Zeit insgesamt 18 Werte zusammen
+          ## und gehören zu einem der nachfolgenden Typen:
+          ## (0x80, 0x81, 0x82, 0x83, 0x8A, 0x8B, 0x8C, 0x8D; 0x8E)
+          ## Achtung:
+          ## Bei dem Regelgerät Logamatic 4211 (4221) werden die Monitorwerte für den
+          ## Heizkreis 0 unter der Kennung des Heizkreises 5 (0x8A) gesendet.
+
           self.device_types = {
               "XX" : "kein Heizkreis",
               "80" : "Heizkreis 1",
@@ -223,8 +264,8 @@ if EI == 1:
           ##           5. Bit = Estrichtrocknung
           ##           6. Bit = Ferien
           ##           7. Bit = Frostschutz
-          ##           8.Bit
-          ## 1     Betriebswerte 2 = Manuell
+          ##           8. Bit = Manuell
+          ## 1     Betriebswerte 2 
           ##           1. Bit = Sommer
           ##           2. Bit = Tag
           ##           3. Bit = keine Kommunikation mit FB
@@ -297,14 +338,6 @@ if EI == 1:
           self.send_to_output(1,"B0%s0065656565%.2x65" % (self.send_prefix,val) )
           self.log("Betriebsmode von %s an %s auf %s" % (self.id,self.bus_id,_mode[val]) )
           
-
-## 2.3.1 Monitorwerte für Heizkreise
-## Die Monitorwerte für einen Heizkreis setzen sich aus zur Zeit insgesamt 18 Werte zusammen
-## und gehören zu einem der nachfolgenden Typen:
-## (0x80, 0x81, 0x82, 0x83, 0x8A, 0x8B, 0x8C, 0x8D; 0x8E)
-## Achtung:
-## Bei dem Regelgerät Logamatic 4211 (4221) werden die Monitorwerte für den
-## Heizkreis 0 unter der Kennung des Heizkreises 5 (0x8A) gesendet.
 
 """])
 
