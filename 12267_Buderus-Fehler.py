@@ -444,14 +444,30 @@ if EI == 1:
               _bus_xml = []
               for _errno,_val in _errno_status_dict.iteritems():
                   _bus_xml.append("<errno_%s>%s</errno_%s>" % (_errno, int(_val <> 0), _errno) )
+              _active_errors = filter(lambda x,busnr=_busnr: x[0] == busnr, self.active_errors)
+              for _slot in xrange(4):
+                  _status = "<errno></errno><errmsg></errmsg><errtime></errtime>"
+                  if len(_active_errors) > _slot:
+                      (_dummy, _err) = _active_errors[_slot]
+                      _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
+                      _err_time = self.get_error_status(_busnr,_err)
+                      if _err_time > 0:
+                          _err_time = time.strftime("%H:%M:%S %d.%m.%Y",time.localtime(_err_time) )
+                      else:
+                          _err_time = "unbekannt"
+                      _status ="<errno>%s</errno><errmsg>%s</errmsg><errtime>%s</errtime>" % (_err,_err_message,_err_time) 
+                  _bus_xml.append("<slot_%s>%s</slot_%s>" % (_slot,_status ,_slot) )
               _xml.append( "<busnr_%s>%s</busnr_%s>" % (_busnr, "".join(_bus_xml) ,_busnr) )
-          
           self.send_to_output( 3, "".join(_xml) )
 
       def set_error_status(self,busnr,errno, val):
           if not self.output_bus_error_status.get(busnr):
               self.output_bus_error_status[busnr] = {}
           self.output_bus_error_status[busnr][errno] = val
+
+      def get_error_status(self,busnr,errno):
+          _bus_dict = self.output_bus_error_status.get(busnr,{})
+          return _bus_dict.get(errno,0)
 
       def build_severitydict(self):
           self.severitydict = {}
@@ -535,6 +551,7 @@ if EI == 1:
           self.parse(payload)
           if self.log_queue:
               self.send_to_output( 1,self.log_queue)
+          self.send_to_output( 2, int(len(self.active_errors) >0) )
           self.get_status_xml()
 
 
