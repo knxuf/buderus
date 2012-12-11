@@ -109,17 +109,23 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|6|"E1 Payload IN"|"E2 ECOCAN Bus"|"E3 Heizkreis"|"E4 Tagsoll"|"E5 Nachtsoll"|"E6 Betriebsmode"|34|"A1 Payload OUT"|"A2 SystemLog"|"A3 Ausschaltoptimierung Status"|"A4 Einschaltoptimierung Status"|"A5 Automatik"|"A6 Warmwasservorrang"|"A7 Estrichtrocknung"|"A8 Ferien"|"A9 Frostschutz"|"A10 Manuell"|"A11 Sommer"|"A12 Tag"|"A13 keine Kommunikation mit FB"|"A14 FB fehlerhaft"|"A15 Fehler Vorlauffühler"|"A16 maximaler Vorlauf"|"A17 externer Störeingang"|"A18 Party / Pause"|A19 Vorlaufsolltemperatur"|"A20 Vorlaufistwert"|"A21 Raumsollwert"|"A22 Raumistwert"|"A23 Einschaltoptimierung"|"A24 Ausschaltoptimierung"|"A25 Pumpe"|"A26 Stellglied"|"A27 HK-Eingang WF2"|"A28 HK-Eingang WF3"|"A29 HK-Schalter 0"|"A30 Schalter Hand"|"A31 Schalter AUTO"|"A32 Heizkennlinie + 10"|"A33 Heizkennlinie 0"|"34 Heizkennlinie - 10"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|11|"E1 Payload IN"|"E2 ECOCAN Bus"|"E3 Heizkreis"|"E4 Umschaltschwelle"|"E5 Tagsoll"|"E6 Nachtsoll"|"E7 Betriebsmode"|"E8 Absenkart Ferien"|"E9 Umschalttemperatur Aussen"|"E10 Auslegungstemperatur"|"E11 Heizsystem"|34|"A1 Payload OUT"|"A2 SystemLog"|"A3 Ausschaltoptimierung Status"|"A4 Einschaltoptimierung Status"|"A5 Automatik"|"A6 Warmwasservorrang"|"A7 Estrichtrocknung"|"A8 Ferien"|"A9 Frostschutz"|"A10 Manuell"|"A11 Sommer"|"A12 Tag"|"A13 keine Kommunikation mit FB"|"A14 FB fehlerhaft"|"A15 Fehler Vorlauffühler"|"A16 maximaler Vorlauf"|"A17 externer Störeingang"|"A18 Party / Pause"|A19 Vorlaufsolltemperatur"|"A20 Vorlaufistwert"|"A21 Raumsollwert"|"A22 Raumistwert"|"A23 Einschaltoptimierung"|"A24 Ausschaltoptimierung"|"A25 Pumpe"|"A26 Stellglied"|"A27 HK-Eingang WF2"|"A28 HK-Eingang WF3"|"A29 HK-Schalter 0"|"A30 Schalter Hand"|"A31 Schalter AUTO"|"A32 Heizkennlinie + 10"|"A33 Heizkennlinie 0"|"34 Heizkennlinie - 10"
 
-5001|6|34|0|1|1
+5001|11|34|0|1|1
 
 # EN[x]
 5002|1|""|1 #* Payload IN
 5002|2|1|0 #* ECOCAN Bus ID
 5002|3|1|0 #* Heizkreis Nr
-5002|4|1|0 #* Tagsoll 0.5° genau Stellbereich: 10 - 30 °C
-5002|5|1|0 #* Nachtsoll 0.5° genau Stellbereich: 10 - 30 °C
-5002|6|1|0 #* Betriebsmode 0 = manuell Nacht / 1 manuell Tag / 2 Automatik
+5002|4|17|0 #* Sommer/Winter Umschaltschwelle 1° genau Stellbereich: 9 - 31 °C
+5002|5|34|0 #* Tagsoll 0.5° genau Stellbereich: 10 - 30 °C
+5002|6|42|0 #* Nachtsoll 0.5° genau Stellbereich: 10 - 30 °C
+5002|7|2|0 #* Betriebsmode 0 manuell Nacht / 1 manuell Tag / 2 Automatik
+5002|8|2|0 #* Absenkart Ferien 0 Abschalt (Frostschutz aktiv) / 1 Reduziert / 2 Raumhalt / 4 Außenhalt
+5002|9|5|0 #* Umschalttemperatur für Absenkart "Außenhalt" bei Ferienbetrieb 1° genau Stellbereich -20 bis 10 °C
+5002|10|75|0 #* Auslegungstemperatur Heizkreis 1° genau Stellbereich 30-90 °C
+5002|11|1|0 #* Heizsystem 0 kein Heizsystem / 1 Heizkörper / 2 Konvektor / 3 Fussboden / 4 Fusspunkt / 5 konstant / 6 Raumregler / 7 EIB
+
 
 # Speicher
 5003|1||0 #* logic
@@ -337,6 +343,9 @@ if EI == 1:
           if _data:
               self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
 
+      def set_umschaltschwelle(self, val, localvars):
+          pass
+      
       def set_tagsoll(self, val, localvars):
           self.localvars = localvars
           if val < 10 or val > 30:
@@ -373,9 +382,10 @@ debugcode = """
 postlogik=[0,"",r"""
 5012|0|"EI"|"buderus_heizkreis(locals())"|""|0|0|1|0
 5012|0|"EC[1]"|"SN[1].incomming(EN[1],locals())"|""|0|0|0|0
-5012|0|"EC[4]"|"SN[1].set_tagsoll(EN[4],locals())"|""|0|0|0|0
-5012|0|"EC[5]"|"SN[1].set_nachtsoll(EN[5],locals())"|""|0|0|0|0
-5012|0|"EC[6]"|"SN[1].set_mode(EN[6],locals())"|""|0|0|0|0
+5012|0|"EC[4]"|"SN[1].set_umschaltschwelle(EN[4],locals())"|""|0|0|0|0
+5012|0|"EC[5]"|"SN[1].set_tagsoll(EN[5],locals())"|""|0|0|0|0
+5012|0|"EC[6]"|"SN[1].set_nachtsoll(EN[6],locals())"|""|0|0|0|0
+5012|0|"EC[7]"|"SN[1].set_mode(EN[7],locals())"|""|0|0|0|0
 
 """]
 
