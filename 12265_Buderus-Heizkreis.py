@@ -319,7 +319,6 @@ if EI == 1:
           #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
           for _x in xrange(_len):
               _offset = offset + _x
-              print "PARSE %r in %r" % (_offset,data[_x])
               _func, _out = self.output_functions[_offset]
               _ret = _func( ord(data[_x]) )
               for _xx in xrange(len(_ret)):
