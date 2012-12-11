@@ -127,7 +127,6 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 # Ausgänge
 5004|1|""|0|1|1 #* Payload OUT
 5004|2|""|0|1|1 #* SystemLog
-5004|3|0|1|1|0 #* SystemLog
 5004|3|0|1|1|0 #* Ausschaltoptimierung Status
 5004|4|0|1|1|0 #* Einschaltoptimierung Status
 5004|5|0|1|1|0 #* Automatik
