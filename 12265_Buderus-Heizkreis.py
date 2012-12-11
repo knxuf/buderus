@@ -109,7 +109,7 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|11|"E1 Payload IN"|"E2 ECOCAN Bus"|"E3 Heizkreis"|"E4 Umschaltschwelle"|"E5 Tagsoll"|"E6 Nachtsoll"|"E7 Betriebsmode"|"E8 Absenkart Ferien"|"E9 Umschalttemperatur Aussen"|"E10 Auslegungstemperatur"|"E11 Heizsystem"|34|"A1 Payload OUT"|"A2 SystemLog"|"A3 Ausschaltoptimierung Status"|"A4 Einschaltoptimierung Status"|"A5 Automatik"|"A6 Warmwasservorrang"|"A7 Estrichtrocknung"|"A8 Ferien"|"A9 Frostschutz"|"A10 Manuell"|"A11 Sommer"|"A12 Tag"|"A13 keine Kommunikation mit FB"|"A14 FB fehlerhaft"|"A15 Fehler Vorlauffühler"|"A16 maximaler Vorlauf"|"A17 externer Störeingang"|"A18 Party / Pause"|A19 Vorlaufsolltemperatur"|"A20 Vorlaufistwert"|"A21 Raumsollwert"|"A22 Raumistwert"|"A23 Einschaltoptimierung"|"A24 Ausschaltoptimierung"|"A25 Pumpe"|"A26 Stellglied"|"A27 HK-Eingang WF2"|"A28 HK-Eingang WF3"|"A29 HK-Schalter 0"|"A30 Schalter Hand"|"A31 Schalter AUTO"|"A32 Heizkennlinie + 10"|"A33 Heizkennlinie 0"|"34 Heizkennlinie - 10"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|11|"E1 Payload IN"|"E2 ECOCAN Bus"|"E3 Heizkreis"|"E4 Umschaltschwelle"|"E5 Nachtraumsolltemperatur"|"E6 Tagsolltemperatur"|"E7 Betriebsmode"|"E8 Absenkart Ferien"|"E9 Umschalttemperatur Aussen"|"E10 Auslegungstemperatur"|"E11 Heizsystem"|34|"A1 Payload OUT"|"A2 SystemLog"|"A3 Ausschaltoptimierung Status"|"A4 Einschaltoptimierung Status"|"A5 Automatik"|"A6 Warmwasservorrang"|"A7 Estrichtrocknung"|"A8 Ferien"|"A9 Frostschutz"|"A10 Manuell"|"A11 Sommer"|"A12 Tag"|"A13 keine Kommunikation mit FB"|"A14 FB fehlerhaft"|"A15 Fehler Vorlauffühler"|"A16 maximaler Vorlauf"|"A17 externer Störeingang"|"A18 Party / Pause"|A19 Vorlaufsolltemperatur"|"A20 Vorlaufistwert"|"A21 Raumsollwert"|"A22 Raumistwert"|"A23 Einschaltoptimierung"|"A24 Ausschaltoptimierung"|"A25 Pumpe"|"A26 Stellglied"|"A27 HK-Eingang WF2"|"A28 HK-Eingang WF3"|"A29 HK-Schalter 0"|"A30 Schalter Hand"|"A31 Schalter AUTO"|"A32 Heizkennlinie + 10"|"A33 Heizkennlinie 0"|"34 Heizkennlinie - 10"
 
 5001|11|34|0|1|1
 
@@ -118,8 +118,8 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 5002|2|1|0 #* ECOCAN Bus ID
 5002|3|1|0 #* Heizkreis Nr
 5002|4|17|0 #* Sommer/Winter Umschaltschwelle 1° genau Stellbereich: 9 - 31 °C
-5002|5|34|0 #* Tagsoll 0.5° genau Stellbereich: 10 - 30 °C
-5002|6|42|0 #* Nachtsoll 0.5° genau Stellbereich: 10 - 30 °C
+5002|5|34|0 #* Nachtraumsolltemperatur 0.5° genau Stellbereich: 2 - 30 °C
+5002|6|42|0 #* Tagsolltemperatur 0.5° genau Stellbereich: 10 - 30 °C
 5002|7|2|0 #* Betriebsmode 0 manuell Nacht / 1 manuell Tag / 2 Automatik
 5002|8|2|0 #* Absenkart Ferien 0 Abschalt (Frostschutz aktiv) / 1 Reduziert / 2 Raumhalt / 4 Außenhalt
 5002|9|5|0 #* Umschalttemperatur für Absenkart "Außenhalt" bei Ferienbetrieb 1° genau Stellbereich -20 bis 10 °C
@@ -219,7 +219,7 @@ if EI == 1:
               self.send_prefix = None
           else:
               _id = self.recv_selector[ int(EN[3]) ]
-              self.send_prefix = "%.2x%s" % (int(EN[2]),self.send_selector [ int(EN[3]) ])
+              self.send_prefix = "B0%.2x%s" % (int(EN[2]),self.send_selector [ int(EN[3]) ])
           
           self.bus_id = "%.2x".upper() % int(EN[2])
           self.id = self.device_types.get(_id)
@@ -343,50 +343,48 @@ if EI == 1:
           if _data:
               self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
 
-      def set_umschaltschwelle(self, val, localvars):
-          pass
-      
-      def set_tagsoll(self, val, localvars):
+      def set_value(self, val, offset, byte,localvars, min=-99999, max=99999, resolution=1):
           self.localvars = localvars
-          if val < 10 or val > 30:
-              self.log("%s an %s ungültiger Tagsoll %s (10-30)" % (self.id,self.bus_id,val) )
-              return
-          _val = round(val*2)
-          self.send_to_output(1,"B0%s006565%.2x656565" % (self.send_prefix,_val) )
-          self.log("Tagsoll von %s an %s auf %s" % (self.id,self.bus_id,val) )
+          if val < min or val > max:
+              self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
+          _val = val * resolution
+          if _val < 0:
+              (_val * -1) + 127
+          _6bytes = [ "65","65","65","65","65","65" ]
+          _6bytes[byte - 1] = "%.2x" % round(_val)
+          self.send_to_output(1,"%s%s%s" % (self.send_prefix, offset.upper(), "".join(_6bytes).upper() ) )
           
-      def set_nachtsoll(self, val, localvars):
-          self.localvars = localvars
-          if val < 10 or val > 30:
-              self.log("%s an %s ungültiger Nachtsoll %s (10-30)" % (self.id,self.bus_id,val) )
-              return
-          _val = round(val*2)
-          self.send_to_output(1,"B0%s00656565%.2x6565" % (self.send_prefix,_val) )
-          self.log("Nachtsoll von %s an %s auf %s" % (self.id,self.bus_id,val) )
-          
-      def set_mode(self, val, localvars):
-          self.localvars = localvars
-          if val < 0 or val > 2:
-              self.log("%s an %s ungültiger Betriebsmode %s (0-2)" % (self.id,self.bus_id,val) )
-              return
-          _mode = ["Nacht","Tag","Automatik"]
-          self.send_to_output(1,"B0%s0065656565%.2x65" % (self.send_prefix,val) )
-          self.log("Betriebsmode von %s an %s auf %s" % (self.id,self.bus_id,_mode[val]) )
-          
-
 """])
 
 debugcode = """
-
 """
 postlogik=[0,"",r"""
 5012|0|"EI"|"buderus_heizkreis(locals())"|""|0|0|1|0
 5012|0|"EC[1]"|"SN[1].incomming(EN[1],locals())"|""|0|0|0|0
-5012|0|"EC[4]"|"SN[1].set_umschaltschwelle(EN[4],locals())"|""|0|0|0|0
-5012|0|"EC[5]"|"SN[1].set_tagsoll(EN[5],locals())"|""|0|0|0|0
-5012|0|"EC[6]"|"SN[1].set_nachtsoll(EN[6],locals())"|""|0|0|0|0
-5012|0|"EC[7]"|"SN[1].set_mode(EN[7],locals())"|""|0|0|0|0
 
+#* Sommer/Winter Umschaltschwelle 1° genau Stellbereich: 9 - 31 °C
+5012|0|"EC[4]"|"SN[1].set_value(EN[4], offset='00', byte=2, min=9, max=31, resolution=1, localvars=locals())"|""|0|0|0|0
+
+#* Nachtraumsolltemperatur 0.5° genau Stellbereich: 2 - 30 °C
+5012|0|"EC[5]"|"SN[1].set_value(EN[5], offset='00', byte=3, min=2, max=30, resolution=0.5, localvars=locals())"|""|0|0|0|0
+
+#* Tagsolltemperatur 0.5° genau Stellbereich: 10 - 30 °C
+5012|0|"EC[6]"|"SN[1].set_value(EN[6], offset='00', byte=4, min=10, max=30, resolution=0.5, localvars=locals())"|""|0|0|0|0
+
+#* Betriebsmode 0 manuell Nacht / 1 manuell Tag / 2 Automatik
+5012|0|"EC[7]"|"SN[1].set_value(EN[7], offset='00', byte=5, min=0, max=2, resolution=1, localvars=locals())"|""|0|0|0|0
+
+#* Absenkart Ferien 0 Abschalt (Frostschutz aktiv) / 1 Reduziert / 2 Raumhalt / 4 Außenhalt
+5012|0|"EC[8]"|"SN[1].set_value(EN[8], offset='0E', byte=5, min=0, max=4, resolution=1, localvars=locals())"|""|0|0|0|0
+
+#* Umschalttemperatur für Absenkart "Außenhalt" bei Ferienbetrieb 1° genau Stellbereich -20 bis 10 °C
+5012|0|"EC[9]"|"SN[1].set_value(EN[9], offset='3F', byte=1, min=-20, max=10, resolution=1, localvars=locals())"|""|0|0|0|0
+
+#* Auslegungstemperatur Heizkreis 1° genau Stellbereich 30-90 °C
+5012|0|"EC[10]"|"SN[1].set_value(EN[10], offset='3F', byte=2, min=30, max=90, resolution=1, localvars=locals())"|""|0|0|0|0
+
+#* Heizsystem 0 kein Heizsystem / 1 Heizkörper / 2 Konvektor / 3 Fussboden / 4 Fusspunkt / 5 konstant / 6 Raumregler / 7 EIB
+5012|0|"EC[11]"|"SN[1].set_value(EN[11], offset='38', byte=2, min=0, max=7, resolution=1, localvars=locals())"|""|0|0|0|0
 """]
 
 ####################################################################################################################################################
