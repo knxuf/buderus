@@ -349,7 +349,7 @@ if EI == 1:
               self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
           _val = val * resolution
           if _val < 0:
-              (_val * -1) + 127
+              (_val * -1) + 128
           _6bytes = [ "65","65","65","65","65","65" ]
           _6bytes[byte - 1] = "%.2x" % round(_val)
           self.send_to_output(1,"%s%s%s" % (self.send_prefix, offset.upper(), "".join(_6bytes).upper() ) )
