@@ -844,6 +844,9 @@ if EI == 1:
                           ## payload von Type List zum String machen und alle hex Zeichen als Großbuchstaben
                           _hexpayload = "".join( _payload ).upper()
                           self.debug("Payload %r erfolgreich empfangen" % (_hexpayload),lvl=2)
+
+                          ## DLE als Bestätigung senden
+                          self.sock.send( self._constants['DLE'] )
                           
                           ## empfangene Payload analysieren
                           self.parse_device_type( _hexpayload )
@@ -851,8 +854,6 @@ if EI == 1:
                           ## payload an Ausgang 1 senden
                           self.send_to_output(1, _hexpayload)
                           
-                          ## DLE als Bestätigung senden
-                          self.sock.send( self._constants['DLE'] )
                           return
                       
                       ## checksummen stimmen nicht überein
