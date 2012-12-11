@@ -54,7 +54,7 @@ LOGIKCAT="www.knx-user-forum.de"
 LOGIKDESC="""
 
 """
-VERSION="V0.1"
+VERSION="V0.9"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -115,7 +115,7 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 
 # EN[x]
 5002|1|""|1 #* Payload IN
-5002|2|0|0 #* ECOCAN Bus ID
+5002|2|1|0 #* ECOCAN Bus ID
 5002|3|1|0 #* Heizkreis Nr
 5002|4|1|0 #* Tagsoll 0.5° genau Stellbereich: 10 - 30 °C
 5002|5|1|0 #* Nachtsoll 0.5° genau Stellbereich: 10 - 30 °C
@@ -216,49 +216,11 @@ if EI == 1:
               _id = self.recv_selector[ int(EN[3]) ]
               self.send_prefix = "%.2x%s" % (int(EN[2]),self.send_selector [ int(EN[3]) ])
           
-          self.bus_id = int(EN[3])
+          self.bus_id = "%.2x".upper() % int(EN[2])
           self.id = self.device_types.get(_id)
-          self.payload_regex = re.compile( "(?P<mode>AB|A7)%.2x%s(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( int(EN[2]) ,_id) )
-          self.get_monitor_data()
 
-      def get_monitor_data(self):
-          self.send_to_output(1,"A2%s" % self.bus_id)
+          self.payload_regex = re.compile( "(?P<mode>AB|A7)%s%s(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ,_id) )
 
-      def debug(self,msg):
-          #self.log(msg,severity='debug')
-          print "DEBUG: %r" % (msg,)
-
-      def send_to_output(self,out,msg,sbc=False):
-          if sbc and msg == self.localvars["AN"]:
-              return
-          self.localvars["AN"][out] = msg
-          self.localvars["AC"][out] = 1
-
-      def log(self,msg,severity='info'):
-          import time
-          try:
-              from hashlib import md5
-          except ImportError:
-              import md5 as md5old
-              md5 = lambda x,md5old=md5old: md5old.md5(x)
-          
-          _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
-          _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
-          self.send_to_output( 2, _msg )
-
-      def parse(self,offset, data):
-          offset = int(offset,16)
-          if offset > len(self.current_status):
-              self.debug("Daten offset größer als vorhandene Daten")
-              return
-          _len = len(data)
-          self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
-          self.debug("Zustand: %r" % (self.current_status,) )
-
-      def to_bits(self,byte):
-         return [(byte >> i) & 1 for i in xrange(8)]
-
-      def parse_status(self,data, offset):
           ## Offset Name Auflösung
           ## 0     Betriebswerte 1 
           ##           1. Bit = Ausschaltoptimierung ## Ausgang 3
@@ -304,13 +266,75 @@ if EI == 1:
           ## 17    FREI 
           ##
           ## Die mit * gekennzeichneten Werte können nur im "Direkt-Modus" empfangen werden.
-          return
+          self.output_functions = [
+              (self.to_bits,[3,4,5,6,7,8,9,10]),
+              (self.to_bits,[11,12,13,14,15,16,17,18]),
+              (lambda x: [x],[19]),
+              (lambda x: [x],[20]),
+              (lambda x: [float(x)/2],[21]),
+              (lambda x: [float(x)/2],[22]),
+              (lambda x: [x],[23]),
+              (lambda x: [x],[24]),
+              (lambda x: [x],[25]),
+              (lambda x: [x],[26]),
+              (self.to_bits,[27,28,0,0,0,29,30,31]),
+              (lambda x: [x],[32]),
+              (lambda x: [x],[33]),
+              (lambda x: [x],[34]),
+          ]
+
+          self.get_monitor_data()
+
+      def get_monitor_data(self):
+          self.send_to_output(1,"A2%s" % self.bus_id)
+
+      def debug(self,msg):
+          #self.log(msg,severity='debug')
+          print "DEBUG: %r" % (msg,)
+
+      def send_to_output(self,out,msg,sbc=False):
+          if sbc and msg == self.localvars["AN"]:
+              return
+          self.localvars["AN"][out] = msg
+          self.localvars["AC"][out] = 1
+
+      def log(self,msg,severity='info'):
+          import time
+          try:
+              from hashlib import md5
+          except ImportError:
+              import md5 as md5old
+              md5 = lambda x,md5old=md5old: md5old.md5(x)
+          
+          _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
+          _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
+          self.send_to_output( 2, _msg )
+
+      def parse(self,offset, data):
+          offset = int(offset,16)
+          #if offset > len(self.current_status):
+          #    self.debug("Daten offset größer als vorhandene Daten")
+          #    return
+          _len = len(data)
+          #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
+          for _x in xrange(_len):
+              _offset = offset + _x
+              print "PARSE %r in %r" % (_offset,data[_x])
+              _func, _out = self.output_functions[_offset]
+              _ret = _func( ord(data[_x]) )
+              for _xx in xrange(len(_ret)):
+                  self.send_to_output(_out[_xx] , _ret[_xx], sbc=True)
+              
+          #self.debug("Zustand: %r" % (self.current_status,) )
+
+      def to_bits(self,byte):
+          return [(byte >> i) & 1 for i in xrange(8)]
 
       def incomming(self,msg, localvars):
           import binascii
           self.localvars = localvars
           self.debug("incomming message %r" % msg)
-          ## mit * getrennte messages hinzufügen
+          msg = msg.replace(' ','')
           _data = self.payload_regex.search(msg)
           if _data:
               self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
