@@ -221,7 +221,7 @@ if EI == 1:
               _id = self.recv_selector[ int(EN[3]) ]
               self.send_prefix = "B0%.2x%s" % (int(EN[2]),self.send_selector [ int(EN[3]) ])
           
-          self.bus_id = "%.2x".upper() % int(EN[2])
+          self.bus_id = "%.2X" % int(EN[2])
           self.id = self.device_types.get(_id)
 
           self.payload_regex = re.compile( "(?P<mode>AB|A7)%s%s(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ,_id) )
@@ -283,9 +283,13 @@ if EI == 1:
               (lambda x: [x],[25]),
               (lambda x: [x],[26]),
               (self.to_bits,[27,28,0,0,0,29,30,31]),
+              (lambda x: [x],[0]),
               (lambda x: [x],[32]),
               (lambda x: [x],[33]),
               (lambda x: [x],[34]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
           ]
 
           self.get_monitor_data()

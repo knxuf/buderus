@@ -54,7 +54,7 @@ LOGIKCAT="www.knx-user-forum.de"
 LOGIKDESC="""
 
 """
-VERSION="V0.1"
+VERSION="V0.9"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -109,17 +109,22 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|6|"E1 Payload IN"|"E2 ECOCAN Bus"|"E3 Heizkreis"|"E4 Tagsoll"|"E5 Nachtsoll"|"E6 Betriebsmode"|2|"A1 Payload OUT"|"A2 SystemLog"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|11|"E1 Payload IN"|"E2 ECOCAN Bus"|"E3 Desinfektion"|"E4 Desinfektions Temp"|"E5 Desinfektionstag"|"E6 Desinfektionsstunde"|"E7 Warmwassersoll"|"E8 Betriebsart WW"|"E9 Zirkulation pro Std"|"E10 Betriebsart"|"E11 tgl. Aufheizzeit"|34|"A1 Payload OUT"|"A2 SystemLog"|"A3 Automatik"|"A4 Desinfektion"|"A5 Nachladung"|"A6 Ferien"|"A7 Fehler Desinfektion"|"A8 Fehler Fühler"|"A9 Fehler WW kalt"|"A10 Fehler Anode"|"A11 Laden"|"A12 Manuell"|"A13 Nachladen"|"A14 Ausschaltoptimierung"|"A15 Einschaltoptimierung"|"A16 Tag"|"A17 Warm"|"A18 Vorrang"|"A19 Wassersolltemperatu"|"A20 Wasseristtemperatu"|"A21 Einschaltoptimierungszeit"|"A22 Ladepumpe"|"A23 Zirkulationspumpe"|"A24 Absenkung Solar"|"A25 WW-Eingang 2"|"A26 WW-Eingang 3"|"A27 WW-Eingang Schalter 0"|"A28 WW-Eingang Schalter Hand"|"A29 WW-Eingang Schalter AUT"|"A30 Fehler extern"|"A31 Zirkulationspumpe Tag *"|"A32 Zirkulationspumpe Automatik"|"A33 Zirkulationspumpe Ferien"|"A34 Zirkulationspumpe Einmal"
 
-5001|6|2|0|1|1
+5001|11|34|0|1|1
 
 # EN[x]
 5002|1|""|1 #* Payload IN
-5002|2|0|0 #* ECOCAN Bus ID
-5002|3|1|0 #* Heizkreis Nr
-5002|4|1|0 #* Tagsoll 0.5° genau Stellbereich: 10 - 30 °C
-5002|5|1|0 #* Nachtsoll 0.5° genau Stellbereich: 10 - 30 °C
-5002|6|1|0 #* Betriebsmode 0 = manuell Nacht / 1 manuell Tag / 2 Automatik
+5002|2|1|0 #* ECOCAN Bus ID
+5002|3|0|0 #* thermische Desinfektion 0 = AUS / 1 = EIN
+5002|4|70|0 #* Warmwassersolltemperatur für die Zeit der thermischen Desinfektion Auflösung: 1 °C Stellbereich: 65 - 75 °C WE: 70 °C
+5002|5|1|0 #* Desinfektionstag Stellbereich: 0 bis 7 WE: 1 0 = Montag 1 = Dienstag 2 = Mittwoch 3 = Donnerstag 4 = Freitag 5 = Samstag 6 = Sonntag 7 = täglich
+5002|6|1|0 #* Uhrzeit an der die thermische Desinfektion starten soll Auflösung: 1 h Stellbereich: 0 - 23 h WE: 1
+5002|7|60|0 #* Warmwassersolltemperatur Auflösung: 1 °C Stellbereich: 30 bis 60 °C WE: 60 °C
+5002|8|2|0 #* Betriebsart Warmwasser Stellbereich: 0 bis 2 WE: 2 0 = Manuell Nacht 1 = Manuell Tag 2 = Automatik
+5002|9|2|0 #* Zirkulationspumpenläufe pro Stunde  Stellbereich: 0 bis 7 WE: 2 0 = ständig aus (läuft nur bei Einmalladung) 1 = ständig an
+5002|10|2|0 #* Betriebsart Stellbereich: 0 bis 2 WE: 2 0 = Manuell Nacht 1 = Manuell Tag 2 = Automatik
+5002|11|24|0 #* Uhrzeit zu der die tägliche Aufheizung gestartet wird Auflösung: 1 h Stellbereich: 0 - 24 h WE: 24 h Hinweis:Wenn auf obere Grenze ((4) gestellt wird, findet keine tägliche Aufheizung statt.
 
 # Speicher
 5003|1||0 #* logic
@@ -127,6 +132,38 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 # Ausgänge
 5004|1|""|0|1|1 #* Payload OUT
 5004|2|""|0|1|1 #* SystemLog
+5004|3|0|1|1|0 #* Automatik 
+5004|4|0|1|1|0 #* Desinfektion 
+5004|5|0|1|1|0 #* Nachladung 
+5004|6|0|1|1|0 #* Ferien 
+5004|7|0|1|1|0 #* Fehler Desinfektion 
+5004|8|0|1|1|0 #* Fehler Fühler 
+5004|9|0|1|1|0 #* Fehler WW bleibt kalt 
+5004|10|0|1|1|0 #* Fehler Anode 
+5004|11|0|1|1|0 #* Laden 
+5004|12|0|1|1|0 #* Manuell 
+5004|13|0|1|1|0 #* Nachladen 
+5004|14|0|1|1|0 #* Ausschaltoptimierung 
+5004|15|0|1|1|0 #* Einschaltoptimierung 
+5004|16|0|1|1|0 #* Tag 
+5004|17|0|1|1|0 #* Warm 
+5004|18|0|1|1|0 #* Vorrang 
+5004|19|0|0|1|0 #* Warmwassersolltemperatur 1 °C 
+5004|20|0|0|1|0 #* Warmwasseristtemperatur 1 °C 
+5004|21|0|0|1|0 #* Einschaltoptimierungszeit 1 min 
+5004|22|0|1|1|0 #* Ladepumpe 
+5004|23|0|1|1|0 #* Zirkulationspumpe 
+5004|24|0|1|1|0 #* Absenkung Solar 
+5004|25|0|1|1|0 #* WW-Eingang 2 
+5004|26|0|1|1|0 #* WW-Eingang 3 
+5004|27|0|1|1|0 #* WW-Eingang Schalter 0 
+5004|28|0|1|1|0 #* WW-Eingang Schalter Hand 
+5004|29|0|1|1|0 #* WW-Eingang Schalter AUT 
+5004|30|0|1|1|0 #* Fehler extern 
+5004|31|0|1|1|0 #* Zirkulationspumpe Tag *
+5004|32|0|1|1|0 #* Zirkulationspumpe Automatik 
+5004|33|0|1|1|0 #* Zirkulationspumpe Ferien 
+5004|34|0|1|1|0 #* Zirkulationspumpe Einmal 
 
 #################################################
 '''
@@ -151,9 +188,89 @@ if EI == 1:
           self.current_status = [ ]
           self.status_length = 18
           
-          self.bus_id = int(EN[3])
+          self.bus_id = "%.2X" % int(EN[2])
           self.id = "Warmwasser"
-          self.payload_regex = re.compile( "(?P<mode>AB|A7)%.2x84(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( int(EN[2])) )
+          self.send_prefix = "B0%.2x0C" % (int(EN[2]))
+
+          self.payload_regex = re.compile( "(?P<mode>AB|A7)%s84(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ) )
+
+          ## Offset Name Auflösung
+          ## 0     Betriebswerte 1 
+          ##           1. Bit = Automatik             ## Ausgang 3
+          ##           2. Bit = Desinfektion          ## Ausgang 4
+          ##           3. Bit = Nachladung            ## Ausgang 5
+          ##           4. Bit = Ferien                ## Ausgang 6
+          ##           5. Bit = Fehler Desinfektion   ## Ausgang 7
+          ##           6. Bit = Fehler Fühler         ## Ausgang 8
+          ##           7. Bit = Fehler WW bleibt kalt ## Ausgang 9
+          ##           8. Bit = Fehler Anode          ## Ausgang 10
+          ## 1     Betriebswerte 2 
+          ##           1. Bit = Laden                 ## Ausgang 11
+          ##           2. Bit = Manuell               ## Ausgang 12
+          ##           3. Bit = Nachladen             ## Ausgang 13
+          ##           4. Bit = Ausschaltoptimierung  ## Ausgang 14
+          ##           5. Bit = Einschaltoptimierung  ## Ausgang 15
+          ##           6. Bit = Tag                   ## Ausgang 16
+          ##           7. Bit = Warm                  ## Ausgang 17
+          ##           8. Bit = Vorrang               ## Ausgang 18
+          ## 2     Warmwassersolltemperatur 1 °C    ## Ausgang 19
+          ## 3     Warmwasseristtemperatur 1 °C     ## Ausgang 20
+          ## 4     Einschaltoptimierungszeit 1 min  ## Ausgang 21
+          ## 5     Bit-Pumpe 
+          ##           1. Bit = Ladepumpe           ## Ausgang 22
+          ##           2. Bit = Zirkulationspumpe   ## Ausgang 23
+          ##           3. Bit = Absenkung Solar     ## Ausgang 24
+          ##           4. Bit = frei 
+          ##           5. Bit = frei 
+          ##           6. Bit = frei 
+          ##           7. Bit = frei 
+          ##           8. Bit = frei 
+          ## 6     WW-Eingang 
+          ##           1. Bit = Eingang 2         ## Ausgang 25
+          ##           2. Bit = Eingang 3         ## Ausgang 26
+          ##           3. Bit = frei 
+          ##           4. Bit = frei 
+          ##           5. Bit = frei 
+          ##           6. Bit = Schalter 0        ## Ausgang 27
+          ##           7. Bit = Schalter Hand     ## Ausgang 28
+          ##           8. Bit = Schalter AUT      ## Ausgang 29
+          ## 7     Betriebswerte 3 
+          ##           1. Bit = Fehler extern     ## Ausgang 30
+          ##           2. Bit = frei 
+          ##           3. Bit = frei 
+          ##           4. Bit = frei 
+          ##           5. Bit = frei 
+          ##           6. Bit = frei 
+          ##           7. Bit = frei 
+          ##           8. Bit = frei 
+          ## 8     Bit-Zirkulationspumpe 
+          ##           1. Bit = Tag *           ## Ausgang 31
+          ##           2. Bit = Automatik       ## Ausgang 32
+          ##           3. Bit = Ferien          ## Ausgang 33
+          ##           4. Bit = Einmal          ## Ausgang 34
+          ##           5. Bit = frei 
+          ##           6. Bit = frei 
+          ##           7. Bit = frei 
+          ##           8. Bit = frei 
+          ## 9     FREI *
+          ## 10    FREI * 
+          ## 11    FREI *
+
+          self.output_functions = [
+              (self.to_bits,[3,4,5,6,7,8,9,10]),
+              (self.to_bits,[11,12,13,14,15,16,17,18]),
+              (lambda x: [x],[19]),
+              (lambda x: [x],[20]),
+              (lambda x: [x],[21]),
+              (self.to_bits,[22,23,24,0,0,0,0,0]),
+              (self.to_bits,[25,26,0,0,0,27,28,29]),
+              (self.to_bits,[30,0,0,0,0,0,0,0]),
+              (self.to_bits,[31,32,33,34,0,0,0,0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+          ]
+
           self.get_monitor_data()
 
       def get_monitor_data(self):
@@ -163,8 +280,9 @@ if EI == 1:
           #self.log(msg,severity='debug')
           print "DEBUG: %r" % (msg,)
 
-      def send_to_output(self,out,msg):
-          ## werte fangen bei 0 an also AN[1] == Ausgang[0]#
+      def send_to_output(self,out,msg,sbc=False):
+          if sbc and msg == self.localvars["AN"]:
+              return
           self.localvars["AN"][out] = msg
           self.localvars["AC"][out] = 1
 
@@ -182,77 +300,43 @@ if EI == 1:
 
       def parse(self,offset, data):
           offset = int(offset,16)
-          if offset > len(self.current_status):
-              self.debug("Daten offset größer als vorhandene Daten")
-              return
+          #if offset > len(self.current_status):
+          #    self.debug("Daten offset größer als vorhandene Daten")
+          #    return
           _len = len(data)
-          self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
-          self.debug("Zustand: %r" % (self.current_status,) )
+          #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
+          for _x in xrange(_len):
+              _offset = offset + _x
+              _func, _out = self.output_functions[_offset]
+              _ret = _func( ord(data[_x]) )
+              for _xx in xrange(len(_ret)):
+                  self.send_to_output(_out[_xx] , _ret[_xx], sbc=True)
+              
+          #self.debug("Zustand: %r" % (self.current_status,) )
 
-      def parse_status(self):
-          ## Offset Name Auflösung
-          ## 0     Betriebswerte 1 
-          ##           1. Bit = Ausschaltoptimierung
-          ##           2. Bit = Einschaltoptimierung
-          ##           3. Bit = Automatik
-          ##           4. Bit = Warmwasservorrang
-          ##           5. Bit = Estrichtrocknung
-          ##           6. Bit = Ferien
-          ##           7. Bit = Frostschutz
-          ##           8.Bit
-          ## 1     Betriebswerte 2 = Manuell
-          ##           1. Bit = Sommer
-          ##           2. Bit = Tag
-          ##           3. Bit = keine Kommunikation mit FB
-          ##           4. Bit = FB fehlerhaft
-          ##           5. Bit = Fehler Vorlauffühler
-          ##           6. Bit = maximaler Vorlauf
-          ##           7. Bit = externer Störeingang
-          ##           8. Bit = Party / Pause
-          ## 2     Vorlaufsolltemperatur 1 °C
-          ## 3     Vorlaufistwert 1 °C
-          ## 4     Raumsollwert 0,5 °C
-          ## 5     Raumistwert 0,5 °C
-          ## 6     Einschaltoptimierung 1 min
-          ## 7     Ausschaltoptimierung 1 min
-          ## 8     Pumpe 1%
-          ## 9     Stellglied 1% * (Puls-Pausen Ansteuerung)
-          ## 10    HK- Eingang
-          ##           1. Bit = Eingang WF2
-          ##           2. Bit = Eingang WF3
-          ##           3. Bit = frei
-          ##           4. Bit = frei
-          ##           5. Bit = frei
-          ##           6. Bit = Schalter 0
-          ##           7. Bit = Schalter Hand
-          ##           8. Bit = Schalter AUT
-          ## 11    FREI *
-          ## 12    Heizkennlinie + 10 °C 1 °C *
-          ## 13    Heizkennlinie 0 °C 1 °C *
-          ## 14    Heizkennlinie - 10 °C 1 °C *
-          ## 15    FREI *
-          ## 16    FREI *
-          ## 17    FREI 
-          ##
-          ## Die mit * gekennzeichneten Werte können nur im "Direkt-Modus" empfangen werden.
-          return
+      def to_bits(self,byte):
+          return [(byte >> i) & 1 for i in xrange(8)]
 
       def incomming(self,msg, localvars):
           import binascii
           self.localvars = localvars
           self.debug("incomming message %r" % msg)
-          ## mit * getrennte messages hinzufügen
+          msg = msg.replace(' ','')
           _data = self.payload_regex.search(msg)
           if _data:
               self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
 
-## 2.3.1 Monitorwerte für Heizkreise
-## Die Monitorwerte für einen Heizkreis setzen sich aus zur Zeit insgesamt 18 Werte zusammen
-## und gehören zu einem der nachfolgenden Typen:
-## (0x80, 0x81, 0x82, 0x83, 0x8A, 0x8B, 0x8C, 0x8D; 0x8E)
-## Achtung:
-## Bei dem Regelgerät Logamatic 4211 (4221) werden die Monitorwerte für den
-## Heizkreis 0 unter der Kennung des Heizkreises 5 (0x8A) gesendet.
+      def set_value(self, val, offset, byte,localvars, min=-99999, max=99999, resolution=1):
+          self.localvars = localvars
+          if val < min or val > max:
+              self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
+          _val = val * resolution
+          if _val < 0:
+              (_val * -1) + 128
+          _6bytes = [ "65","65","65","65","65","65" ]
+          _6bytes[byte - 1] = "%.2x" % round(_val)
+          self.send_to_output(1,"%s%s%s" % (self.send_prefix, offset.upper(), "".join(_6bytes).upper() ) )
+
 
 """])
 
@@ -263,6 +347,32 @@ postlogik=[0,"",r"""
 5012|0|"EI"|"buderus_heizkreis(locals())"|""|0|0|1|0
 5012|0|"EC[1]"|"SN[1].incomming(EN[1],locals())"|""|0|0|0|0
 
+#* thermische Desinfektion 0 = AUS / 1 = EIN
+5012|0|"EC[3]"|"SN[1].set_value(EN[3], offset='00', byte=2, min=0, max=1, resolution=1, localvars=locals())"|""|0|0|0|0
+
+#* Warmwassersolltemperatur für die Zeit der thermischen Desinfektion Auflösung: 1 °C Stellbereich: 65 - 75 °C WE: 70 °C
+5012|0|"EC[4]"|"SN[1].set_value(EN[4], offset='00', byte=3, min=65, max=75, resolution=1, localvars=locals())"|""|0|0|0|0
+
+#* Desinfektionstag Stellbereich: 0 bis 7 WE: 1 0 = Montag 1 = Dienstag 2 = Mittwoch 3 = Donnerstag 4 = Freitag 5 = Samstag 6 = Sonntag 7 = täglich
+5012|0|"EC[5]"|"SN[1].set_value(EN[5], offset='00', byte=4, min=10, max=7, resolution=1, localvars=locals())"|""|0|0|0|0
+
+#* Uhrzeit an der die thermische Desinfektion starten soll Auflösung: 1 h Stellbereich: 0 - 23 h WE: 1
+5012|0|"EC[6]"|"SN[1].set_value(EN[6], offset='00', byte=5, min=0, max=23, resolution=1, localvars=locals())"|""|0|0|0|0
+
+#* Warmwassersolltemperatur Auflösung: 1 °C Stellbereich: 30 bis 60 °C WE: 60 °C
+5012|0|"EC[7]"|"SN[1].set_value(EN[7], offset='07', byte=4, min=30, max=60, resolution=1, localvars=locals())"|""|0|0|0|0
+
+#* Betriebsart Warmwasser Stellbereich: 0 bis 2 WE: 2 0 = Manuell Nacht 1 = Manuell Tag 2 = Automatik
+5012|0|"EC[8]"|"SN[1].set_value(EN[8], offset='0E', byte=1, min=0, max=2, resolution=1, localvars=locals())"|""|0|0|0|0
+
+#* Zirkulationspumpenläufe pro Stunde  Stellbereich: 0 bis 7 WE: 2 0 = ständig aus (läuft nur bei Einmalladung) 1 = ständig an
+5012|0|"EC[9]"|"SN[1].set_value(EN[9], offset='0E', byte=6, min=0, max=7, resolution=1, localvars=locals())"|""|0|0|0|0
+
+#* Betriebsart Stellbereich: 0 bis 2 WE: 2 0 = Manuell Nacht 1 = Manuell Tag 2 = Automatik
+5012|0|"EC[10]"|"SN[1].set_value(EN[10], offset='15', byte=2, min=0, max=2, resolution=1, localvars=locals())"|""|0|0|0|0
+
+#* Uhrzeit zu der die tägliche Aufheizung gestartet wird Auflösung: 1 h Stellbereich: 0 - 24 h WE: 24 h Hinweis:Wenn auf obere Grenze ((4) gestellt wird, findet keine tägliche Aufheizung statt.
+5012|0|"EC[11]"|"SN[1].set_value(EN[11], offset='2A', byte=3, min=0, max=24, resolution=1, localvars=locals())"|""|0|0|0|0
 """]
 
 ####################################################################################################################################################
