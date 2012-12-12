@@ -152,6 +152,7 @@ if EI == 1:
           ## Config
           self.config = {
               'debug': 0,
+              'delaydirectendtime' : 1.0, # wartezeit beim beenden des directmodes
           }
           
           # 3964R Constants
@@ -400,6 +401,7 @@ if EI == 1:
               self.directmode_lock.release()
           
       def check_directmode_needed(self):
+          import time
           ## Die Abfrage der gesamten Monitordaten braucht nur zu Beginn oder nach einem Reset zu erfolgen. 
           ## Nach erfolgter Abfrage der Monitordaten sollte wieder mit dem Kommando 0xDC in den "Normal-Modus" 
           ## zurückgeschaltet werden. 
@@ -410,6 +412,7 @@ if EI == 1:
           
           ## wenn die Sendewarteschlange leer ist und keine Antworten(AC<busnr>) mehr von einem A2<busnr> erwartet werden dann directmode aus
           if self._buderus_message_queue.empty() and not self.get_direct_waiting():
+              time.sleep( self.config.get('delaydirectendtime') )
               self.set_directmode(False)
 
       def set_directmode(self,mode):
