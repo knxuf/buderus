@@ -559,7 +559,7 @@ if EI == 1:
               self.remove_direct_waiting(_busnr)
 
       def wait_for_ready_to_receive(self):
-          import time
+          import select,time
           ## 3 versuche warten bis wir auf ein STX ein DLE erhalten
           for _loop in xrange(3):
               ## STX senden
