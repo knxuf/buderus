@@ -54,7 +54,7 @@ LOGIKCAT="www.knx-user-forum.de"
 LOGIKDESC="""
 
 """
-VERSION="V0.2"
+VERSION="V0.9"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -109,20 +109,20 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|3|"E1 IP:Port"|"E2 Typ"|"E3 senden"|2|"A1 Daten"|"A2 SystemLog"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|3|"E1 IP:Port"|"E2 config"|"E3 senden"|2|"A1 Daten"|"A2 SystemLog"
 
 5001|3|2|0|1|1
 
 # EN[x]
 5002|1|"192.168.178.10:22"|1 #* IP:Port
-5002|2|1|0 #* Typ
+5002|2|""|1 #* config
 5002|3|""|1 #* Senden
 
 # Speicher
 5003|1||0 #* logic
 
 # Ausgänge
-5004|1|""|0|1|0 #* Daten
+5004|1|""|0|1|1 #* Daten
 5004|2|""|0|1|1 #* SystemLog
 
 #################################################
@@ -140,65 +140,340 @@ if EI == 1:
       def __init__(self,localvars):
           from hs_queue import Queue
           from hs_queue import hs_threading as threading
+          import re
           self.id = "buderus_connect"
+          
           self.logik = localvars["pItem"]
           self.MC = self.logik.MC
+          
           EN = localvars['EN']
           self.device_connector = EN[1]
-          self.device_type = EN[2]
-          self._thread = None
-
-          ## Achtung:
-          ## Die Anzahl der Bytes je Datentyp bezieht sich auf den Stand 01/2009. Bei früheren Regelgeräteversionen 
-          ## kann die Anzahl niedriger sein. 
           
-          ## Funktionstyp / Name / Datenlänge in Bytes
-          
-          self.monitor_data_type = {
-              0x80 : ("Heizkreis 1", 18),
-              0x81 : ("Heizkreis 2", 18),
-              0x82 : ("Heizkreis 3", 18),
-              0x83 : ("Heizkreis 4", 18),
-              0x84 : ("Warmwasser", 12),
-              0x85 : ("Strategie wandhängend", 12),
-              0x87 : ("Fehlerprotokoll", 42),
-              0x88 : ("bodenstehender Kessel", 42),
-              0x89 : ("Konfiguration", 24),
-              0x8A : ("Heizkreis 5", 18),
-              0x8B : ("Heizkreis 6", 18),
-              0x8C : ("Heizkreis 7", 18),
-              0x8D : ("Heizkreis 8", 18),
-              0x8E : ("Heizkreis 9", 18),
-              0x8F : ("Strategie bodenstehend", 30),
-              0x90 : ("LAP", 18),
-              0x92 : ("wandhängende Kessel 1", 60),
-              0x93 : ("wandhängende Kessel 2", 60),
-              0x94 : ("wandhängende Kessel 3", 60),
-              0x95 : ("wandhängende Kessel 4", 60),
-              0x96 : ("wandhängende Kessel 5", 60),
-              0x97 : ("wandhängende Kessel 6", 60),
-              0x98 : ("wandhängende Kessel 7", 60),
-              0x99 : ("wandhängende Kessel 8", 60),
-              0x9B : ("Wärmemenge", 36),
-              0x9C : ("Störmeldemodul", 6),
-              0x9D : ("Unterstation", 6),
-              0x9E : ("Solarfunktion", 54),
+          ## Config
+          self.config = {
+              'debug': 0,
+              'delaydirectendtime' : 1.0, # wartezeit beim beenden des directmodes
           }
-          self._hs_message_queue = Queue()
+          
+          # 3964R Constants
+          self._constants = {
+              'STX': chr(0x02),
+              'DLE': chr(0x10),
+              'ETX': chr(0x03),
+              'NAK': chr(0x15),
+              'QVZ': 2,             # Quittungsverzugzeit (QVZ) 2 sec
+              'ZVZ': 0.220,         # Der Abstand zwischen zwei Zeichen darf nicht mehr als die Zeichenverzugszeit (ZVZ) von 220 ms
+              'BWZ': 4,             # Blockwartezeit von 4 sec
+          }
 
+          ## Gerätetypen
+          self.device_types = {
+              "80" : ("Heizkreis 1", 18),
+              "81" : ("Heizkreis 2", 18),
+              "82" : ("Heizkreis 3", 18),
+              "83" : ("Heizkreis 4", 18),
+              "84" : ("Warmwasser", 12),
+              "85" : ("Strategie wandhängend", 12),
+              "87" : ("Fehlerprotokoll", 42),
+              "88" : ("bodenstehender Kessel", 42),
+              "89" : ("Konfiguration", 24),
+              "8A" : ("Heizkreis 5", 18),
+              "8B" : ("Heizkreis 6", 18),
+              "8C" : ("Heizkreis 7", 18),
+              "8D" : ("Heizkreis 8", 18),
+              "8E" : ("Heizkreis 9", 18),
+              "8F" : ("Strategie bodenstehend", 30),
+              "90" : ("LAP", 18),
+              "92" : ("wandhängende Kessel 1", 60),
+              "93" : ("wandhängende Kessel 2", 60),
+              "94" : ("wandhängende Kessel 3", 60),
+              "95" : ("wandhängende Kessel 4", 60),
+              "96" : ("wandhängende Kessel 5", 60),
+              "97" : ("wandhängende Kessel 6", 60),
+              "98" : ("wandhängende Kessel 7", 60),
+              "99" : ("wandhängende Kessel 8", 60),
+              "9B" : ("Wärmemenge", 36),
+              "9C" : ("Störmeldemodul", 6),
+              "9D" : ("Unterstation", 6),
+              "9E" : ("Solarfunktion", 54),
+          }
+          
+          ## List für gefundene Geräte
+          self.found_devices = []
+          
+          ## List die Geräte IDs enthällt bei denen Antworten ausstehen
+          self.waiting_direct_bus = []
+          
+          ## threading Lock um _is_directmode und waiting_direct_bus zu beschreiben
+          self.directmode_lock = threading.RLock()
+          
+          ## Derzeitiger Direct-mode status
+          self._is_directmode = False
+          
+          ## Mit dem Kommando "0xA2 <ECOCAN-BUS-Adresse>" können die Monitordaten des ausgewählten 
+          ## ECOCAN-BUS-Gerätes von der Kommunikationskarte ausgelesen werden. 
+          ## Mit Hilfe des Kommandos "0xB0 <ECOCAN-BUS-Adresse>" gefolgt von einem entsprechenden 
+          ## Datenblock können im Direkt-Modus einstellbare Parameter die für ein Regelgerät bestimmt sind an die 
+          ## Schnittstelle geschickt werden. Die Schnittstelle schickt diese Daten dann weiter an das entsprechende 
+          ## Regelgerät. 
+          self.directmode_regex = re.compile("(?P<id>A2|B0)(?P<busnr>[0-9a-fA-F]{2})")
+
+
+          ## Im "Normal-Modus" werden die Monitordaten nach folgendem Muster übertragen: 
+          ## 0xA7 <ECOCAN-BUS-Adresse> <TYP> <OFFSET> <DATUM> 
+          ## 0xA7 = Kennung für einzelne Monitordaten 
+          ## ECOCAN-BUS-Adresse = Herkunft´s Adresse des Monitordatum´s (hier Regelgeräteadresse) 
+          ## TYP = Typ der empfangenen Monitordaten       
+          ## OFFSET = Offset zur Einsortierung der Daten eines Typ´s 
+          ## DATUM = eigentlicher Messwert 
+
+          ## Im "Direct-Modus" werden die Monitordaten nach folgendem Muster übertragen: 
+          ## 0xAB <ECOCAN-BUS-Adresse> <TYP> <OFFSET> <6 Daten-Byte> 
+          ## 0xAB = Kennung für Monitordaten 
+          ## ECOCAN-BUS-Adresse = die abgefragte Adresse zur Bestätigung 
+          ## TYP = Typ der gesendeten Monitordaten
+          ## Daten unter dem entsprechenden Typ werden nur gesendet wenn auch die entsprechende Funktionalität 
+          ## im Regelgerät eingebaut ist. 
+          ## OFFSET = Offset zur Einsortierung der Daten eines Typ´s
+
+          self.payload_regex = re.compile("(?P<id>AB|A7)(?P<busnr>[0-9a-fA-F]{2})(?P<type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{2})+)")
+
+          ## Als Endekennung für das abgefragte Regelgerät oder falls keine Daten vorhanden sind, wird der 
+          ## nachfolgende String 
+          ## 0xAC <ECOCAN-BUS-Adresse> gesendet          
+          self.directmode_finish_regex = re.compile("AC(?P<busnr>[0-9a-fA-F]{2})")
+          
+          self._moxa_thread = None
+          
+          ## Socket zum MOXA
+          self.sock = None
+          
+          ## threading Lock für exklusives schreiben von entweder der Empfangs- oder Sende- Funktion
+          self._buderus_data_lock = threading.RLock()
+
+          ## Queue für Nachrichten zu den Ausgängen des Bausteins
+          self._hs_message_queue = Queue()
+          self._buderus_message_queue = Queue()
+
+          ## Konfig an Eingang 2 parsen
+          self.readconfig(EN[2])
+          
+          ## Consumer Thread der Nachrichten an die Ausgänge des Bausteins schickt
           self.hs_queue_thread = threading.Thread(target=self._send_to_hs_consumer,name='buderus_hs_consumer')
           self.hs_queue_thread.start()
 
+          ## Consumer Thread der Nachrichten an das Buderus Gerät schickt
+          self.buderus_queue_thread = threading.Thread(target=self._send_to_buderus_consumer,name='hs_buderus_consumer')
+          self.buderus_queue_thread.start()
+
+          ## jetzt zum MOXA verbinden
           self.connect()
 
-      def debug(self,msg):
+      def readconfig(self,configstring):
+          ## config einlesen
+          import re
+          for (option,value) in re.findall("(\w+)=(.*?)(?:\*|$)", configstring ):
+              option = option.lower()
+              _configoption = self.config.get(option)
+              _configtype = type(_configoption)
+              
+              ## wenn es den Wert nicht gibt
+              if _configtype == type(None):
+                  self.log("unbekannte Konfig Option %s=%s" % (option,value) )
+                  continue
+              
+              ## versuchen Wert im config string zum richtigen Type zu machen
+              try:
+                  _val = _configtype(value)
+                  self.config[option] = _val
+              except ValueError:
+                  self.log("falscher Wert bei Konfig Option %s=%s (erwartet %r)" % (option,value, _configtype ) )
+                  pass
+
+
+      def debug(self,msg,lvl=5):
+          ## wenn debuglevel zu klein gleich zurück
+          if self.config.get("debug") < lvl:
+              return
+          import time
+          
+          ## FIXME sollte später gesetzt werden
           #self.log(msg,severity='debug')
-          print "DEBUG: %r" % (msg,)
+          
+          print "%s DEBUG: %r" % (time.strftime("%H:%M:%S"),msg,)
 
       def connect(self):
+          ## _connect als Thread starten
           from hs_queue import hs_threading as threading
-          self._thread = threading.Thread(target=self._connect,name='Buderus-Moxa-Connect')
-          self._thread.start()
+          self._moxa_thread = threading.Thread(target=self._connect,name='Buderus-Moxa-Connect')
+          self._moxa_thread.start()
+
+      def _send_to_buderus_consumer(self):
+          import select,time
+          while True:
+              ## wenn noch keine Verbindung 
+              if not self.sock:
+                  self.debug("Socket nicht bereit ... warten")
+                  ## 1 Sekunden auf Socket warten
+                  time.sleep(1)
+                  continue
+              
+              ## nächste payload aus der Queue holen
+              msg = self._buderus_message_queue.get()
+
+              ## nach gültigen zu sendener payload suchen
+              _direct_mode = self.directmode_regex.search(msg)
+
+              ## wenn keine gültige SENDE payload
+              if not _direct_mode:
+                  self.debug("ungültige sende Nachricht %r" % (msg,) )
+                  continue
+              
+              _cmdid = _direct_mode.group("id")
+              _busnr = _direct_mode.group("busnr")
+              
+              ## Wenn eine direct-mode anfrage
+              if _cmdid == "A2":
+                  if _busnr not in self.waiting_direct_bus:
+                      ## busnr zur liste auf Antwort wartender hinzu
+                      self.add_direct_waiting(_busnr)
+                  else:
+                      ## Bus wird schon abgefragt
+                      continue
+
+              self._buderus_data_lock.acquire()
+              self.debug("sende Queue exklusiv lock erhalten")
+              try:
+                  ## wenn wir nicht auf den directmode schalten konnten
+                  if not self.set_directmode(True):
+                      ## payload verworfen und loop
+                      continue
+                  
+                  ## payload per 3964R versenden
+                  self._send3964r(msg)
+                  
+                  ## gucken ob wir den directmode noch brauchen
+                  self.check_directmode_needed()
+              finally:
+                  self._buderus_data_lock.release()
+                  self.debug("sende Queue exklusiv lock released")
+
+
+      def add_direct_waiting(self,busnr):
+          ## busnr zur liste zu erwartender Antworten hinzufügen
+          try:
+              self.directmode_lock.acquire()
+              self.waiting_direct_bus.append(busnr)
+          finally:
+              self.directmode_lock.release()
+
+      def remove_direct_waiting(self,busnr=None):
+          ## busnr von der Liste der zu erwartetenden Antworten entfernen
+          try:
+              self.directmode_lock.acquire()
+              
+              ## wenn keine busnr übergeben wurde, dann alle entfernen
+              if not busnr:
+                  ## Flush
+                  self.waiting_direct_bus =[]
+                  self._is_directmode = False
+              
+              ## wenn die zu entfernenden busnr in der liste ist, entfernen
+              elif busnr in self.waiting_direct_bus:
+                  self.waiting_direct_bus.remove(busnr)
+          finally:
+              self.directmode_lock.release()
+
+      def get_direct_waiting(self):
+          ## threadsicheres abfragen der zu erwartenden Antworten
+          try:
+              self.directmode_lock.acquire()
+              return self.waiting_direct_bus
+          finally:
+              self.directmode_lock.release()
+
+      def is_directmode(self):
+          ## threadsicheres abfragen von directmode
+          try:
+              self.directmode_lock.acquire()
+              return self._is_directmode
+          finally:
+              self.directmode_lock.release()
+          
+      def check_directmode_needed(self):
+          import time
+          ## Die Abfrage der gesamten Monitordaten braucht nur zu Beginn oder nach einem Reset zu erfolgen. 
+          ## Nach erfolgter Abfrage der Monitordaten sollte wieder mit dem Kommando 0xDC in den "Normal-Modus" 
+          ## zurückgeschaltet werden. 
+          
+          ## wenn direct mode nicht an ist dann gleich zurück
+          if not self.is_directmode():
+              return
+          
+          ## wenn die Sendewarteschlange leer ist und keine Antworten(AC<busnr>) mehr von einem A2<busnr> erwartet werden dann directmode aus
+          if self._buderus_message_queue.empty() and not self.get_direct_waiting():
+              time.sleep( self.config.get('delaydirectendtime') )
+              self.set_directmode(False)
+
+      def set_directmode(self,mode):
+          ## Bei dem Kommunikationsmodul wird zwischen einem "Normal-Modus" und einem "Direkt-Modus"
+          ## unterschieden. 
+          ## "Normal-Modus" Bei diesem Modus werden laufend alle sich ändernden Monitorwerte 
+          ## sowie Fehlermeldungen übertragen. 
+          ## "Direkt-Modus" Bei diesem Modus kann der aktuelle Stand aller bisher vom Regelgerät 
+          ## generierten Monitordaten en Block abgefragt und ausgelesen werden. 
+          ## Mittels des Kommandos 0xDD kann von "Normal-Modus" in den "Direkt-Modus" umgeschaltet werden. 
+          ## In diesem Modus kann auf alle am ECOCAN-BUS angeschlossenen Geräte zugegriffen und es können 
+          ## geräteweise die Monitorwerte ausgelesen werden. 
+          import time
+          _setmode = "DC"
+          if mode:
+              _setmode = "DD"
+          try:
+              self.directmode_lock.acquire()
+              _loop = 0
+              ## FIXME: keine Ahnung ob wir das öfter als einmal versuchen oder nicht
+              while not self._is_directmode == mode:
+                  if _loop == 2:
+                      break
+                  
+                  
+                  # wenn der rückgabewert vom Senden dem erwarteten mode erfolgreich ist, dann mode
+                  if self._send3964r(_setmode):
+                      self._is_directmode = mode
+                  else:
+                      self._is_directmode = not mode
+                  
+                  ## wenn kein erfolg dann 1 sekunde warten
+                  time.sleep(1)
+                  
+                  _loop += 1
+              
+              return (self._is_directmode == mode)
+          finally:
+              self.directmode_lock.release()
+        
+      def _send3964r(self,payload):
+          ## returnwert erstmal auf False
+          _ret = False
+          try:
+              ## auf Freigabe STX/DLE vom Socket warten
+              if self.wait_for_ready_to_receive():
+                  
+                  ## Payload jetzt senden
+                  self.debug("jetzt payload %r senden" % (payload,) )
+                  self.send_payload(payload)
+                  
+                  ## ertrunwert auf True
+                  _ret = True
+              else:
+                  ## wenn kein DLE auf unser STX kam dann payload verwerfen
+                  self.debug("payload %r verworfen" % (payload,) )
+          
+          except:
+              ## Fehler auf die HS Debugseite
+              self.MC.Debug.setErr(sys.exc_info(),"%r" % (payload,))
+          return _ret
 
       def _send_to_hs_consumer(self):
           while True:
@@ -239,410 +514,387 @@ if EI == 1:
 
       def incomming(self,msg):
           self.debug("incomming message %r" % msg)
+          ## mit * getrennte messages hinzufügen
+          for _msg in msg.split("*"):
 
-      def to_hex(self,list_of_dec):
-          try:
-              if not type(list_of_dec) == list:
-                  list_of_dec = [list_of_dec]
-              return " ".join( ["%.2x".upper() % x for x in list_of_dec] )
-          except:
-              return list_of_dec
+              ## leerzeichen entfernen 
+              _msg = _msg.replace(' ','')
 
-              
-              
+              ## _msg in die sende Warteschlange
+              self._buderus_message_queue.put( _msg )
 
-## Bei dem Kommunikationsmodul wird zwischen einem "Normal-Modus" und einem "Direkt-Modus"
-## unterschieden. 
-## "Normal-Modus" Bei diesem Modus werden laufend alle sich ändernden Monitorwerte 
-## sowie Fehlermeldungen übertragen. 
-## "Direkt-Modus" Bei diesem Modus kann der aktuelle Stand aller bisher vom Regelgerät 
-## generierten Monitordaten en Block abgefragt und ausgelesen werden. 
-## Mittels des Kommandos 0xDD kann von "Normal-Modus" in den "Direkt-Modus" umgeschaltet werden. 
-## In diesem Modus kann auf alle am ECOCAN-BUS angeschlossenen Geräte zugegriffen und es können 
-## geräteweise die Monitorwerte ausgelesen werden. 
-## Der "Direkt-Modus" kann durch das Kommando 0xDC wieder verlassen werden. 
-## Außerdem wird vom "Direkt-Modus" automatisch in den "Normal-Modus" zurückgeschaltet, wenn für die 
-## Zeit von 60 sec kein Protokoll des "Direkt-Modus" mehr gesendet wird. 
+      def parse_device_type(self,payload):
+          ## nach gültiger payload suchen
+          _payload = self.payload_regex.search(payload)
+          
+          ## wenn normal-mode oder direct mode antwort 
+          if _payload:
               
+              ## wenn einen normal mode antwort mit Typ A7 kommt und der direktmode lokal an ist, 
+              ## dann ist der 60 Sekunden Timeout abgelaufen ohne die Daten rechtzeitig erhalten zu haben
+              if _payload.group("id") == "A7" and self.is_directmode():
+                  self.remove_direct_waiting()
+                  ## Der "Direkt-Modus" kann durch das Kommando 0xDC wieder verlassen werden. 
+                  ## Außerdem wird vom "Direkt-Modus" automatisch in den "Normal-Modus" zurückgeschaltet, wenn für die 
+                  ## Zeit von 60 sec kein Protokoll des "Direkt-Modus" mehr gesendet wird. 
+                  self.log("Directmode timeout")
+              
+              ## Gerätetype
+              _type = _payload.group("type")
+              
+              ## wenn wir das Gerät noch nicht gefunden hatten kurze Info über den Fund loggen
+              if _type not in self.found_devices:
+                  self.found_devices.append( _type )
+                  (_devicename, _datalen) = self.device_types.get( _type, ("unbekanntes Gerät (%s)" % _type, 0) )
+                  self.log("Gerät %r an ECOCAN %s gefunden" % ( _devicename, _payload.group("busnr") ) , severity="info")
+              
+              return
+          
+          ## wenn ein AC<busnr> empfangen wurde die busnr aus der liste für direct Daten entfernen und evtl direct_mode beenden
+          _direct = self.directmode_finish_regex.search(payload)
+          if _direct:
+              _busnr = _direct.group("busnr")
+              
+              ## bus von der liste auf antwort wartender im direct mode entfernen
+              self.remove_direct_waiting(_busnr)
+
+      def wait_for_ready_to_receive(self):
+          import select,time
+          ## 3 versuche warten bis wir auf ein STX ein DLE erhalten
+          for _loop in xrange(3):
+              ## STX senden
+              self.debug("STX senden")
+              self.sock.send( self._constants['STX'] )
+              self.debug("STX gesendet / warten auf DLE")
+              
+              ## auf daten warten, timeout ist QVZ
+              _r,_w,_e = select.select( [ self.sock ],[],[], self._constants['QVZ'] )
+              
+              ## wenn kein timeout QVZ
+              if self.sock in _r:
+                  # 1 Zeichen lesen
+                  data = self.sock.recv(1)
+                  ## wenn wir ein DLE empfangen
+                  if data == self._constants['DLE']:
+                      self.debug("DLE empfangen")
+                      
+                      ## erfolg zurück
+                      return True
+                  
+                  ## Wenn wir beim warten auf ein DLE ein STX der Gegenseite erhalten stellen wir unsere Sendung zurück und lassen das andere Gerät seine Daten erstmal senden
+                  elif data == self._constants['STX']:
+                      self.debug("STX empfangen Initialisierungskonflikt")
+                      time.sleep(self._constants['ZVZ'])
+                      ## DLE senden, dass wir Daten vom anderen Gerät akzeptieren senden
+                      self.sock.send( self._constants['DLE'] )
+                      self.debug("DLE gesendet")
+                      
+                      ## eigentlich Funktion aus dem connect zum lesen der payload hier ausführen
+                      self.read_payload()
+                      
+                      ### danach loop und erneuter sende Versuch
+                  else:
+                      self.debug("%r empfangen" % (data,) )
+                      
+          self.debug("Nach 3x STX senden innerhalb QVZ kein DLE")
+          return False
+        
+
+      ## Verbindung zum Moxa (gethreadet)
       def _connect(self):
-          import time,socket,sys
-          MODE_NORMAL = 0xDE
-          MODE_DIRECT = 0xDD
-
-          self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-          _ip,_port = self.device_connector.split(":")
-          self.sock.connect( ( _ip, int(_port) ) )
+          import time,socket,sys,select
           try:
-              print "DEBUG: Try"
- ##             ## setze nomal mode
- ##             while True:
- ##                 print "DEBUG: Setze set_mode"                  
- ##                 if self.set_mode(MODE_NORMAL):
- ##                     self.debug("Normal Mode gesetzt")
- ##                     self.debug("Packet %r" % ( self.to_hex(MODE_NORMAL) ) )
- ##                     self.debug("Normal Mode gesetzt")
- ##                     break
- ##                 time.sleep(2)
               
+              ## TCP Socket erstellen
+              self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+              
+              ## IP:Port auslesen und dorthin verbinden
+              try:
+                  _ip,_port = self.device_connector.split(":")
+                  self.sock.connect( ( _ip, int(_port) ) )
+                  self.debug("connect zu moxa an %s:%s" % (_ip,_port))
+              except (TypeError,ValueError):
+                  self.log("ungültige IP:Port Kombination %r an Eingang 1" % self.device_connector, severity="error")
+                  return
               
               while True:
-                  print "DEBUG: _3964r_Send: Also im Sende Mode"
-                ##  Send_Data = [ 0xA2 , 0x01 , 0x23, 0x24, 0x53, 0x66 ]
-                  Send_Data = [ MODE_DIRECT ]
-        ##          Send_Data = self.get_to_senden() ## from EN[3]
-                  if self._3964r_Send(Send_Data) == 0:
-                      print "DEBUG: Daten sind erfolgreich gesendet"
-                      self.debug("Send_Data %r" % ( self.to_hex(Send_Data) ) )
+                  # wenn keine Verbindung dann abbruch
+                  if not self.sock:
                       break
-                  time.sleep(2)
-              
-   ##           while True:
-                  print "DEBUG: _3964r_Receive: Also in Empfangs Mode"
-                  Receive_Data = []
-                  if self._3964r_Receive(Receive_Data) == 0:   
-                     print "DEBUG: Daten sind erfolgreich empfangen"
-                     
-                     ## packet an Ausgang 1
-                     ### self.send_to_output( 1, Receive_Data )
-                     
-                     self.debug("Reveice_Data %r" % ( self.to_hex(Receive_Data) ) )
-              
-          except:
-              self.MC.Debug.setErr(sys.exc_info(),"")
-              time.sleep(10)
-              self.connect()
-
-###########################################################################################################
-#####                                      Die 3964R Prozedure !                                      #####
-###########################################################################################################                   
-              
-## Warum diese Prozedure ?
-## Diese Prozedure dient dazu Kollisionen zu verhindern und Störungen zu erkennen.
-## -> Kollisionen werden dadurch verhindert, dass nur dann gesendet werden kann, wenn die Gegenstelle (hier 
-## also das Buderus RS232 Gateway) eingewilligt hat (mit DLE geantwortet hat).
-## -> Störungen: Durch das Mitsenden eine Prüfsumme (BCC) mit dem Datenstrom kann von der Gegenstelle 
-## nachgeprüft werden, ob es zu einer Störung gekommen ist.
-## Dies nur als Motivation.
-              
-## Die Steuerzeichen für die Prozedur 3964R sind der Norm DIN 66003 für den 7-Bit-Code entnommen. Sie
-## werden allerdings mit der Zeichenlänge 8 Bit übertragen (Bit I7 = 0). Am Ende jedes Datenblocks wird zur
-## Datensicherung ein Prüfzeichen(BCC) gesendet.
-              
-## STX = 0x02     ## bedeutet soviel wie "ich möchte senden, darf ich ?"
-## DLE = 0x10     ## bedeutet soviel wie "ich bestätige, du darfst senden!"
-## ETX = 0x03     ## die beiden Zeichen "DLE ETX" zeigen an, dass das Ende der Daten erreicht ist. 
-## NAK = 0x15     ## NAK steht für "Not Acknoledge" also soviel wie "Kein Bestätigung" Irgend was 
-##                ## hat nicht geklappt.
-
-
-## Das Blockprüfzeichen BCC wird durch eine exklusiv-oder-Verknüpfung über alle Datenbytes der
-## Nutzinformation, inclusive der Endekennung DLE, ETX gebildet.
-
-## Es gibt noch eine Besonderheit: Befindet sich in Transport Daten selbst ein DLE Zeichen, wird es beim 
-## Senden gedoppelt. Es wird also ein zweites eingefügt und beim BCC berücksichtigt das auch. Somit ist 
-## sichergestellt, dass es nur Paare von "DLE DLE" oder "DLE ETX" geben kann und das "DLE ETX" einzig am 
-## Ende auftauche kann.
-## Damit dadurch die Daten aber nicht verändert werden, ist das zweite DLE auf der Empfangs Seite wieder
-## zu entfernen. Da es aber beim BCC mit gezählt wurde, ist es hierbei aber mit zu Berücksichtigen. 
-
-
-
-
-## Empfangen mit der Prozedur 3964R
-## --------------------------------------------------------------------------------------------------
-##
-## Beispiel für einen fehlerlosen Datenverkehr: bei Empfang
-## Prozedur 3964R                        Peripheriegerät
-##                                <--                 STX
-##      DLE                    -->
-##                                <--          1. Zeichen der zu übertragenden Daten
-##                                <--
-##                                <--
-##                                <--          n. Zeichen der zu übertragenden Daten
-##                                <--               DLE
-##                                <--               ETX
-##                                <--               BCC
-##      DLE                    -->
-##
-## Im Ruhezustand, wenn kein Sendeauftrag und kein Warteauftrag des Interpreters zu bearbeiten ist, wartet
-## die Prozedur auf den Verbindungsaufbau durch das Peripheriegerät. Empfängt die Prozedur ein STX und
-## steht ihr ein leerer Eingabepuffer zur Verfügung, wird mit DLE geantwortet.
-## Nachfolgende Empfangszeichen werden nun in dem Eingabepuffer abgelegt. Werden zwei aufeinander
-## folgende Zeichen DLE empfangen, wird nur ein DLE in den Eingabepuffer übernommen.
-## Nach jedem Empfangszeichen wird während der Zeichenverzugszeit (ZVZ) auf das nächste Zeichen
-## gewartet. Verstreicht die Zeichenverzugszeit ohne Empfang, wird das Zeichen NAK an das
-## Peripheriegerät gesendet und der Fehler an den Interpreter gemeldet.
-## Mit erkennen der Zeichenfolge DLE, ETX und BCC beendet die Prozedur den Empfang und sendet DLE
-## für einen fehlerfrei (oder NAK für einen fehlerhaft) empfangenen Block an das Peripheriegerät.
-## Treten während des Empfangs Übertragungsfehler auf (verlorenes Zeichen, Rahmenfehler), wird der
-## Empfang bis zum Verbindungsabbau weitergeführt und NAK an das Peripheriegerät gesendet. Dann wird
-## eine Wiederholung des Blocks erwartet. Kann der Block auch nach insgesamt sechs Versuchen nicht
-## fehlerfrei empfangen werden, oder wird die Wiederholung vom Peripheriegerät nicht innerhalb der
-## Blockwartezeit (BWZ) von 4 sec gestartet, bricht die Prozedur 3964R den Empfang ab und meldet den Fehler an
-## den Interpreter.
-
-              
-      def _3964r_Receive(self, list_of_bytes):
-          
-          STX = 0x02
-          DLE = 0x10
-          ETX = 0x03
-          NAK = 0x15
-          
-          import select
-          
-          ZVZ = 0.200   ## Zeichenverzugszeit  220 ms
-          BWZ = 5       ## Blockwartezeit 5 sec
-          
-          _3964r_ErrCode = 0    ## Fehlercode loeschen
-      
-          while True:
-             _r,_w,_e = select.select([self.sock],[],[],BWZ)
-             if self.sock in _r:
-                data = ord( self.sock.recv(1) )
-                if data == STX:
-                   self.debug("STX <--- empfangen")
-                   ## jetzt ist DLE zurücksenden damit die Daten losgeschickt werden
-                   self.sock.send( chr(DLE))
-                   self.debug("---> DLE gesendet")
-                   break
-                else:
-                   self.debug(" !! KEINE STX: wird ignoriert!! ")
-                   ## Zeiche ignorieren und weitere Zeichen lesen
-                   continue
-             else:
-                ## kein STX innerhalb der Blockwartezeit (BWZ) empfangen
-                _3964r_ErrCode = 8
-                return _3964r_ErrCode
-            
-          ## Nun die DATEN empfangen !
-          
-          
-          for _loop in xrange(6):
-             ## nun sind 6 Versuche erlaubt, die Daten zu empfangen
-             
-             bcc = 0
-             DLE_merker = 0
-             Ende = 0
-             
-             while not (Ende):
-                _r,_w,_e = select.select([self.sock],[],[],ZVZ)
-                if self.sock in _r:
-                   data = ord( self.sock.recv(1) )
-                   if (data == DLE) and ( not DLE_merker):
-                      ## self.debug("erstes DLE in DATA gefunden")
-                      DLE_merker = 1
-                      bcc ^= data     ## faellt weg bei "DLE nicht in BCC"
-                   elif (data == ETX) and (DLE_merker):
-                      ## direkt nach einem DLE ist nun das ETX empfange worden, also das Ende ist erreicht
-                      ## bcc ist aber nur vom DLE berechnet, noch nicht vom ETX
-                      ## wäre das zweite Zeichen nach dem DLE wieder ein DLE, würde es in den nächsten ELSE Zweig
-                      ## gehen und gespeichert werden. Das erste DLE ist damit wieder entfernt, aber bei BCC 
-                      ## mitgezählt worden, was nach 3964R richtig ist. BCC wird über alle Zeichen gemacht.
-                      Ende = 1
-                   else:
-                      ## Zeichen in list_of_bytes speichern
-                      list_of_bytes.append(data)
-                      bcc ^= data
-                      DLE_merker = 0    ## merker zurücksetzen
-                      self.debug("Data %r" % ( self.to_hex(data) ) )
-                      ## und weitere Zeichen lesen
+                  _r,_w,_e = select.select( [ self.sock ],[],[], 10 )
+                  
+                  ## exklusiv lock
+                  if not self._buderus_data_lock.acquire(blocking=False):
+                      ## wenn nicht erhalten lesen wir nicht vom socket, da die Daten für die Sende Queue sind
                       continue
-                else:
-                   ## NAK rauschicken
-                   self.sock.send( chr(NAK) )
-                   _3964r_ErrCode = 9
-                   return _3964r_ErrCode
-             
-             bcc ^= ETX     ## das DLE ist ja schon in bcc, das ETX hiermit nun auch
-            
-             ## nun BCC lesen       
-             _r,_w,_e = select.select([self.sock],[],[],ZVZ)
-             if self.sock in _r:
-                data = ord( self.sock.recv(1) )
-                if data == bcc:
-                   ## erfolgreicher Empfang von BCC
-                   self.debug("Received BBC -> OK")
-                   ## Bestätigung schicken
-                   self.sock.send( chr(DLE) )
-                   return 0 ## Kein Fehler
-                else:    
-                   ## enpfangenes BCC stimmt nicht
-                   self.debug("Falsches BBC -> NAK")
-                   ## NAK rauschicken
-                   self.sock.send( chr(NAK) )
-             else:
-                ## keine BCC innerhalb von ZVZ empfangen
-                self.debug("kein BBC -> NAK")
-                ## NAK rausschicken    
-                self.sock.send( chr(NAK) )
-                return 5 ## Fehler zurueckgeben
-          else:
-             _3964r_ErrCode = 10
-          
-          return _3964r_ErrCode
- 
- ## ENDE _3964r_Receive
- 
- 
-## Senden mit der Prozedur 3964R
-## --------------------------------------------------------------------------------------------------
-## 
-## Der Signalfluß ist hier genauso wie beim Empfang (siehe oben), nur das die Richtung anderum ist.
-##
-## Zum Aufbau der Verbindung sendet die Prozedur 3964R das Steuerzeichen STX aus. Antwortet das
-## Peripheriegerät vor Ablauf der Quittungsverzugzeit (QVZ) von 2 sec mit dem Zeichen DLE, so geht die
-## Prozedur in den Sendebetrieb über. Antwortet das Peripheriegerät mit NAK, einem beliebigen anderen
-## Zeichen (außer DLE) oder die Quittungsverzugszeit verstreicht ohne Reaktion, so ist der
-## Verbindungsaufbau gescheitert. Nach insgesamt drei vergeblichen Versuchen bricht die Prozedur das
-## Verfahren ab und meldet dem Interpreter den Fehler im Verbindungsaufbau.
-## Gelingt der Verbindungsaufbau, so werden nun die im aktuellen Ausgabepuffer enthaltenen
-## Nutzinformationszeichen mit der gewählten Übertragungsgeschwindigkeit an das Peripheriegerät
-## gesendet. Das Peripheriegerät soll die ankommenden Zeichen in Ihrem zeitlichen Abstand überwachen.
-## Der Abstand zwischen zwei Zeichen darf nicht mehr als die Zeichenverzugszeit (ZVZ) von 220 ms
-## betragen.
-## Jedes im Puffer vorgefundene Zeichen DLE wird als zwei Zeichen DLE gesendet. Dabei wird das Zeichen
-## DLE zweimal in die Prüfsumme übernommen.
-## Nach erfolgtem senden des Pufferinhalts fügt die Prozedur die Zeichen DLE, ETX und BCC als
-## Endekennung an und wartet auf ein Quittungszeichen. Sendet das Peripheriegerät innerhalb der
-## Quittungsverzugszeit QVZ das Zeichen DLE, so wurde der Datenblock fehlerfrei übernommen. Antwortet
-## das Peripheriegerät mit NAK, einem beliebigen anderen Zeichen (außer DLE), einem gestörten Zeichen
-## oder die Quittungsverzugszeit verstreicht ohne Reaktion, so wiederholt die Prozedur das Senden des
-## Datenblocks. Nach insgesamt sechs vergeblichen Versuchen, den Datenblock zu senden, bricht die
-## Prozedur das Verfahren ab und meldet dem Interpreter den Fehler im Verbindungsaufbau.
-## Sendet das Peripheriegerät während einer laufenden Sendung das Zeichen NAK, so beendet die
-## Prozedur den Block und wiederholt in der oben beschriebenen Weise.
- 
-      def _3964r_Send(self, list_of_bytes):
-          
-          STX = 0x02
-          DLE = 0x10
-          ETX = 0x03
-          NAK = 0x15
-          
-          import select
-          
-          QVZ = 0.200      
+                  
+                  self.debug("empfang exklusiv lock erhalten")
+                  try:
+                      ## wenn kein Timeout
+                      if self.sock in _r:
+                          ## wenn Daten da sind, ein zeichen lesen
+                          data = self.sock.recv(1)
+                          
+                          ## wenn keine Daten trotz select dann Verbindung abgebrochen
+                          if not data:
+                              self.debug("Verbindung abgebrochen")
+                              break
+                          
+                          ## wenn wir ein STX empfangen
+                          if data == self._constants['STX']:
+                              self.debug("STX empfangen sende DLE")
+                              ## senden wir das DLE
+                              self.sock.send( self._constants['DLE'] )
+                              self.debug("DLE gesendet")
+                              
+                              ## jetzt die eigentliche payload vom socket lesen
+                              self.read_payload()
+                          else:
+                              self.debug("ungültiges Zeichen %r empfangen" % (data,) ,lvl=4)
+                          
+                      ## Testen ob der directmode noch gesetzt ist, und evtl ausschalten
+                      self.check_directmode_needed()
+                  
+                  finally:
+                      ## den lock auf jedenfall relasen
+                      self._buderus_data_lock.release()
+                      self.debug("empfang exklusiv lock releasen")
+                      
 
-          _3964r_ErrCode = 0    ## Fehlercode loeschen
-          packet = []
-          checksum = 0
-          self.debug("_3964r_Send")
-          for _loop in xrange(3):
-             self.sock.send( chr(STX) )
-             self.debug("STX gesendet")
-             _r,_w,_e = select.select([self.sock],[],[],QVZ)
-             if self.sock in _r:
-                  data = ord( self.sock.recv(1) )
-                  if data == DLE:
-                      ## jetzt ist FREI zum Senden
-                      self.debug("Received DLE")
-                      break
-             else:
-                ## timeout nächster Versuch machen (von den 3 erlaubten Versuchen)
-                continue
-          else:
-             self.debug("Nach 3 mal STX senden innerhalb von QVZ kein DLE empfangen")
-             _3964r_ErrCode = 1
-             return _3964r_ErrCode
-        
-          ## nun senden der Daten
-          self.debug("Daten senden")
-          ## nun sind 6 Versuche erlaubt
+          except:
+              ## fehler auf die HS Debugseite
+              self.MC.Debug.setErr(sys.exc_info(),"")
+              ## 10 sekunden pause
+              time.sleep(10)
+          
+          ## dann reconnect
+          self.connect()
+
+      ## STX = 0x02
+      ## DLE = 0x10
+      ## ETX = 0x03
+      ## NAK = 0x15
+      ## Die Steuerzeichen für die Prozedur 3964R sind der Norm DIN 66003 für den 7-Bit-Code entnommen. Sie
+      ## werden allerdings mit der Zeichenlänge 8 Bit übertragen (Bit I7 = 0). Am Ende jedes Datenblocks wird zur
+      ## Datensicherung ein Prüfzeichen(BCC) gesendet.
+      ## Das Blockprüfzeichen wird durch eine exklusiv-oder-Verknüpfung über alle Datenbytes der
+      ## Nutzinformation, inclusive der Endekennung DLE, ETX gebildet.
+
+      def send_payload(self,payload):
+          ## Senden mit der Prozedur 3964R
+          ## -----------------------------
+          ## Zum Aufbau der Verbindung sendet die Prozedur 3964R das Steuerzeichen STX aus. Antwortet das
+          ## Peripheriegerät vor Ablauf der Quittungsverzugzeit (QVZ) von 2 sec mit dem Zeichen DLE, so geht die
+          ## Prozedur in den Sendebetrieb über. Antwortet das Peripheriegerät mit NAK, einem beliebigen anderen
+          ## Zeichen (außer DLE) oder die Quittungsverzugszeit verstreicht ohne Reaktion, so ist der
+          ## Verbindungsaufbau gescheitert. Nach insgesamt drei vergeblichen Versuchen bricht die Prozedur das
+          ## Verfahren ab und meldet dem Interpreter den Fehler im Verbindungsaufbau.
+          ## Gelingt der Verbindungsaufbau, so werden nun die im aktuellen Ausgabepuffer enthaltenen
+          ## Nutzinformationszeichen mit der gewählten Übertragungsgeschwindigkeit an das Peripheriegerät
+          ## gesendet. Das Peripheriegerät soll die ankommenden Zeichen in Ihrem zeitlichen Abstand überwachen.
+          ## Der Abstand zwischen zwei Zeichen darf nicht mehr als die Zeichenverzugszeit (ZVZ) von 220 ms
+          ## betragen.
+          ## Jedes im Puffer vorgefundene Zeichen DLE wird als zwei Zeichen DLE gesendet. Dabei wird das Zeichen
+          ## DLE zweimal in die Prüfsumme übernommen.
+          ## Nach erfolgtem senden des Pufferinhalts fügt die Prozedur die Zeichen DLE, ETX und BCC als
+          ## Endekennung an und wartet auf ein Quittungszeichen. Sendet das Peripheriegerät innerhalb der
+          ## Quittungsverzugszeit QVZ das Zeichen DLE, so wurde der Datenblock fehlerfrei übernommen. Antwortet
+          ## das Peripheriegerät mit NAK, einem beliebigen anderen Zeichen (außer DLE), einem gestörten Zeichen
+          ## oder die Quittungsverzugszeit verstreicht ohne Reaktion, so wiederholt die Prozedur das Senden des
+          ## Datenblocks. Nach insgesamt sechs vergeblichen Versuchen, den Datenblock zu senden, bricht die
+          ## Prozedur das Verfahren ab und meldet dem Interpreter den Fehler im Verbindungsaufbau.
+          ## Sendet das Peripheriegerät während einer laufenden Sendung das Zeichen NAK, so beendet die
+          ## Prozedur den Block und wiederholt in der oben beschriebenen Weise.
+          import select,binascii
+          ## 6 versuche
           for _loop in xrange(6):
-             ## BCC wird schon inklusive DLE und ETX auf 0x13 initialisiert
-             bcc = 0x13   
-             for _byte in list_of_bytes:
-                self.sock.send( chr(_byte))
-                self.debug("Send Data %r" % ( self.to_hex(_byte) ) )
-                bcc ^= _byte
-                ## Wenn das DLE Zeichen in DATA vorkommt ist es nach 3964R zweimal zu senden
-                if _byte == DLE:
-                   self.sock.send( chr(DLE))
-                   self.debug("Send Data ++ %r" % ( self.to_hex(DLE) ) )
-                   bcc ^= DLE
-                 
-             ## nun sind alle Daten raus
-             ## jetzt den ABSCHLUSS anzeigen mit DLE, ETX und zum Nachprüfen für die Gegenseite BCC
-             self.sock.send( chr(DLE))
-             self.debug("Send Abschluss DLE %r" % ( self.to_hex(DLE) ) )
-             ## KEIN BCC, weil schon in Initialisierung geschehen
-             self.sock.send( chr(ETX))
-             self.debug("Send Abschluss ETX %r" % ( self.to_hex(ETX) ) )
-             ## KEIN BCC, weil schon in Initialisierung geschehen
-             self.sock.send( chr(bcc))
-             self.debug("Send Abschluss BCC %r" % ( self.to_hex(bcc) ) )
-             
-             ## Nun ist alles draussen
-             ## jetzt muß noch die Empfangsbestaetigung DLE zurückkommen
-             
-             _r,_w,_e = select.select([self.sock],[],[],QVZ)
-             if self.sock in _r:
-                  data = ord( self.sock.recv(1) )
-                  if data == DLE:
-                      ## jetzt ist der Empfang bestätigt
-                      self.debug("Empfang bestaetigt mit DLE")
-                      break
-             else:
-                ## timeout nächster Versuch machen (von den 6 erlaubten Versuchen)
-                continue
-          else:
-             self.debug("Nach 6 mal Daten senden, kein DLE innerhalb von QVZ empfangen")
-             _3964r_ErrCode = 2
-             return _3964r_ErrCode
-        
-          ## Senden: habe fertig
-          self.debug("Daten senden fertig")
-          ## _3964r_ErrCode zurückgeben (sollt hier 0 sein
-          return _3964r_ErrCode
+              self.debug("exklusiv senden / versuch %d" % _loop)
+              
+              ## checksumme
+              _bcc = 0
+              for _byte in binascii.unhexlify(payload):
+                  
+                  ## Byte an Gerät schicken
+                  self.sock.send( _byte )
+                  self.debug("Byte %r versendet" % binascii.hexlify(_byte))
+                  
+                  ## Checksumme berechnen
+                  _bcc ^= ord(_byte)
+                  
+                  ## Wenn payload ein DLE ist
+                  if _byte == self._constants['DLE']:
 
-## ENDE _3964r_Send
+                      ## dann in der payload verdoppeln
+                      self.sock.send( _byte )
+                      self.debug("Payload enthällt DLE, ersetzt mit DLE DLE" ) 
 
-          
+                      ## doppeltes DLE auch in die Checksumme einrechenen
+                      _bcc ^= ord(_byte)
+              
+              ## Abschluss der Prozedur 3964R durch senden von DLE ETX
+              self.debug("Alle Daten gesendet, jetzt DLE und ETX")
+              
+              self.sock.send( self._constants['DLE'] )
+              _bcc ^= ord( self._constants['DLE'] )
+              
+              self.sock.send( self._constants['ETX'] )
+              _bcc ^= ord( self._constants['ETX'] )
+              
+              ## Berechnete Checksukmme
+              self.debug("jetzt checksumme %r senden" % (_bcc) )
+              self.sock.send( chr(_bcc) )
 
- 
-
-
-      def direct_read_request(self):
-          ## Mit dem Kommando "0xA2 <ECOCAN-BUS-Adresse>" können die Monitordaten des ausgewählten 
-          ## ECOCAN-BUS-Gerätes von der Kommunikationskarte ausgelesen werden. 
-          pass
-      
-      def direct_read_answer(self):
-          ## Die Kommunikationskarte antwortet mit : 
-          ## 0xAB <ECOCAN-BUS-Adresse> <TYP> <OFFSET> <6 Daten-Byte> 
-          ## 0xAB = Kennung für Monitordaten 
-          ## ECOCAN-BUS-Adresse = die abgefragte Adresse zur Bestätigung 
-          ## TYP = Typ der gesendeten Monitordaten
-
-          ## Daten unter dem entsprechenden Typ werden nur gesendet wenn auch die entsprechende Funktionalität 
-          ## im Regelgerät eingebaut ist. 
-          ## OFFSET = Offset zur Einsortierung der Daten eines Typ´s
-
-          ## Als Endekennung für das abgefragte Regelgerät oder falls keine Daten vorhanden sind, wird der 
-          ## nachfolgende String 
-          ## 0xAC <ECOCAN-BUS-Adresse> gesendet          
-
-          ## Die Abfrage der gesamten Monitordaten braucht nur zu Beginn oder nach einem Reset zu erfolgen. 
-          ## Nach erfolgter Abfrage der Monitordaten sollte wieder mit dem Kommando 0xDC in den "Normal-Modus" 
-          ## zurückgeschaltet werden. 
-
-          pass
+              ## auf daten warten, timeout ist Quittungsverzugszeit
+              self.debug("warten auf DLE")
+              _r,_w,_e = select.select( [ self.sock ],[],[], self._constants['QVZ'] )
+              
+              ## wenn nicht Quittingsverzugszeit
+              if self.sock in _r:
+                  
+                  ## 1 zeichen lesen
+                  data = self.sock.recv(1)
+                  
+                  ## wenn empfangenes zeichen DLE ist
+                  if data == self._constants['DLE']:
+                      self.debug("DLE erhalten")
+                      self.debug("Daten %r erfolgreich gesendet" % (payload,),lvl=2)
+                      return True
+              self.debug("Kein DLE erhalten loop")
+          self.debug("Nach 6x STX senden innerhalb QVZ kein DLE",lvl=1)
 
 
-      def normal_read(self):
-          ## Im "Normal-Modus" werden die Monitordaten nach folgendem Muster übertragen: 
-          ## 0xA7 <ECOCAN-BUS-Adresse> <TYP> <OFFSET> <DATUM> 
-          ## 0xA7 = Kennung für einzelne Monitordaten 
-          ## ECOCAN-BUS-Adresse = Herkunft´s Adresse des Monitordatum´s (hier Regelgeräteadresse) 
-          ## TYP = Typ der empfangenen Monitordaten       
-          ## OFFSET = Offset zur Einsortierung der Daten eines Typ´s 
-          ## DATUM = eigentlicher Messwert 
-          pass
-          
+      def read_payload(self):
+          ## Empfangen mit der Prozedur 3964R
+          ## --------------------------------
+          ## Im Ruhezustand, wenn kein Sendeauftrag und kein Warteauftrag des Interpreters zu bearbeiten ist, wartet
+          ## die Prozedur auf den Verbindungsaufbau durch das Peripheriegerät. Empfängt die Prozedur ein STX und
+          ## steht ihr ein leerer Eingabepuffer zur Verfügung, wird mit DLE geantwortet.
+          ## Nachfolgende Empfangszeichen werden nun in dem Eingabepuffer abgelegt. Werden zwei aufeinander
+          ## folgende Zeichen DLE empfangen, wird nur ein DLE in den Eingabepuffer übernommen.
+          ## Nach jedem Empfangszeichen wird während der Zeichenverzugszeit (ZVZ) auf das nächste Zeichen
+          ## gewartet. Verstreicht die Zeichenverzugszeit ohne Empfang, wird das Zeichen NAK an das
+          ## Peripheriegerät gesendet und der Fehler an den Interpreter gemeldet.
+          ## Mit erkennen der Zeichenfolge DLE, ETX und BCC beendet die Prozedur den Empfang und sendet DLE
+          ## für einen fehlerfrei (oder NAK für einen fehlerhaft) empfangenen Block an das Peripheriegerät.
+          ## Treten während des Empfangs Übertragungsfehler auf (verlorenes Zeichen, Rahmenfehler), wird der
+          ## Empfang bis zum Verbindungsabbau weitergeführt und NAK an das Peripheriegerät gesendet. Dann wird
+          ## eine Wiederholung des Blocks erwartet. Kann der Block auch nach insgesamt sechs Versuchen nicht
+          ## fehlerfrei empfangen werden, oder wird die Wiederholung vom Peripheriegerät nicht innerhalb der
+          ## Blockwartezeit von 4 sec gestartet, bricht die Prozedur 3964R den Empfang ab und meldet den Fehler an
+          ## den Interpreter.
+          import select,binascii,time
+          ## 6 versuche sind erlaubt
+          for _loop in xrange(6):
+              self.debug("exklusiv lesen / versuch %d" % _loop)
+              
+              ## speicher für das zuletzt empfangene zeichen um DLE DLE bzw DLE ETX zu erkennen
+              _lastchar = ""
+              
+              ## checksumme
+              _bcc = 0
+              
+              ## eigentliche Payload
+              _payload = []
+              
+              ## nach erhalten von DLE ETX (Ende der Übermittlung) wird auf True gesetzt, somit ist das nächste Zeichen die gesendetet Checksumme
+              _wait_for_checksum = False
+              
+              ## Timer für die Blockwartezeit
+              _bwz_timer = time.time() + self._constants['BWZ']
+              
+              while True:
+                  ## auf dem socket auf Veränderung warten
+                  _r,_w,_e = select.select( [ self.sock ],[],[], self._constants['ZVZ'] )
+                  
+                  ## wenn obiger select mit Timeout von Zeichenverzugszeit 
+                  if not self.sock in _r:
+                      
+                      ## wenn schon Daten da nur zeichenverzugszeit/ wenn keine Daten dann Blockwartezeit
+                      if len(_payload) > 0 or _bwz_timer <= time.time():
+                          ## kein zeichen innerhalb ZVZ bzw BWZ
+                          self.debug("abbruch ZVZ oder BWZ",lvl=1)
+                          
+                          ## NAK an Gerät senden
+                          self.sock.send( self._constants['NAK'] )
+                          
+                          ## gegenseite zeit geben
+                          time.sleep( self._constants['ZVZ'] )
+                          
+                          ## abruck der while Schleife zurück in connect
+                          break
+                      ## wenn noch keine daten und blockwartezeit nicht überschritten
+                      else:
+                          self.debug("weiter warten auf daten noch kein ZVZ/BWZ timeout")
+                          continue
+                  ## ein Zeichen lesen
+                  data = self.sock.recv(1)
 
+                  ## wenn keine Daten auf Socket (Verbindungsabbruch)
+                  if not data:
+                      self.debug("Keine Daten / verbindung verloren")
+                      return
 
+                  ## wenn checksumme erwartet wird
+                  if _wait_for_checksum:
+                      
+                      ## empfangene Checksumme
+                      _bcc_recv = ord(data)
+                      self.debug("berechnete checksumme = %.2x empfange checksumme = %.2x" % ( _bcc,_bcc_recv) )
+                      
+                      ## wenn empfangene Checkumme der berechneten entspricht
+                      if _bcc == _bcc_recv:
+                          
+                          ## payload von Type List zum String machen und alle hex Zeichen als Großbuchstaben
+                          _hexpayload = "".join( _payload ).upper()
+                          self.debug("Payload %r erfolgreich empfangen" % (_hexpayload),lvl=2)
 
+                          ## DLE als Bestätigung senden
+                          self.sock.send( self._constants['DLE'] )
+                          
+                          ## empfangene Payload analysieren
+                          self.parse_device_type( _hexpayload )
+                          
+                          ## payload an Ausgang 1 senden
+                          self.send_to_output(1, _hexpayload)
+                          
+                          return
+                      
+                      ## checksummen stimmen nicht überein
+                      else:
+                          self.debug("Checksum nicht korrekt %r != %r" % (_bcc, _bcc_recv) ,lvl=1)
+                          
+                          ## NAK an gerät senden
+                          self.sock.send( self._constants['NAK'] )
+
+                          ## FIXME BREAK heißt nochmal in die 6 versuche oder return wäre zurück zum mainloop warten auf STX
+                          break
+                  
+                  ## checksum von jedem packet berechnen
+                  _bcc ^= ord(data)
+
+                  ## wenn 2mal DLE hintereinander bcc berechnen aber nur eins zum packet
+                  if data == _lastchar == self._constants['DLE']:
+                      self.debug("entferne doppeltes DLE")
+                      
+                      ## löschen damit bei DLE DLE DLE ETX nicht das 3te DLE auch wieder entfernt wird
+                      _lastchar = ""
+                      continue
+                  
+                  ## WENN DLE ETX dann Ende
+                  if _lastchar == self._constants['DLE'] and data ==  self._constants['ETX']:
+                      self.debug("DLE/ETX empfangen warte auf checksumme")
+                      _wait_for_checksum = True
+                      
+                      ## letztes DLE entfernen denn das gehört nicht zur payload sondern zum 3964R
+                      _payload = _payload[:-1]
+                      continue
+                      
+                  ## daten zum packet hinzu
+                  _payload.append( binascii.hexlify(data) )
+                  self.debug("Daten %r empfangen" % (binascii.hexlify(data)),lvl=3)
+                  
+                  ## letztes zeichen speichern
+                  _lastchar = data
 
 """])
 
