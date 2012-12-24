@@ -54,7 +54,7 @@ LOGIKCAT="www.knx-user-forum.de"
 LOGIKDESC="""
 
 """
-VERSION="V0.9"
+VERSION="V0.10"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -196,6 +196,7 @@ if EI == 1:
               "9C" : ("Störmeldemodul", 6),
               "9D" : ("Unterstation", 6),
               "9E" : ("Solarfunktion", 54),
+			  "9F" : ("Alternativer Wärmeerzeuger", 42),
           }
           
           ## List für gefundene Geräte
