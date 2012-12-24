@@ -54,7 +54,7 @@ LOGIKCAT="www.knx-user-forum.de"
 LOGIKDESC="""
 
 """
-VERSION="V0.1"
+VERSION="V0.3"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -145,27 +145,28 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 
 
 # Ausgänge
+#5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 5004|1|""|0|1|1 #* Payload OUT
 5004|2|""|0|1|1 #* SystemLog
-5004|3|0|1|1|0 #* Vorlauf IST (FWV)
-5004|4|0|1|1|0 #* Rücklauf IST (FWR)
-5004|5|0|1|1|0 #* Abgas Byte2 (FWG)
-5004|6|0|1|1|0 #* Abgas Byte1 (FWG)
-5004|7|0|1|1|0 #* Anl. Rücklauf IST (FWG)
-5004|8|0|1|1|0 #* Puffer oben IST (FPO)
-5004|9|0|1|1|0 #* Puffer mitte IST (FPM)
-5004|10|0|1|1|0 #* Puffer unten IST (FPU)
-5004|11|0|1|1|0 #* Vorlauf SOLL
-5004|12|0|1|1|0 #* Sollwert Vorlaufregelung
-5004|13|0|1|1|0 #* Sollwert Rücklaufregelgung
-5004|14|0|1|1|0 #* Soll Puffer
-5004|15|0|1|1|0 #* Soll Anlage
+5004|3|0|0|1|0 #* Vorlauf IST (FWV)
+5004|4|0|0|1|0 #* Rücklauf IST (FWR)
+5004|5|0|0|1|0 #* Abgas Byte2 (FWG)
+5004|6|0|0|1|0 #* Abgas Byte1 (FWG)
+5004|7|0|0|1|0 #* Anl. Rücklauf IST (FWG)
+5004|8|0|0|1|0 #* Puffer oben IST (FPO)
+5004|9|0|0|1|0 #* Puffer mitte IST (FPM)
+5004|10|0|0|1|0 #* Puffer unten IST (FPU)
+5004|11|0|0|1|0 #* Vorlauf SOLL
+5004|12|0|0|1|0 #* Sollwert Vorlaufregelung
+5004|13|0|0|1|0 #* Sollwert Rücklaufregelgung
+5004|14|0|0|1|0 #* Soll Puffer
+5004|15|0|0|1|0 #* Soll Anlage
 5004|16|0|1|1|0 #* Brenner AN.
 5004|17|0|1|1|0 #* SWE AUF
 5004|18|0|1|1|0 #* Pumpe WE
-5004|19|0|0|1|0 #* ON/Notkühlung
-5004|20|0|0|1|0 #* Öl/Gaskessel gesperrt
-5004|21|0|0|1|0 #* Stellglied SWR
+5004|19|0|1|1|0 #* ON/Notkühlung
+5004|20|0|1|1|0 #* Öl/Gaskessel gesperrt
+5004|21|0|1|1|0 #* Stellglied SWR
 5004|22|0|0|1|0 #* Betriebsstunden Byte3
 5004|23|0|0|1|0 #* Betriebsstunden Byte2
 5004|24|0|0|1|0 #* Betriebsstunden Byte1
@@ -193,83 +194,83 @@ if EI == 1:
           self.status_length = 42
           
           self.bus_id = "%.2X" % int(EN[2])
-          self.id = "alternativer-Waermeerzeuger"
+          self.id = "Alternativer Wärmeerzeuger"
 		  
 		  ##keine Info über einstellbare Parameter des FM444
-		  #self.send_prefix = "B0%.2x24" % (int(EN[2]))
+		  ##self.send_prefix = "B0%.2x24" % (int(EN[2]))
           
-		  self.payload_regex = re.compile( "(?P<mode>AB|A7)%s9F(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ) )
-			
-			#Buderus FM444 -> Beschreibung aus Bildschirmkopie übernommen
-			#Offset 	Beschreibung
-			#0 		- Vorlauf IST (FWV)
-			#5 		- Rücklauf IST (FWR)
-			#36 	- Abgas Byte2 (FWG)
-			#37		- Abgas Byte1 (FWG)
-			#1		- Anl. Rücklauf IST (FWG)
-			#2		- Puffer oben IST (FPO)
-			#4 		- Puffer mitte IST (FPM)
-			#3		- Puffer unten IST (FPU)
-			#23		- Vorlauf SOLL
-			#6		- Sollwert Vorlaufregelung
-			#34		- Sollwert Rücklaufregelgung
-			#7 		- Soll Puffer
-			#17		- Soll Anlage
-			#27		Bit1	- Brenner AN
-			#21		Bit2	- SWE AUF
-			#27		Bit4	- Pumpe WE
-			#21		Bit3	- ON/Notkühlung
-			#21		Bit6	- Öl/Gaskessel gesperrt
-			#38		- Stellglied SWR
-			#12 	- Betriebsstunden Byte3
-			#13 	- Betriebsstunden Byte2
-			#14		- Betriebsstunden Byte1
-		  
-		  
+          self.payload_regex = re.compile( "(?P<mode>AB|A7)%s9F(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ) )
+			##
+			##Buderus FM444 -> Beschreibung aus Bildschirmkopie übernommen
+			##Offset 	Beschreibung
+			##0 	- Vorlauf IST (FWV)
+			##5 	- Rücklauf IST (FWR)
+			##36 	- Abgas Byte2 (FWG)
+			##37	- Abgas Byte1 (FWG)
+			##1		- Anl. Rücklauf IST (FWG)
+			##2		- Puffer oben IST (FPO)
+			##4 	- Puffer mitte IST (FPM)
+			##3		- Puffer unten IST (FPU)
+			##23	- Vorlauf SOLL
+			##6		- Sollwert Vorlaufregelung
+			##34	- Sollwert Rücklaufregelgung
+			##7 	- Soll Puffer
+			##17	- Soll Anlage
+			##27		Bit1	- Brenner AN
+			##21		Bit2	- SWE AUF
+			##27		Bit4	- Pumpe WE
+			##21		Bit3	- ON/Notkühlung
+			##21		Bit6	- Öl/Gaskessel gesperrt
+			##38	- Stellglied SWR
+			##12 	- Betriebsstunden Byte3
+			##13 	- Betriebsstunden Byte2
+			##14	- Betriebsstunden Byte1
+		    ##
+		    ## 
           self.output_functions = [
-		      (lambda x: [x],[3]),
-			  (lambda x: [x],[7]),
-			  (lambda x: [x],[8]),
-			  (lambda x: [x],[10]),
-			  (lambda x: [x],[9]),
-			  (lambda x: [x],[4]),
-			  (lambda x: [x],[12]),
-			  (lambda x: [x],[14]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[22]),
-			  (lambda x: [x],[23]),
-			  (lambda x: [x],[24]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (self.to_bits,[0,17,19,0,0,20,0,0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[11]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (self.to_bits,[16,0,0,18,0,0,0,0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[5]),
-			  (lambda x: [x],[6]),
-			  (lambda x: [x],[21]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
-			  (lambda x: [x],[0]),
+              (lambda x: [float(x)],[3]),
+              (lambda x: [float(x)],[7]),
+              (lambda x: [float(x)],[8]),
+              (lambda x: [x],[10]),
+              (lambda x: [x],[9]),
+              (lambda x: [x],[4]),
+              (lambda x: [x],[12]),
+              (lambda x: [x],[14]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[22]),
+              (lambda x: [x],[23]),
+              (lambda x: [x],[24]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (self.to_bits,[0,17,19,0,0,20,0,0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[11]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (self.to_bits,[16,0,0,18,0,0,0,0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[5]),
+              (lambda x: [x],[6]),
+              (lambda x: [x],[21]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
+              (lambda x: [x],[0]),
           ]
 
           self.get_monitor_data()

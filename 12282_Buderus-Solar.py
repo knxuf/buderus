@@ -54,7 +54,7 @@ LOGIKCAT="www.knx-user-forum.de"
 LOGIKDESC="""
 
 """
-VERSION="V0.2"
+VERSION="V0.4"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -158,24 +158,24 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 ##
 5004|23|0|0|1|0 #* SP1 Warmwassertemperatur unten 1°C
 ##Betriebsstatus Speicher 1
-5004|24|0|0|1|0 #* SP1 Gesperrt
-5004|25|0|0|1|0 #* SP1 zu wenig solarer Ertrag
-5004|26|0|0|1|0 #* SP1 Low Flow
-5004|27|0|0|1|0 #* SP1 High Flow
+5004|24|0|1|1|0 #* SP1 Gesperrt
+5004|25|0|1|1|0 #* SP1 zu wenig solarer Ertrag
+5004|26|0|1|1|0 #* SP1 Low Flow
+5004|27|0|1|1|0 #* SP1 High Flow
 5004|28|0|1|1|0 #* SP1 HAND ein
 5004|29|0|1|1|0 #* SP1 Umschalt-Check
 ##
-5004|30|0|1|1|0 #* SP2 Warmwassertemperatur unten 1 °C
+5004|30|0|0|1|0 #* SP2 Warmwassertemperatur unten 1 °C
 ##Betriebsstatus Speicher 2
-5004|31|0|0|1|0 #* SP2 Gesperrt
-5004|32|0|0|1|0 #* SP2 zu wenig solarer Ertrag
-5004|33|0|0|1|0 #* SP2 Low Flow
-5004|34|0|0|1|0 #* SP2 High Flow
+5004|31|0|1|1|0 #* SP2 Gesperrt
+5004|32|0|1|1|0 #* SP2 zu wenig solarer Ertrag
+5004|33|0|1|1|0 #* SP2 Low Flow
+5004|34|0|1|1|0 #* SP2 High Flow
 5004|35|0|1|1|0 #* SP2 HAND ein
 5004|36|0|1|1|0 #* SP2 Umschalt-Check
 ##
-5004|37|0|1|1|0 #* Warmwassertemperatur Speichermitte (Bypass) 1°C
-5004|38|0|1|1|0 #* Anlagenrücklauftemperatur (Bypass)
+5004|37|0|0|1|0 #* Warmwassertemperatur Speichermitte (Bypass) 1°C
+5004|38|0|0|1|0 #* Anlagenrücklauftemperatur (Bypass)
 5004|39|0|0|1|0 #* Vorlauftemperatur Wärmemengenzähler 1 °C
 5004|40|0|0|1|0 #* Rücklauftemperatur Wärmemengenzähler 1 °C
 ##Anlagen-Volumenstrom (Byte2 * 256) + Byte1
@@ -302,37 +302,37 @@ if EI == 1:
           self.output_functions = [
               (self.to_bits,[3,4,5,6,0,0,0,0]),
               (self.to_bits,[7,8,9,10,11,12,13,14]),
-			  (self.to_bits,[15,16,17,18,19,0,0,0]),
-			  (lambda x: [(float(x)/10)],[20]),
-			  (lambda x: [(float(x)/10)],[21]),
+              (self.to_bits,[15,16,17,18,19,0,0,0]),
+              (lambda x: [(float(x)/10)],[20]),
+              (lambda x: [(float(x)/10)],[21]),
               (lambda x: [x],[22]),
-			  (lambda x: [x],[23]),
+              (lambda x: [x],[23]),
               (self.to_bits,[24,25,26,27,28,29,0,0]),
-			  (lambda x: [x],[30]),
+              (lambda x: [x],[30]),
               (self.to_bits,[31,32,33,34,35,36,0,0]),
-			  (lambda x: [x],[37]),
-			  (lambda x: [x],[38]),
-			  (lambda x: [x],[39]),
-			  (lambda x: [x],[40]),
-			  (lambda x: [x],[41]),
-			  (lambda x: [x],[42]),			  
-			  (lambda x: [x],[43]),
-			  (lambda x: [x],[44]),
-			  (lambda x: [x],[45]),
-			  (lambda x: [x],[46]),
-			  (lambda x: [x],[47]),
-			  (lambda x: [x],[48]),
-			  (lambda x: [x],[49]),
-			  (lambda x: [x],[50]),
-			  (lambda x: [x],[51]),
-			  (lambda x: [x],[52]),
-			  (lambda x: [x],[53]),
-			  (lambda x: [x],[54]),
-			  (lambda x: [x],[55]),
-			  (lambda x: [x],[56]),
-			  (lambda x: [x],[57]),
-			  (lambda x: [x],[58]),
-			  (lambda x: [x],[59]),
+              (lambda x: [x],[37]),
+              (lambda x: [x],[38]),
+              (lambda x: [x],[39]),
+              (lambda x: [x],[40]),
+              (lambda x: [x],[41]),
+              (lambda x: [x],[42]),			  
+              (lambda x: [x],[43]),
+              (lambda x: [x],[44]),
+              (lambda x: [x],[45]),
+              (lambda x: [x],[46]),
+              (lambda x: [x],[47]),
+              (lambda x: [x],[48]),
+              (lambda x: [x],[49]),
+              (lambda x: [x],[50]),
+              (lambda x: [x],[51]),
+              (lambda x: [x],[52]),
+              (lambda x: [x],[53]),
+              (lambda x: [x],[54]),
+              (lambda x: [x],[55]),
+              (lambda x: [x],[56]),
+              (lambda x: [x],[57]),
+              (lambda x: [x],[58]),
+              (lambda x: [x],[59]),
           ]
 
           self.get_monitor_data()
