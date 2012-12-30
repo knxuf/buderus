@@ -196,7 +196,7 @@ if EI == 1:
               "9C" : ("Störmeldemodul", 6),
               "9D" : ("Unterstation", 6),
               "9E" : ("Solarfunktion", 54),
-			  "9F" : ("Alternativer Wärmeerzeuger", 42),
+              "9F" : ("Alternativer Wärmeerzeuger", 42),
           }
           
           ## List für gefundene Geräte

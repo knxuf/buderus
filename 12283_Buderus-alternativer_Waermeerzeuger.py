@@ -179,7 +179,7 @@ code=[]
 
 code.append([3,"EI",r"""
 if EI == 1:
-  class buderus_heizkreis(object):
+  class buderus_alternativewaerme(object):
       def __init__(self,localvars):
           import re
 		  
@@ -196,37 +196,37 @@ if EI == 1:
           self.bus_id = "%.2X" % int(EN[2])
           self.id = "Alternativer Wärmeerzeuger"
 		  
-		  ##keine Info über einstellbare Parameter des FM444
-		  ##self.send_prefix = "B0%.2x24" % (int(EN[2]))
+          ##keine Info über einstellbare Parameter des FM444
+          ##self.send_prefix = "B0%.2x24" % (int(EN[2]))
           
           self.payload_regex = re.compile( "(?P<mode>AB|A7)%s9F(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ) )
-			##
-			##Buderus FM444 -> Beschreibung aus Bildschirmkopie übernommen
-			##Offset 	Beschreibung
-			##0 	- Vorlauf IST (FWV)
-			##5 	- Rücklauf IST (FWR)
-			##36 	- Abgas Byte2 (FWG)
-			##37	- Abgas Byte1 (FWG)
-			##1		- Anl. Rücklauf IST (FWG)
-			##2		- Puffer oben IST (FPO)
-			##4 	- Puffer mitte IST (FPM)
-			##3		- Puffer unten IST (FPU)
-			##23	- Vorlauf SOLL
-			##6		- Sollwert Vorlaufregelung
-			##34	- Sollwert Rücklaufregelgung
-			##7 	- Soll Puffer
-			##17	- Soll Anlage
-			##27		Bit1	- Brenner AN
-			##21		Bit2	- SWE AUF
-			##27		Bit4	- Pumpe WE
-			##21		Bit3	- ON/Notkühlung
-			##21		Bit6	- Öl/Gaskessel gesperrt
-			##38	- Stellglied SWR
-			##12 	- Betriebsstunden Byte3
-			##13 	- Betriebsstunden Byte2
-			##14	- Betriebsstunden Byte1
-		    ##
-		    ## 
+          ##
+          ##Buderus FM444 -> Beschreibung aus Bildschirmkopie übernommen
+          ## Offset 	Beschreibung
+          ##  0 - Vorlauf IST (FWV)
+          ##  5 - Rücklauf IST (FWR)
+          ## 36 - Abgas Byte2 (FWG)
+          ## 37	- Abgas Byte1 (FWG)
+          ##  1	- Anl. Rücklauf IST (FWG)
+          ##  2	- Puffer oben IST (FPO)
+          ##  4 - Puffer mitte IST (FPM)
+          ##  3	- Puffer unten IST (FPU)
+          ## 23	- Vorlauf SOLL
+          ##  6	- Sollwert Vorlaufregelung
+          ## 34	- Sollwert Rücklaufregelgung
+          ##  7 - Soll Puffer
+          ## 17	- Soll Anlage
+          ## 27	Bit1	- Brenner AN
+          ## 21	Bit2	- SWE AUF
+          ## 27	Bit4	- Pumpe WE
+          ## 21	Bit3	- ON/Notkühlung
+          ## 21	Bit6	- Öl/Gaskessel gesperrt
+          ## 38	- Stellglied SWR
+          ## 12 - Betriebsstunden Byte3
+          ## 13 - Betriebsstunden Byte2
+          ## 14	- Betriebsstunden Byte1
+          ##
+          ## 
           self.output_functions = [
               (lambda x: [float(x)],[3]),
               (lambda x: [float(x)],[7]),
@@ -347,7 +347,7 @@ debugcode = """
 
 """
 postlogik=[0,"",r"""
-5012|0|"EI"|"buderus_heizkreis(locals())"|""|0|0|1|0
+5012|0|"EI"|"buderus_alternativewaerme(locals())"|""|0|0|1|0
 5012|0|"EC[1]"|"SN[1].incomming(EN[1],locals())"|""|0|0|0|0
 
 """]

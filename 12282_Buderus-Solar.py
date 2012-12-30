@@ -215,7 +215,7 @@ code=[]
 
 code.append([3,"EI",r"""
 if EI == 1:
-  class buderus_heizkreis(object):
+  class buderus_solar(object):
       def __init__(self,localvars):
           import re
 		  
@@ -237,66 +237,66 @@ if EI == 1:
 
           ## Offset Name Auflösung
           ## 0 Betriebswerte 1 
-		  ##	1. Bit = Fehler Einstellung Hysterese
-		  ## 	2. Bit = Speicher 2 auf max. Temperatur
-		  ## 	3. Bit = Speicher 1 auf max. Temperatur
-		  ## 	4. Bit = Kollektor auf max. Temperatur
-		  ## 1 Betriebswerte 2 
-		  ##	1. Bit = Fehler Fühler Anlagenrücklauf Bypass defekt
-		  ##	2. Bit = Fehler Fühler Speichermitte Bypass defekt
-		  ##	3. Bit = Fehler Volumenstromzähler WZ defekt
-		  ## 	4. Bit = Fehler Fühler Rücklauf WZ defekt
-		  ## 	5. Bit = Fehler Fühler Vorlauf WZ defekt
-		  ##	6. Bit = Fehler Fühler Speicher-unten 2 defekt
-		  ##	7. Bit = Fehler Fühler Speicher-unten 1 defekt
-		  ## 	8. Bit = Fehler Fühler Kollektor defekt
-		  ## 2 Betriebswerte 3 
-		  ##	1. Bit = Umschaltventil Speicher 2 zu.
-		  ## 	2. Bit = Umschaltventil Speicher 2 auf/Speicherladepumpe2.
-		  ##	3. Bit = Umschaltventil Bypass zu
-		  ## 	4. Bit = Umschaltventil Bypass auf
-		  ## 	5. Bit = Sekundärpumpe Speicher 2 Betrieb
-		  ## 3 Kollektortemperatur Byte2 0,1 °C
-		  ## 4 Kollektortemperatur Byte1 0,1 °C
-		  ## 5 Modulation Pumpe Speicher 1 %
+          ##	1. Bit = Fehler Einstellung Hysterese
+          ## 	2. Bit = Speicher 2 auf max. Temperatur
+          ## 	3. Bit = Speicher 1 auf max. Temperatur
+          ## 	4. Bit = Kollektor auf max. Temperatur
+          ## 1 Betriebswerte 2 
+          ##	1. Bit = Fehler Fühler Anlagenrücklauf Bypass defekt
+          ##	2. Bit = Fehler Fühler Speichermitte Bypass defekt
+          ##	3. Bit = Fehler Volumenstromzähler WZ defekt
+          ## 	4. Bit = Fehler Fühler Rücklauf WZ defekt
+          ## 	5. Bit = Fehler Fühler Vorlauf WZ defekt
+          ##	6. Bit = Fehler Fühler Speicher-unten 2 defekt
+          ##	7. Bit = Fehler Fühler Speicher-unten 1 defekt
+          ## 	8. Bit = Fehler Fühler Kollektor defekt
+          ## 2 Betriebswerte 3 
+          ##	1. Bit = Umschaltventil Speicher 2 zu.
+          ## 	2. Bit = Umschaltventil Speicher 2 auf/Speicherladepumpe2.
+          ##	3. Bit = Umschaltventil Bypass zu
+          ## 	4. Bit = Umschaltventil Bypass auf
+          ## 	5. Bit = Sekundärpumpe Speicher 2 Betrieb
+          ## 3 Kollektortemperatur Byte2 0,1 °C
+          ## 4 Kollektortemperatur Byte1 0,1 °C
+          ## 5 Modulation Pumpe Speicher 1 %
           ## 6 Warmwassertemperatur Speicher 1 unten 1 °C
-		  ## 7 Betriebsstatus Speicher 1
-		  ## 	Wert = 0: Gesperrt
-		  ##	Wert = 1: zu wenig solarer Ertrag
-		  ## 	Wert = 2: Low Flow
-		  ##	Wert = 3: High Flow
-		  ##	Wert = 4: HAND ein
-		  ## 	Wert = 5: Umschalt-Check
-		  ## 8 Warmwassertemperatur Speicher 2 unten 1 °C
-		  ## 9 Betriebsstatus Speicher 2 Wert = 0: Gesperrt
-		  ##	Wert = 1: zu wenig solarer Ertrag
-		  ##	Wert = 2: Low Flow
-		  ##	Wert = 3: High Flow
-		  ## 	Wert = 4: HAND ein
-		  ##	Wert = 5: Umschalt-Check
-		  ## 10 Warmwassertemperatur Speichermitte (Bypass) 1 °C
-		  ## 11 Anlagenrücklauftemperatur (Bypass) 1 °C
-		  ## 12 Vorlauftemperatur Wärmemengenzähler 1 °C
-		  ## 13 Rücklauftemperatur Wärmemengenzähler 1 °C
-		  ## 14 Anlagen-Volumenstrom Byte 2 (Byte2 * 256) + Byte1
-		  ## 15 Anlagen-Volumenstrom Byte 1 l/h
-		  ## 16 Momentan-Leistung Solar Byte 2 (Byte2 * 256) + Byte1
-		  ## 17 Momentan-Leistung Solar Byte 1 W
-		  ## 18 eingebrachte Wärmemenge (Byte3 * 65536) + (Byte2 * 256) + Byte1 Solar in Speicher 1 Byte 3
-		  ## 19 eingeb. Wärmem. Sp. 1 Byte 2
-		  ## 20 eingeb. Wärmem. Sp. 1 Byte 1 100 Wh
-		  ## 21 eingebrachte Wärmemenge (Byte3 * 65536) + (Byte2 * 256) + Byte1 Solar in Speicher 2 Byte 3
-		  ## 22 eingeb. Wärmem. Sp. 2 Byte 2
-		  ## 23 eingeb. Wärmem. Sp. 2 Byte 1 100 Wh
-		  ## 24 Betriebsstunden Speicher 1 Byte 3 (Byte3 * 65536) + (Byte2 * 256) + Byte1 (Pumpenlaufzeit)
-		  ## 25 Betriebsstunden Speicher 1 Byte 2
-		  ## 26 Betriebsstunden Speicher 1 Byte 1 min
-		  ## 27 Warmwassersolltemperaturabsenkung 1 K durch solaren Ertrag
-		  ## 28 Warmwassersolltemperaturabsenkung 1 K durch Wärmekapazität (Speicher unten Temperatur)
-		  ## 29 Kollektortemperatur 1 °C
-		  ## 30 Betriebsstunden Speicher 2 Byte 3 (Byte3 * 65536) + (Byte2 * 256) + Byte1 (Pumpenlaufzeit)
-		  ## 31 Betriebsstunden Speicher 2 Byte 2
-		  ## 32 Betriebsstunden Speicher 2 Byte 1 min
+          ## 7 Betriebsstatus Speicher 1
+          ## 	Wert = 0: Gesperrt
+          ##	Wert = 1: zu wenig solarer Ertrag
+          ## 	Wert = 2: Low Flow
+          ##	Wert = 3: High Flow
+          ##	Wert = 4: HAND ein
+          ## 	Wert = 5: Umschalt-Check
+          ## 8 Warmwassertemperatur Speicher 2 unten 1 °C
+          ## 9 Betriebsstatus Speicher 2 Wert = 0: Gesperrt
+          ##	Wert = 1: zu wenig solarer Ertrag
+          ##	Wert = 2: Low Flow
+          ##	Wert = 3: High Flow
+          ## 	Wert = 4: HAND ein
+          ##	Wert = 5: Umschalt-Check
+          ## 10 Warmwassertemperatur Speichermitte (Bypass) 1 °C
+          ## 11 Anlagenrücklauftemperatur (Bypass) 1 °C
+          ## 12 Vorlauftemperatur Wärmemengenzähler 1 °C
+          ## 13 Rücklauftemperatur Wärmemengenzähler 1 °C
+          ## 14 Anlagen-Volumenstrom Byte 2 (Byte2 * 256) + Byte1
+          ## 15 Anlagen-Volumenstrom Byte 1 l/h
+          ## 16 Momentan-Leistung Solar Byte 2 (Byte2 * 256) + Byte1
+          ## 17 Momentan-Leistung Solar Byte 1 W
+          ## 18 eingebrachte Wärmemenge (Byte3 * 65536) + (Byte2 * 256) + Byte1 Solar in Speicher 1 Byte 3
+          ## 19 eingeb. Wärmem. Sp. 1 Byte 2
+          ## 20 eingeb. Wärmem. Sp. 1 Byte 1 100 Wh
+          ## 21 eingebrachte Wärmemenge (Byte3 * 65536) + (Byte2 * 256) + Byte1 Solar in Speicher 2 Byte 3
+          ## 22 eingeb. Wärmem. Sp. 2 Byte 2
+          ## 23 eingeb. Wärmem. Sp. 2 Byte 1 100 Wh
+          ## 24 Betriebsstunden Speicher 1 Byte 3 (Byte3 * 65536) + (Byte2 * 256) + Byte1 (Pumpenlaufzeit)
+          ## 25 Betriebsstunden Speicher 1 Byte 2
+          ## 26 Betriebsstunden Speicher 1 Byte 1 min
+          ## 27 Warmwassersolltemperaturabsenkung 1 K durch solaren Ertrag
+          ## 28 Warmwassersolltemperaturabsenkung 1 K durch Wärmekapazität (Speicher unten Temperatur)
+          ## 29 Kollektortemperatur 1 °C
+          ## 30 Betriebsstunden Speicher 2 Byte 3 (Byte3 * 65536) + (Byte2 * 256) + Byte1 (Pumpenlaufzeit)
+          ## 31 Betriebsstunden Speicher 2 Byte 2
+          ## 32 Betriebsstunden Speicher 2 Byte 1 min
           ## Die mit * gekennzeichneten Werte können nur im "Direkt-Modus" empfangen werden.
  
           self.output_functions = [
@@ -409,7 +409,7 @@ debugcode = """
 
 """
 postlogik=[0,"",r"""
-5012|0|"EI"|"buderus_heizkreis(locals())"|""|0|0|1|0
+5012|0|"EI"|"buderus_solar(locals())"|""|0|0|1|0
 5012|0|"EC[1]"|"SN[1].incomming(EN[1],locals())"|""|0|0|0|0
 
 #* Betriebsart Stellbereich: 0 – 2 / 0 = Aus / 1 = Auto / 2 = EIN
