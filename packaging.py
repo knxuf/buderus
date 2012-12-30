@@ -31,8 +31,11 @@ def sha_hash(_data):
 main_package = "12264_Buderus.py"
 package = { 
     main_package : None,
-    "12266_Buderus-Warmwasser.py": None,
     "12265_Buderus-Heizkreis.py":None,
+    "12266_Buderus-Warmwasser.py": None,
+    "12267_Buderus-Fehler.py": None,
+    "12282_Buderus-Solar.py": None,
+    "12283_Buderus-alternativer_Waermeerzeuger.py": None,
 }
 
 diffs=[]
