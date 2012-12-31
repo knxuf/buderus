@@ -54,7 +54,7 @@ LOGIKCAT="www.knx-user-forum.de"
 LOGIKDESC="""
 
 """
-VERSION="V0.10"
+VERSION="V0.11"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -319,12 +319,14 @@ if EI == 1:
                   time.sleep(1)
                   continue
               
+              ## solange noch ein direkt mode Befehlt austeht, darf kein neuer geschickt werden.
+              if self.get_direct_waiting():
+                  continue              
+                 
               ## nächste payload aus der Queue holen
               msg = self._buderus_message_queue.get()
-
               ## nach gültigen zu sendener payload suchen
               _direct_mode = self.directmode_regex.search(msg)
-
               ## wenn keine gültige SENDE payload
               if not _direct_mode:
                   self.debug("ungültige sende Nachricht %r" % (msg,) )
@@ -345,10 +347,11 @@ if EI == 1:
               self._buderus_data_lock.acquire()
               self.debug("sende Queue exklusiv lock erhalten")
               try:
-                  ## wenn wir nicht auf den directmode schalten konnten
-                  if not self.set_directmode(True):
-                      ## payload verworfen und loop
-                      continue
+                  ## wenn wir nicht schon im directmode sind oder nicht auf den directmode schalten konnten 
+                  if not self.is_directmode():
+                      if not self.set_directmode(True):
+                          ## payload verworfen und loop
+                          continue
                   
                   ## payload per 3964R versenden
                   self._send3964r(msg)
@@ -407,13 +410,13 @@ if EI == 1:
           ## Nach erfolgter Abfrage der Monitordaten sollte wieder mit dem Kommando 0xDC in den "Normal-Modus" 
           ## zurückgeschaltet werden. 
           
-          ## wenn direct mode nicht an ist dann gleich zurück
+          ## wenn direct mode nicht an ist, dann gleich zurück
           if not self.is_directmode():
               return
           
-          ## wenn die Sendewarteschlange leer ist und keine Antworten(AC<busnr>) mehr von einem A2<busnr> erwartet werden dann directmode aus
-          if self._buderus_message_queue.empty() and not self.get_direct_waiting():
-              time.sleep( self.config.get('delaydirectendtime') )
+          ## wenn die Sendewarteschlange leer ist und keine Antworten(AC<busnr>) mehr von einem A2<busnr> erwartet werden,
+          ## dann directmode ausschalten
+          if (self._buderus_message_queue.empty() and not self.get_direct_waiting()):    
               self.set_directmode(False)
 
       def set_directmode(self,mode):
@@ -465,7 +468,7 @@ if EI == 1:
                   self.debug("jetzt payload %r senden" % (payload,) )
                   self.send_payload(payload)
                   
-                  ## ertrunwert auf True
+                  ## returnwert auf True
                   _ret = True
               else:
                   ## wenn kein DLE auf unser STX kam dann payload verwerfen
@@ -525,6 +528,7 @@ if EI == 1:
               self._buderus_message_queue.put( _msg )
 
       def parse_device_type(self,payload):
+          import time
           ## nach gültiger payload suchen
           _payload = self.payload_regex.search(payload)
           
@@ -555,10 +559,13 @@ if EI == 1:
           _direct = self.directmode_finish_regex.search(payload)
           if _direct:
               _busnr = _direct.group("busnr")
-              
               ## bus von der liste auf antwort wartender im direct mode entfernen
               self.remove_direct_waiting(_busnr)
-
+              ## Wenn ein AC<busnr> gekommen ist, wird ggf. die Sende Richtung geändert, was zu Initialisierungskonflikten führen kann
+              time.sleep( self.config.get('delaydirectendtime') )
+              self.check_directmode_needed()
+              
+              
       def wait_for_ready_to_receive(self):
           import select,time
           ## 3 versuche warten bis wir auf ein STX ein DLE erhalten
@@ -586,6 +593,7 @@ if EI == 1:
                   elif data == self._constants['STX']:
                       self.debug("STX empfangen Initialisierungskonflikt")
                       time.sleep(self._constants['ZVZ'])
+                      
                       ## DLE senden, dass wir Daten vom anderen Gerät akzeptieren senden
                       self.sock.send( self._constants['DLE'] )
                       self.debug("DLE gesendet")
@@ -652,9 +660,6 @@ if EI == 1:
                               self.read_payload()
                           else:
                               self.debug("ungültiges Zeichen %r empfangen" % (data,) ,lvl=4)
-                          
-                      ## Testen ob der directmode noch gesetzt ist, und evtl ausschalten
-                      self.check_directmode_needed()
                   
                   finally:
                       ## den lock auf jedenfall relasen
