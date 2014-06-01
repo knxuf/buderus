@@ -52,9 +52,66 @@ LOGIKCAT="www.knx-user-forum.de"
 
 ## Beschreibung
 LOGIKDESC="""
+<P>Der Baustein bildet stellt die zentrale Kommunication zwischen einem Esycom RS232 Gateway 
+von Buderus zum ECOCAN Logamatic 4000, wo die RS232 Schnittstelle an einen Moxa (also RS232 &lt;-&gt; IP) 
+über TCP verbunden ist. Im Moxa ist dazu TCP-Server eingestellt und ein freier Port gesetzt. Der 
+selbe Port und die IP des Moxa muß in dem Baustein eingetragen werden.</P>
+<P>Diese Schnittstelle ist bietet viele Möglichkeiten Monitordaten der Heizung mitzulesen und aber auch 
+Konfigurationen der Heizungsanlage zu verändern. Dasverändert sollte man aber, erstmal dem Heizungfachmann
+ überlassen. Weiter ist jeder Schreiben Zugriff ein Flash schreiben, das laut Buderus nur 1.000.000 Mal geht.
+ </P>
+ <P>Also, aus diesem Grund gibt es hier die sehr ernst gemeinte Empfehlung nur lesend diesem Baustein zu verwenden.<BR>
+ Die Config Option &quot;readonly=1&quot; sollte immer gesetzt bleiben. </P>
+<P>Für die eigentlich Kommunikation sind zwingend folgende Beschreibungen von Buderus zu beachten:<BR>
+7747004149 – 01/2009 DE - Technische Information - Monitordaten - System 4000<BR>
+7747004150 – 05/2009 DE - Technische Information - Einstellbare Parameter - Logamatic 4000<BR>
+Weiter ist folgende Beschreibung sehr Wertvoll:<BR>
+ Funktionsbeschreibung - KM471- RS232-Schnittstelle (3964R) - Für Programmversion 1.07<BR>
+Die Kommunikationskarte KM471 ist das Modul was auf der Buderus Seite mit dem die Daten ausgetauscht werden.<BR>
+Zumindest ist in dem heutigen Easycom RS232 Gateway etwas vergleichbares drin.</P>
+<P>Der Baustein kapselt für den Benutzer komplett die 3964R Procedure. Auch schaltet er automatisch bei Kommandos die den &quot;Direktmode&quot; benötigen,<BR>
+automatisch in diesen und erkennt auch das Ende und schalten den Direktmode automatisch wieder aus. Ein Warten (und damit Blockieren), dass der<BR>
+Normal-Mode erst nach einem Timeout erreicht wird, kann somit verhindert werden. Man kann sagen der Benutzer braucht sich um Normal-Mode und <BR>
+Direkt-Mode gar nicht kümmern. Dies geschieht alles automatisch.   </P>
+<P>Folgende Kommandos sind getestet:<BR>
+# Zeit abfragen mit &quot;B1&quot;: ok<BR>
+EN[3]:&quot;B1&quot;   <BR>
+# Zeit setzen mit &quot;B2&lt;Zeit beschrieben in Dokument Technische Information - Einstellbare Parameter&gt; : ok <BR>
+EN[3]:&quot;B2121D941FD572&quot;<BR>
+# Anfordern des ECO-BUS Geräte Status, Endekennung: 0xA8 0x80+adr &lt; Seriennummer &gt; &lt;version vorkomma&gt; &lt;version nachkomma&gt;<BR>
+EN[3]:&quot;A000&quot;<BR>
+#  'A8010948849F40E4'   A8: Antwort , 01: Gerätestatus von Gerät #1 , 0948849F40E4: &lt;6Byte Seriennummer&gt; Codierung unklar<BR>
+#  'A8020930032FC00C'   A8: Antwort , 02: Gerätestatus von Gerät #2 , 0930032FC00C: &lt;6Byte Seriennummer&gt; Codierung unklar<BR>
+#  'A8940102030405060F17'   0xA8 0x80+0x14 &lt; Seriennummer '010203040506'&gt; &lt;version vorkomma 0x0F -&gt; dez. 15&gt; &lt;version nachkomma 0x17 -&gt; dez. 23&gt;<BR>
+#                           Endekennung muß also 0x08 0x[89abcdef]? sein. ; Das ist die Version des EasyCom: 15.23 Sieht man nur über die ECO-SOFT.<BR>
+Mit diesem Kommando &quot;A000&quot; kann man zum Beispiel nach dem System Start erstmal den Bus abfragen welche Geräte existieren. Hier sind auf dem ECOCAN Bus<BR>
+ die Adressen 1 und 2 vergeben. </P>
+<P>Nun kann man mit A1 gefolgt von der Adresse des Regelgeräts alle einstallbaren Parameter abfragen: <BR>
+##Anfordern aller einstellbaren Parameter eines Gerätes <BR>
+#EN[3]:&quot;A101&quot;<BR>
+#EN[3]:&quot;A102&quot;<BR>
+## Endekennung &quot;AA&lt;busnr&gt;  hier also AA01 bzw. AA02 ## beides Ok</P>
+<P>##Anfordern aller einstellbaren Parameter eines Gerätes im Block mode<BR>
+EN[3]:&quot;B301&quot;<BR>
+EN[3]:&quot;B302&quot;<BR>
+## Endekennung &quot;AA&lt;busnr&gt;  hier also AA01 bzw. AA02 ## beides Ok</P>
+<P>## Einzelabfrage A3 eines einstellbaren Parameter eines Gerätes, nur Beispiel<BR>
+EN[3]:&quot;A3010704&quot;</P>
+<P>## Einzelabfrage von Monitordaten eines Gerätes, nur Beispiel<BR>
+EN[3]:&quot;A3018004&quot;<BR>
+## ok<BR>
+Das, was die meisten machen sollte ist nach dem Systemstart alle Monitor Daten einmal abzufragen.<BR>
+##Anfordern aller Monitordaten eines Gerätes <BR>
+#EN[3]:&quot;A201&quot;<BR>
+#EN[3]:&quot;A202&quot;<BR>
+## Endekennung &quot;AC&lt;busnr&gt;  hier also AC01 bzw AC02 ## beides Ok</P>
+<P>##Anfordern aller Monitordaten eines Gerätes im Blockmode<BR>
+EN[3]:&quot;B401&quot;<BR>
+EN[3]:&quot;B402&quot;<BR>
+## Endekennung &quot;AC&lt;busnr&gt;  hier also AC01 oder AC02 ## beides Ok</P>
 
 """
-VERSION="V0.11"
+VERSION="V0.16"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -114,16 +171,16 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 5001|3|2|0|1|1
 
 # EN[x]
-5002|1|"192.168.178.10:22"|1 #* IP:Port
-5002|2|""|1 #* config
-5002|3|""|1 #* Senden
+5002|1|"192.168.178.10:22"|1 #* IP:Port <BR>Des Moxa
+5002|2|"debug=5*readonly=1*writetime=0"|1 #* config <BR>(mit debug=5 wird diese Konfiguration auf SystemLog ausgegeben, readonly=1 weist schreibende Kommandos ab, und writetime=1 erlaubt die BUS Zeit zu setzen) Der * ist das Trennzeichen.
+5002|3|""|1 #* Senden <BR>(Hier werden die Kommandos an den ECOCAN Bus gesendet)
 
 # Speicher
 5003|1||0 #* logic
 
 # Ausgänge
-5004|1|""|0|1|1 #* Daten
-5004|2|""|0|1|1 #* SystemLog
+5004|1|""|0|1|1 #* Daten <BR>(Hier werden alle Antworten vom ECOCAN ausgegeben, hier müssen die Auswerte Bausteine am besten mit einem Konnector angeschlossen werden)
+5004|2|""|0|1|1 #* SystemLog <BR>(Ausgang an den SystemLog)
 
 #################################################
 '''
@@ -151,7 +208,9 @@ if EI == 1:
           
           ## Config
           self.config = {
-              'debug': 0,
+              'debug': 0,                 # debug level (> 5) macht debug prints
+              'readonly' : 1,             # wenn readyonly=1 , werden schreibende Befehle nicht zugelassen
+              'writetime' : 0,            # wenn writetime=1 , wird das schreiben der Zeit zugelassen
               'delaydirectendtime' : 1.0, # wartezeit beim beenden des directmodes
           }
           
@@ -167,7 +226,33 @@ if EI == 1:
           }
 
           ## Gerätetypen
-          self.device_types = {
+          self.data_types = {
+              "07" : ("Heizkreis 1", 18),
+              "08" : ("Heizkreis 2", 18),
+              "09" : ("Heizkreis 3", 18),
+              "0A" : ("Heizkreis 4", 18),
+              "0B" : ("Außenparameter", 12),
+              "0C" : ("Warmwasser", 12),
+              "0D" : ("Konfiguration(Modulauswahl)", 18),
+              "0E" : ("Wandhängende Strategie (UBA)", 18),
+              "10" : ("bodenstehender Kessel", 18),
+              "11" : ("Schaltuhr pro Woche Kanal 1", 18),
+              "12" : ("Schaltuhr pro Woche Kanal 2", 18),
+              "13" : ("Schaltuhr pro Woche Kanal 3", 18),
+              "14" : ("Schaltuhr pro Woche Kanal 4", 18),
+              "15" : ("Schaltuhr pro Woche Kanal 5", 18),
+              "16" : ("Heizkreis 5", 18),
+              "17" : ("Schaltuhr pro Woche Kanal 6", 18),
+              "18" : ("Heizkreis 6", 18),
+              "19" : ("Schaltuhr pro Woche Kanal 7", 18),
+              "1A" : ("Heizkreis 7", 18),
+              "1B" : ("Schaltuhr pro Woche Kanal 8", 18),
+              "1C" : ("Heizkreis 8", 18),
+              "1D" : ("Schaltuhr pro Woche Kanal 9", 18),
+              "1F" : ("Schaltuhr pro Woche Kanal 10", 18),
+              "20" : ("Bodenstehende Strategie", 12),
+              "24" : ("Solar", 12),
+              "26" : ("Strategie (FM458)", 12),
               "80" : ("Heizkreis 1", 18),
               "81" : ("Heizkreis 2", 18),
               "82" : ("Heizkreis 3", 18),
@@ -211,38 +296,7 @@ if EI == 1:
           ## Derzeitiger Direct-mode status
           self._is_directmode = False
           
-          ## Mit dem Kommando "0xA2 <ECOCAN-BUS-Adresse>" können die Monitordaten des ausgewählten 
-          ## ECOCAN-BUS-Gerätes von der Kommunikationskarte ausgelesen werden. 
-          ## Mit Hilfe des Kommandos "0xB0 <ECOCAN-BUS-Adresse>" gefolgt von einem entsprechenden 
-          ## Datenblock können im Direkt-Modus einstellbare Parameter die für ein Regelgerät bestimmt sind an die 
-          ## Schnittstelle geschickt werden. Die Schnittstelle schickt diese Daten dann weiter an das entsprechende 
-          ## Regelgerät. 
-          self.directmode_regex = re.compile("(?P<id>A2|B0)(?P<busnr>[0-9a-fA-F]{2})")
-
-
-          ## Im "Normal-Modus" werden die Monitordaten nach folgendem Muster übertragen: 
-          ## 0xA7 <ECOCAN-BUS-Adresse> <TYP> <OFFSET> <DATUM> 
-          ## 0xA7 = Kennung für einzelne Monitordaten 
-          ## ECOCAN-BUS-Adresse = Herkunft´s Adresse des Monitordatum´s (hier Regelgeräteadresse) 
-          ## TYP = Typ der empfangenen Monitordaten       
-          ## OFFSET = Offset zur Einsortierung der Daten eines Typ´s 
-          ## DATUM = eigentlicher Messwert 
-
-          ## Im "Direct-Modus" werden die Monitordaten nach folgendem Muster übertragen: 
-          ## 0xAB <ECOCAN-BUS-Adresse> <TYP> <OFFSET> <6 Daten-Byte> 
-          ## 0xAB = Kennung für Monitordaten 
-          ## ECOCAN-BUS-Adresse = die abgefragte Adresse zur Bestätigung 
-          ## TYP = Typ der gesendeten Monitordaten
-          ## Daten unter dem entsprechenden Typ werden nur gesendet wenn auch die entsprechende Funktionalität 
-          ## im Regelgerät eingebaut ist. 
-          ## OFFSET = Offset zur Einsortierung der Daten eines Typ´s
-
-          self.payload_regex = re.compile("(?P<id>AB|A7)(?P<busnr>[0-9a-fA-F]{2})(?P<type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{2})+)")
-
-          ## Als Endekennung für das abgefragte Regelgerät oder falls keine Daten vorhanden sind, wird der 
-          ## nachfolgende String 
-          ## 0xAC <ECOCAN-BUS-Adresse> gesendet          
-          self.directmode_finish_regex = re.compile("AC(?P<busnr>[0-9a-fA-F]{2})")
+          
           
           self._moxa_thread = None
           
@@ -258,6 +312,67 @@ if EI == 1:
 
           ## Konfig an Eingang 2 parsen
           self.readconfig(EN[2])
+          
+          ## Mit dem Kommando "0xA2 <ECOCAN-BUS-Adresse>" können die Monitordaten des ausgewählten 
+          ## ECOCAN-BUS-Gerätes von der Kommunikationskarte ausgelesen werden. 
+          ## Mit Hilfe des Kommandos "0xB0 <ECOCAN-BUS-Adresse>" gefolgt von einem entsprechenden 
+          ## Datenblock können im Direkt-Modus einstellbare Parameter die für ein Regelgerät bestimmt sind an die 
+          ## Schnittstelle geschickt werden. Die Schnittstelle schickt diese Daten dann weiter an das entsprechende 
+          ## Regelgerät. 
+          ## B1 und B2 sind lesen und schreiben der ECOCAN Bus Zeit und Datum
+          self.directmode_B1_regex = re.compile("(?P<id>B1)")
+          self.directmode_B2_regex = re.compile("(?P<id>B2)[0-9a-fA-F]{12}")
+          ##Alle andere Abfragen
+          self.directmode_regex = re.compile("(?P<id>A0|A1|A2|B3|B4)(?P<busnr>[0-9a-fA-F]{2})")
+          self.directmode_A3_regex = re.compile("(?P<id>A3)(?P<busnr>[0-9a-fA-F]{2})(?P<Data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})")
+          ## das sind die schreibenden Kommandos
+          self.directmode_B0_regex = re.compile("(?P<id>B0)(?P<busnr>[0-9a-fA-F]{2})(?P<Data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})")
+   
+          ## Im "Normal-Modus" werden die Monitordaten nach folgendem Muster übertragen: 
+          ## 0xA7 <ECOCAN-BUS-Adresse> <TYP> <OFFSET> <DATUM> 
+          ## 0xA7 = Kennung für einzelne Monitordaten 
+          ## ECOCAN-BUS-Adresse = Herkunft´s Adresse des Monitordatum´s (hier Regelgeräteadresse) 
+          ## TYP = Typ der empfangenen Monitordaten       
+          ## OFFSET = Offset zur Einsortierung der Daten eines Typ´s 
+          ## DATUM = eigentlicher Messwert 
+
+          ## Im "Direct-Modus" werden alle Monitordaten nach folgendem Muster übertragen: 
+          ## 0xAB <ECOCAN-BUS-Adresse> <TYP> <OFFSET> <6 Daten-Byte> 
+          ## 0xAB = Kennung für Monitordaten 
+          ## ECOCAN-BUS-Adresse = die abgefragte Adresse zur Bestätigung 
+          ## TYP = Typ der gesendeten Monitordaten
+          ## Daten unter dem entsprechenden Typ werden nur gesendet wenn auch die entsprechende Funktionalität 
+          ## im Regelgerät eingebaut ist. 
+          ## OFFSET = Offset zur Einsortierung der Daten eines Typ´s
+          
+          ## Im "Direct-Modus" werden alle Einstellbaren Parameter nach folgendem Muster übertragen: 
+          ## 0xA9 <ECOCAN-BUS-Adresse> <TYP> <OFFSET> <6 Daten-Byte> 
+          ## 0xA9 = Kennung für Monitordaten 
+          ## ECOCAN-BUS-Adresse = die abgefragte Adresse zur Bestätigung 
+          ## TYP = Typ der gesendeten Monitordaten
+          ## Daten unter dem entsprechenden Typ werden nur gesendet wenn auch die entsprechende Funktionalität 
+          ## im Regelgerät eingebaut ist. 
+          ## OFFSET = Offset zur Einsortierung der Daten eines Typ´s
+
+          self.payload_regex = re.compile("(?P<id>B8|B9|A9|AB|A7|B7)(?P<busnr>[0-9a-fA-F]{2})(?P<data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{12})+)")
+          self.payload_A8_regex = re.compile("(?P<id>A8)(?P<busnr>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{12}))$")
+
+
+          ## Als Endekennung für das abgefragte Regelgerät oder falls keine Daten vorhanden sind, wird der 
+          ## nachfolgende String 
+          ## 0xAC <ECOCAN-BUS-Adresse> gesendet  Endekennung bei A2<busnr> und bei B4<busnr>
+          ## 0xAA <ECOCAN-BUS-Adresse> gesendet  Endekennung bei A1<busnr>
+          ## 0xA8 0x80+adr < Seriennummer > <version vorkomma> <version nachkomma> Endekennung bei A100 
+          ##  Da A8 auch als normale Antwort kommt, muß auf A8[89a-fA-F]? abgefragt werden
+          self.directmode_finish_regex = re.compile("(AC|AA|AD)(?P<busnr>[0-9a-fA-F]{2}$)")
+          self.directmode_finish_A8_regex = re.compile("A8[8-9a-fA-F][0-9a-fA-F]{13}(?P<version_vk>[0-9a-fA-F]{2})(?P<version_nk>[0-9a-fA-F]{2})") 
+          self.directmode_finish_AD_regex = re.compile("AD(?P<busnr>[0-9a-fA-F]{2})(?P<data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{12}))")
+          self.directmode_finish_AF_regex = re.compile("AF[0-9a-fA-F]{12}|AFFF")
+          
+          
+          
+          
+          
           
           ## Consumer Thread der Nachrichten an die Ausgänge des Bausteins schickt
           self.hs_queue_thread = threading.Thread(target=self._send_to_hs_consumer,name='buderus_hs_consumer')
@@ -276,32 +391,32 @@ if EI == 1:
           for (option,value) in re.findall("(\w+)=(.*?)(?:\*|$)", configstring ):
               option = option.lower()
               _configoption = self.config.get(option)
-              _configtype = type(_configoption)
-              
+              _configtype = type(_configoption)              
               ## wenn es den Wert nicht gibt
               if _configtype == type(None):
-                  self.log("unbekannte Konfig Option %s=%s" % (option,value) )
+                  self.log("unbekannte Konfig Option %s=%s" % (option,value), severity="error" )
                   continue
-              
               ## versuchen Wert im config string zum richtigen Type zu machen
               try:
                   _val = _configtype(value)
                   self.config[option] = _val
+                  self.debug("Konfig Option %s=%s empfangen" % (option,value ), 5 )
               except ValueError:
-                  self.log("falscher Wert bei Konfig Option %s=%s (erwartet %r)" % (option,value, _configtype ) )
+                  self.log("falscher Wert bei Konfig Option %s=%s (erwartet %r)" % (option,value, _configtype ), severity="error" )
                   pass
 
 
-      def debug(self,msg,lvl=5):
+      def debug(self,msg,lvl=10):
           ## wenn debuglevel zu klein gleich zurück
-          if self.config.get("debug") < lvl:
+          if self.config.get("debug") == 0:
               return
           import time
           
           ## FIXME sollte später gesetzt werden
-          #self.log(msg,severity='debug')
-          
-          print "%s DEBUG: %r" % (time.strftime("%H:%M:%S"),msg,)
+          if (self.config.get("debug") == 5 and lvl == 5):
+            self.log(msg,severity='debug')
+          elif (self.config.get("debug") == 10 and lvl == 10):
+            print "%s DEBUG: %r" % (time.strftime("%H:%M:%S"),msg,)
 
       def connect(self):
           ## _connect als Thread starten
@@ -327,16 +442,29 @@ if EI == 1:
               msg = self._buderus_message_queue.get()
               ## nach gültigen zu sendener payload suchen
               _direct_mode = self.directmode_regex.search(msg)
+              if not _direct_mode:
+                  _direct_mode = self.directmode_A3_regex.search(msg)
+                  if not _direct_mode:
+                     _direct_mode = self.directmode_B1_regex.search(msg)
+                     if (not _direct_mode and self.config.get("writetime") == 1):
+                        _direct_mode = self.directmode_B2_regex.search(msg)
+                     elif (not _direct_mode and not self.config.get("readonly")):
+                        _direct_mode = self.directmode_B0_regex.search(msg)
               ## wenn keine gültige SENDE payload
               if not _direct_mode:
-                  self.debug("ungültige sende Nachricht %r" % (msg,) )
+                  self.log("ungültige sende Nachricht %r" % (msg,) )
                   continue
               
               _cmdid = _direct_mode.group("id")
-              _busnr = _direct_mode.group("busnr")
-              
+              if (_cmdid == "B1"):
+                 _busnr = "B1"
+              elif (_cmdid == "B2"):
+                 _busnr = "B2"
+              else:
+                 _busnr = _direct_mode.group("busnr")
+
               ## Wenn eine direct-mode anfrage
-              if _cmdid == "A2":
+              if (_cmdid == "A3" or _cmdid == "A2" or _cmdid == "A1" or _cmdid == "A0" or _cmdid == "B0" or _cmdid == "B3" or _cmdid == "B4"):
                   if _busnr not in self.waiting_direct_bus:
                       ## busnr zur liste auf Antwort wartender hinzu
                       self.add_direct_waiting(_busnr)
@@ -527,45 +655,70 @@ if EI == 1:
               ## _msg in die sende Warteschlange
               self._buderus_message_queue.put( _msg )
 
-      def parse_device_type(self,payload):
-          import time
+      def parse_payload(self,payload):
+          import time,binascii
           ## nach gültiger payload suchen
           _payload = self.payload_regex.search(payload)
           
           ## wenn normal-mode oder direct mode antwort 
           if _payload:
               
-              ## wenn einen normal mode antwort mit Typ A7 kommt und der direktmode lokal an ist, 
+              ## wenn einen normal mode antwort mit Typ A7 kommt und der direktmode gerade an ist, 
               ## dann ist der 60 Sekunden Timeout abgelaufen ohne die Daten rechtzeitig erhalten zu haben
-              if _payload.group("id") == "A7" and self.is_directmode():
+              if (_payload.group("id") == "A7" or _payload.group("id") == "B7") and self.is_directmode():
                   self.remove_direct_waiting()
                   ## Der "Direkt-Modus" kann durch das Kommando 0xDC wieder verlassen werden. 
                   ## Außerdem wird vom "Direkt-Modus" automatisch in den "Normal-Modus" zurückgeschaltet, wenn für die 
                   ## Zeit von 60 sec kein Protokoll des "Direkt-Modus" mehr gesendet wird. 
                   self.log("Directmode timeout")
               
-              ## Gerätetype
-              _type = _payload.group("type")
+              ## Datentype
+              _type = _payload.group("data_type")
               
               ## wenn wir das Gerät noch nicht gefunden hatten kurze Info über den Fund loggen
               if _type not in self.found_devices:
                   self.found_devices.append( _type )
-                  (_devicename, _datalen) = self.device_types.get( _type, ("unbekanntes Gerät (%s)" % _type, 0) )
-                  self.log("Gerät %r an ECOCAN %s gefunden" % ( _devicename, _payload.group("busnr") ) , severity="info")
-              
+                  (_devicename, _datalen) = self.data_types.get( _type, ("unbekannter Datentyp (%s)" % _type, 0) )
+                  self.log("Datentyp %r an Regelgerät %s gefunden" % ( _devicename, _payload.group("busnr") ) , severity="info")
               return
+          else:
+              _payload_A8 = self.payload_A8_regex.search(payload)
+              if _payload_A8 and self.is_directmode():
+                self.log("Regelgerät %s an ECOCAN BUS gefunden" % (  _payload_A8.group("busnr") ) , severity="info")
+                return
           
-          ## wenn ein AC<busnr> empfangen wurde die busnr aus der liste für direct Daten entfernen und evtl direct_mode beenden
+          ## wenn eine Endekennung AC|AA<busnr> empfangen wurde, dann die busnr aus der liste für direct Daten entfernen und evtl direct_mode beenden
           _direct = self.directmode_finish_regex.search(payload)
           if _direct:
               _busnr = _direct.group("busnr")
               ## bus von der liste auf antwort wartender im direct mode entfernen
               self.remove_direct_waiting(_busnr)
+              #self.log("BusNr %s gelöscht" % ( repr(_busnr) ) ,severity="info")
               ## Wenn ein AC<busnr> gekommen ist, wird ggf. die Sende Richtung geändert, was zu Initialisierungskonflikten führen kann
               time.sleep( self.config.get('delaydirectendtime') )
               self.check_directmode_needed()
-              
-              
+          else:
+              _direct = self.directmode_finish_A8_regex.search(payload)
+              if _direct:
+                  _busnr = "00"  # da mit "A000" eingeleitet ist, dann ist die Busnr "00", diese muß nun wieder gelöscht werden 
+                  self.remove_direct_waiting(_busnr)
+                  #self.log("Bus-Nr %s gelöscht" % ( _busnr ) ,severity="info")
+                  self.log("ECOCAN BUS Version %r.%r gefunden" % ( ord(binascii.unhexlify(_direct.group("version_vk"))), ord(binascii.unhexlify(_direct.group("version_nk"))) ) ,severity="info")
+                  ## Wenn ein AC<busnr> gekommen ist, wird ggf. die Sende Richtung geändert, was zu Initialisierungskonflikten führen kann
+                  time.sleep( self.config.get('delaydirectendtime') )
+                  self.check_directmode_needed()
+              else:
+                  _direct = self.directmode_finish_AD_regex.search(payload)
+                  if _direct:
+                      _busnr = _direct.group("busnr")
+                      ## bus von der liste auf antwort wartender im direct mode entfernen
+                      self.remove_direct_waiting(_busnr)
+                      #self.log("BusNr AD %s gelöscht" % ( repr(_busnr) ) ,severity="info")
+                      ## Wenn ein AC<busnr> gekommen ist, wird ggf. die Sende Richtung geändert, was zu Initialisierungskonflikten führen kann
+                      time.sleep( self.config.get('delaydirectendtime') )
+                      self.check_directmode_needed()
+                      
+                      
       def wait_for_ready_to_receive(self):
           import select,time
           ## 3 versuche warten bis wir auf ein STX ein DLE erhalten
@@ -858,7 +1011,7 @@ if EI == 1:
                           self.sock.send( self._constants['DLE'] )
                           
                           ## empfangene Payload analysieren
-                          self.parse_device_type( _hexpayload )
+                          self.parse_payload( _hexpayload )
                           
                           ## payload an Ausgang 1 senden
                           self.send_to_output(1, _hexpayload)
