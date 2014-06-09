@@ -47,14 +47,43 @@ LOGIKNAME="Buderus-Solar"
 LOGIKID="12282"
 
 ## Ordner im GLE
-LOGIKCAT="www.knx-user-forum.de"
+LOGIKCAT="www.knx-user-forum.de\Buderus"
 
 
 ## Beschreibung
 LOGIKDESC="""
+Dieser Baustein wertet alle Daten für den Datentyp Solar, die vom Buderus Baustein 12264 kommen aus und gibt
+ die Zustände auf die entsprechenden Ausgänge aus. 
+ <div class="hinw">
+ Wichtig: Eingang 1 und Ausgang 1 dürfen NIE direkt mit dem Buderus Baustein verbunden werden. Bitte immer die 
+ Verbindung indirekt über ein iKO herstellen !!!! 
+</div>
+ Auf Eingang 1 werden die Daten vom Buderus Baustein empfangen. Auf dem Eingang 2 stellt man die Adresse 
+ des Regelgerätes ein. 
+ 
+ Hier ein Tip: Man kann im SystemLog des Buderus Bausteines sehen, an welchen Regelgeräten welche DatenTypen
+ erkannt wurden.  Hier ist der DatenTyp Solar relevant. Ist dieser am Regelgerät 2 erkannt worden, ist hier 
+ eine 2 einzugeben. 
+ 
+ Damit werden nunmehr aus dem gesamten Datenstrom des ECOCAN Bus nur noch genau diese Daten gefilter und auf 
+ den Ausgängen ausgegeben.
+ <div class="hinw">
+ Allgemeines: Ein Istwert von 110 °C beschreibt für den betroffenen Fühler einen Fühler defekt. Es kann auch sein,
+ das hier einfach kein Fühler angeschlossen wurde. Messwerte in diesem Bereich hören bei 109 auf und gehen bei 111 weiter. 
+</div>
 
-"""
-VERSION="V0.4"
+Für die eigentliche Kommunikation sind zwingend folgende Beschreibungen von Buderus zu beachten:
+7747004149 – 01/2009 DE - Technische Information - Monitordaten - System 4000
+7747004150 – 05/2009 DE - Technische Information - Einstellbare Parameter - Logamatic 4000
+
+Die weiteren Eingänge 3-8 sind zum Verändern von Parametern der Anlage. Diese Wert stellen bei jedem Scheiben ein
+ physikalischen Schreiben auf den Flashspeicher dar. Dieser ist auf 1.000.000 mal Schreiben pro Wert begrenzt.
+ Es wird also sehr davon abgeraten, dies aus einer Logik zu tun. Am besten wird hier nie geschrieben und 
+ man setzt im Buderus Baustein die Konfiguration auf ReadOnly. Dann werden dort alle Schreib-Kommandos verworfen.
+ Fast alle Schreib Kommandos wirken auf Service Parameter, die normalerweise NUR der Heizungsfachman verändert.
+
+ """
+VERSION="V0.6"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -109,13 +138,13 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|8|"E1 Payload IN"|"E2 ECOCAN Bus"|"E3 Betriebsart Stellbereich"|"E4 Umschaltung für Verbraucher"|"E5 Maximaltemperatur SP1"|"E6 Minimaltemperatur SP1"|"E7 Maximaltemperatur SP2"|"E8 Glykolanteil"|59|"A1 Payload OUT"|"A2 SystemLog"|"A3 Fehler Einstellung Hysterese"|"A4 SP2 auf max Temp"|"A5 SP1 auf max Temp"|"A6 Kollektor auf max Temp"|"A7 Fehler Fühler Anlagenrücklauf Bypass"|"A8 Fehler Fühler Speichermitte Bypass"|"A9 Fehler Volumenstromzähler WZ"|"A10 Fehler Fühler Rücklauf"|"A11 Fehler Fühler Vorlauf"|"A12 Fehler Fühler SP2 unten"|"A13 Fehler Fühler SP1 unten"|"A14 Fehler Fühler Kollektor"|"A15 Umschaltventil SP2 zu"|"Umschaltventil SP2 auf/Speicherladepumpe2"|"A17 Umschaltventil Bypass zu"|"A18 Umschaltventil Bypass auf"|"A19 Sekundärpumpe SP2 Betrieb"|"A20 Kollektortemperatur Byte2 0.1°C"|"A21 Kollektortemperatur Byte1 0.1°C"|"A22 SP Modulation 1%"|"A23 Warmwassertemperatur unten 1°C"|"A24 SP1 gesperrt"|"A25 SP1 zu wenig solarer Ertrag"|"A26 SP1 Low Flow"|"A27 SP1 High Flow"|"A28 SP1 Hand ein"|"A29 SP1 Umschalt-Check"|"A30 SP2 Warmwassertemperatur unten"|"A31 SP2 gesperrt"|"A32 SP2 zu wenig solarer Ertrag"|"A33 SP2 Low Flow"|"A34 SP2 High Flow"|"A35 SP2 Hand ein"|"A36 SP2 Umschalt-Check"|"A37 Warmwassertemperatur Speicher mitte"|"A38 Anlagenrücklauf"|"A39 Vorlauftemperatur Wärmemengenzähler"|"A40 Rücklauftemperatur Wärmemengenzähler"|"A41 Anlagen Volumenstrom Byte2 l/h"|"A42 Anlagen Volumenstrom Byte1 l/h"|"A43 Momentan Leistung Solar Byte2 W"|"A44 Momentan Leistung Solar Byte1 W"|"A45 SP1 eingebrachte Wärmemenge Byte3"|"A46 SP1 eingebrachte Wärmemenge Byte2"|"A47 SP1 eingebrachte Wärmemenge Byte1"|"A48 SP2 eingebrachte Wärmemenge Byte3"|"A49 SP2 eingebrachte Wärmemenge Byte2"|"A50 SP2 eingebrachte Wärmemenge Byte1"|"A51 SP1 Betriebsstunden Byte3"|"A52 SP1 Betriebsstunden Byte2"|"A53 SP1 Betriebsstunden Byte1"|"A54 Warmwassersolltemperaturabsenkung Solarertrag 1K"|"A55 Warmwassersolltemperaturabsenkung Wärmekapazität 1K"|"A56 Kollektortemperatur"|"A57 SP2 Betriebsstunden Byte3"|"A58 SP2 Betriebsstunden Byte2"|"A59 SP2 Betriebsstunden Byte1"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|8|"E1 Payload IN"|"E2 ECOCAN Bus ID des Regelgeräts"|"E3 Betriebsart Stellbereich"|"E4 Umschaltung für Verbraucher"|"E5 Maximaltemperatur SP1"|"E6 Minimaltemperatur SP1"|"E7 Maximaltemperatur SP2"|"E8 Glykolanteil"|38|"A1 Payload OUT"|"A2 SystemLog"|"A3 Fehler Einstellung Hysterese"|"A4 SP2 auf max Temp"|"A5 SP1 auf max Temp"|"A6 Kollektor auf max Temp"|"A7 Fehler Fühler Anlagenrücklauf Bypass"|"A8 Fehler Fühler Speichermitte Bypass"|"A9 Fehler Volumenstromzähler WZ"|"A10 Fehler Fühler Rücklauf"|"A11 Fehler Fühler Vorlauf"|"A12 Fehler Fühler SP2 unten"|"A13 Fehler Fühler SP1 unten"|"A14 Fehler Fühler Kollektor"|"A15 Umschaltventil SP2 zu"|"A16 Umschaltventil SP2 auf/Speicherladepumpe2"|"A17 Umschaltventil Bypass zu"|"A18 Umschaltventil Bypass auf"|"A19 Sekundärpumpe SP2 Betrieb"|"A20 Kollektortemperatur in 0.1°C"|"A21 SP Modulation 1%"|"A22 Warmwassertemperatur unten 1°C"|"A23 Betriebsstatus Speicher 1"|"A24 SP2 Warmwassertemperatur unten"|"A25 Betriebsstatus Speicher 2"|"A26 Warmwassertemperatur Speicher mitte"|"A27 Anlagenrücklauf"|"A28 Vorlauftemperatur Wärmemengenzähler"|"A29 Rücklauftemperatur Wärmemengenzähler"|"A30 Anlagen Volumenstrom in l/h"|"A31 Momentan Leistung Solar in W"|"A32 SP1 eingebrachte Wärmemenge in kWh"|"A33 SP2 eingebrachte Wärmemenge in kWh"|"A34 SP1 Betriebsstunden in Std"|"A35 Warmwassersolltemperaturabsenkung Solarertrag 1K"|"A36 Warmwassersolltemperaturabsenkung Wärmekapazität 1K"|"A37 Kollektortemperatur"|"A38 SP2 Betriebsstunden in Std"
 
-5001|8|59|0|1|1
+5001|8|38|0|19|1
 
 # EN[x]
 5002|1|""|1 #* Payload IN
-5002|2|1|0 #* ECOCAN Bus ID
+5002|2|1|0 #* ECOCAN Bus ID des Regelgeräts
 5002|3|1|0 #* Betriebsart Stellbereich: 0 – 2 / 0 = Aus / 1 = Auto / 2 = EIN
 5002|4|2|0 #* Umschaltung für Verbraucher Stellbereich: 0 - 2 / 0 = Auto / 1 = nur SP1 / 2 = nur SP2
 5002|5|60|0 #* Maximaltemperatur SP1 1° genau Stellbereich: 30 - 90 °C
@@ -126,6 +155,25 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 
 # Speicher
 5003|1||0 #* logic
+5003|2||0 #* Byte2 Kollektortemperature 0,1 C
+5003|3||0 #* Byte1 Kollektortemperature 0,1 C
+5003|4||0 #* Byte2 Anlagenvolumenstrom
+5003|5||0 #* Byte1 Anlagenvolumenstrom
+5003|6||0 #* Byte2 Momentaleistung Solar
+5003|7||0 #* Byte1 Momentaleistung Solar
+5003|8||0 #* Byte3 Eingebrachte Wärmemenge Solar SP1
+5003|9||0 #* Byte2 Eingebrachte Wärmemenge Solar SP1
+5003|10||0 #* Byte1 Eingebrachte Wärmemenge Solar SP1
+5003|11||0 #* Byte3 Eingebrachte Wärmemenge Solar SP2
+5003|12||0 #* Byte2 Eingebrachte Wärmemenge Solar SP2
+5003|13||0 #* Byte1 Eingebrachte Wärmemenge Solar SP2
+5003|14||0 #* Byte3 Betriebsstunden SP1
+5003|15||0 #* Byte2 Betriebsstunden SP1
+5003|16||0 #* Byte1 Betriebsstunden SP1
+5003|17||0 #* Byte3 Betriebsstunden SP2
+5003|18||0 #* Byte2 Betriebsstunden SP2
+5003|19||0 #* Byte1 Betriebsstunden SP2
+
 
 # Ausgänge
 5004|1|""|0|1|1 #* Payload OUT
@@ -145,67 +193,46 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 5004|13|0|1|1|0 #* Fehler Fühler Speicher-unten 1 defekt
 5004|14|0|1|1|0 #* Fehler Fühler Kollektor defekt
 ##Betriebswerte 3
-5004|15|0|1|1|0 #* Umschaltventil Speicher 2 zu.
-5004|16|0|1|1|0 #* Umschaltventil Speicher 2 auf/Speicherladepumpe2.
+5004|15|0|1|1|0 #* Umschaltventil Speicher 2 zu 
+5004|16|0|1|1|0 #* Umschaltventil Speicher 2 auf bzw. Speicherladepumpe2
 5004|17|0|1|1|0 #* Umschaltventil Bypass zu
 5004|18|0|1|1|0 #* Umschaltventil Bypass auf
 5004|19|0|0|1|0 #* Sekundärpumpe Speicher 2 Betrieb
-##Kollektortemperatur Byte 2 + Byte 1
-5004|20|0|0|1|0 #* Kollektortemperatur Byte2 0,1°C
-5004|21|0|0|1|0 #* Kollektortemperatur Byte1 0,1°C
+##Kollektortemperatur 0,1 C in (Byte2 * 256) + Byte1
+5004|20|0|0|1|0 #* Kollektortemperatur 0,1°C
 ##
-5004|22|0|0|1|0 #* SP Modulation Pumpe 1%
+5004|21|0|0|1|0 #* SP Modulation Pumpe 1%
 ##
-5004|23|0|0|1|0 #* SP1 Warmwassertemperatur unten 1°C
+5004|22|0|0|1|0 #* SP1 Warmwassertemperatur unten 1°C
 ##Betriebsstatus Speicher 1
-5004|24|0|1|1|0 #* SP1 Gesperrt
-5004|25|0|1|1|0 #* SP1 zu wenig solarer Ertrag
-5004|26|0|1|1|0 #* SP1 Low Flow
-5004|27|0|1|1|0 #* SP1 High Flow
-5004|28|0|1|1|0 #* SP1 HAND ein
-5004|29|0|1|1|0 #* SP1 Umschalt-Check
+5004|23|0|0|1|0 #* Betriebsstatus Speicher 1
 ##
-5004|30|0|0|1|0 #* SP2 Warmwassertemperatur unten 1 °C
+5004|24|0|0|1|0 #* SP2 Warmwassertemperatur unten 1 °C
 ##Betriebsstatus Speicher 2
-5004|31|0|1|1|0 #* SP2 Gesperrt
-5004|32|0|1|1|0 #* SP2 zu wenig solarer Ertrag
-5004|33|0|1|1|0 #* SP2 Low Flow
-5004|34|0|1|1|0 #* SP2 High Flow
-5004|35|0|1|1|0 #* SP2 HAND ein
-5004|36|0|1|1|0 #* SP2 Umschalt-Check
+5004|25|0|0|1|0 #* Betriebsstatus Speicher 2
 ##
-5004|37|0|0|1|0 #* Warmwassertemperatur Speichermitte (Bypass) 1°C
-5004|38|0|0|1|0 #* Anlagenrücklauftemperatur (Bypass)
-5004|39|0|0|1|0 #* Vorlauftemperatur Wärmemengenzähler 1 °C
-5004|40|0|0|1|0 #* Rücklauftemperatur Wärmemengenzähler 1 °C
+5004|26|0|0|1|0 #* Warmwassertemperatur Speichermitte (Bypass) 1°C
+5004|27|0|0|1|0 #* Anlagenrücklauftemperatur (Bypass) 1 °C
+5004|28|0|0|1|0 #* Vorlauftemperatur Wärmemengenzähler 1 °C
+5004|29|0|0|1|0 #* Rücklauftemperatur Wärmemengenzähler 1 °C
 ##Anlagen-Volumenstrom (Byte2 * 256) + Byte1
-5004|41|0|0|1|0 #* Anlagen-Volumenstrom Byte2 l/h
-5004|42|0|0|1|0 #* Anlagen-Volumenstrom Byte1 l/h
+5004|30|0|0|1|0 #* Anlagen-Volumenstrom l/h
 ##Momentan-Leistung Solar (Byte2 * 256) + Byte1
-5004|43|0|0|1|0 #* Momentan-Leistung Solar Byte2 W
-5004|44|0|0|1|0 #* Momentan-Leistung Solar Byte1 W
+5004|31|0|0|1|0 #* Momentan-Leistung Solar W
 ##eingebrachte Wärmemenge Speicher 1 (Byte3 * 65536) + (Byte2 * 256) + Byte1
-5004|45|0|0|1|0 #* SP1 eingebrachte Wärmemenge Byte3
-5004|46|0|0|1|0 #* SP1 eingebrachte Wärmemenge Byte2
-5004|47|0|0|1|0 #* SP1 eingebrachte Wärmemenge Byte1
+5004|32|0|0|1|0 #* SP1 eingebrachte Wärmemenge in kWh
 ##eingebrachte Wärmemenge Speicher 2 (Byte3 * 65536) + (Byte2 * 256) + Byte1
-5004|48|0|0|1|0 #* SP2 eingebrachte Wärmemenge Byte3
-5004|49|0|0|1|0 #* SP2 eingebrachte Wärmemenge Byte2
-5004|50|0|0|1|0 #* SP2 eingebrachte Wärmemenge Byte1
-##Betriebsstunden Speicher 1 Byte 3 (Byte3 * 65536) + (Byte2 * 256) + Byte1
-5004|51|0|0|1|0 #* SP1 Betriebsstunden Byte3
-5004|52|0|0|1|0 #* SP1 Betriebsstunden Byte2
-5004|53|0|0|1|0 #* SP1 Betriebsstunden Byte1
+5004|33|0|0|1|0 #* SP2 eingebrachte Wärmemenge in kWh
+##Betriebsstunden Speicher 1 in min (Byte3 * 65536) + (Byte2 * 256) + Byte1
+5004|34|0|0|1|0 #* SP1 Betriebsstunden in Std
 ##
-5004|54|0|0|1|0 #* Warmwassersolltemperaturabsenkung Solarertrag 1 K
+5004|35|0|0|1|0 #* Warmwassersolltemperaturabsenkung Solarertrag 1 K
 ##
-5004|55|0|0|1|0 #* Warmwassersolltemperaturabsenkung Wärmekapazität 1 K
+5004|36|0|0|1|0 #* Warmwassersolltemperaturabsenkung Wärmekapazität 1 K
 ##
-5004|56|0|0|1|0 #* Kollektortemperatur
-##Betriebsstunden Speicher 2 Byte 3 (Byte3 * 65536) + (Byte2 * 256) + Byte1
-5004|57|0|0|1|0 #* SP2 Betriebsstunden Byte3
-5004|58|0|0|1|0 #* SP2 Betriebsstunden Byte2
-5004|59|0|0|1|0 #* SP2 Betriebsstunden Byte1
+5004|37|0|0|1|0 #* Kollektortemperatur
+##Betriebsstunden Speicher 2 in min (Byte3 * 65536) + (Byte2 * 256) + Byte1
+5004|38|0|0|1|0 #* SP2 Betriebsstunden in Std
 #################################################
 '''
 #####################
@@ -218,7 +245,7 @@ if EI == 1:
   class buderus_solar(object):
       def __init__(self,localvars):
           import re
-		  
+          
           self.logik = localvars["pItem"]
           self.MC = self.logik.MC
 
@@ -237,43 +264,43 @@ if EI == 1:
 
           ## Offset Name Auflösung
           ## 0 Betriebswerte 1 
-          ##	1. Bit = Fehler Einstellung Hysterese
-          ## 	2. Bit = Speicher 2 auf max. Temperatur
-          ## 	3. Bit = Speicher 1 auf max. Temperatur
-          ## 	4. Bit = Kollektor auf max. Temperatur
+          ##    1. Bit = Fehler Einstellung Hysterese
+          ##    2. Bit = Speicher 2 auf max. Temperatur
+          ##    3. Bit = Speicher 1 auf max. Temperatur
+          ##    4. Bit = Kollektor auf max. Temperatur
           ## 1 Betriebswerte 2 
-          ##	1. Bit = Fehler Fühler Anlagenrücklauf Bypass defekt
-          ##	2. Bit = Fehler Fühler Speichermitte Bypass defekt
-          ##	3. Bit = Fehler Volumenstromzähler WZ defekt
-          ## 	4. Bit = Fehler Fühler Rücklauf WZ defekt
-          ## 	5. Bit = Fehler Fühler Vorlauf WZ defekt
-          ##	6. Bit = Fehler Fühler Speicher-unten 2 defekt
-          ##	7. Bit = Fehler Fühler Speicher-unten 1 defekt
-          ## 	8. Bit = Fehler Fühler Kollektor defekt
+          ##    1. Bit = Fehler Fühler Anlagenrücklauf Bypass defekt
+          ##    2. Bit = Fehler Fühler Speichermitte Bypass defekt
+          ##    3. Bit = Fehler Volumenstromzähler WZ defekt
+          ##    4. Bit = Fehler Fühler Rücklauf WZ defekt
+          ##    5. Bit = Fehler Fühler Vorlauf WZ defekt
+          ##    6. Bit = Fehler Fühler Speicher-unten 2 defekt
+          ##    7. Bit = Fehler Fühler Speicher-unten 1 defekt
+          ##    8. Bit = Fehler Fühler Kollektor defekt
           ## 2 Betriebswerte 3 
-          ##	1. Bit = Umschaltventil Speicher 2 zu.
-          ## 	2. Bit = Umschaltventil Speicher 2 auf/Speicherladepumpe2.
-          ##	3. Bit = Umschaltventil Bypass zu
-          ## 	4. Bit = Umschaltventil Bypass auf
-          ## 	5. Bit = Sekundärpumpe Speicher 2 Betrieb
+          ##    1. Bit = Umschaltventil Speicher 2 zu.
+          ##    2. Bit = Umschaltventil Speicher 2 auf/Speicherladepumpe2.
+          ##    3. Bit = Umschaltventil Bypass zu
+          ##    4. Bit = Umschaltventil Bypass auf
+          ##    5. Bit = Sekundärpumpe Speicher 2 Betrieb
           ## 3 Kollektortemperatur Byte2 0,1 °C
           ## 4 Kollektortemperatur Byte1 0,1 °C
           ## 5 Modulation Pumpe Speicher 1 %
           ## 6 Warmwassertemperatur Speicher 1 unten 1 °C
           ## 7 Betriebsstatus Speicher 1
-          ## 	Wert = 0: Gesperrt
-          ##	Wert = 1: zu wenig solarer Ertrag
-          ## 	Wert = 2: Low Flow
-          ##	Wert = 3: High Flow
-          ##	Wert = 4: HAND ein
-          ## 	Wert = 5: Umschalt-Check
+          ##    Wert = 0: Gesperrt
+          ##    Wert = 1: zu wenig solarer Ertrag
+          ##    Wert = 2: Low Flow
+          ##    Wert = 3: High Flow
+          ##    Wert = 4: HAND ein
+          ##    Wert = 5: Umschalt-Check
           ## 8 Warmwassertemperatur Speicher 2 unten 1 °C
           ## 9 Betriebsstatus Speicher 2 Wert = 0: Gesperrt
-          ##	Wert = 1: zu wenig solarer Ertrag
-          ##	Wert = 2: Low Flow
-          ##	Wert = 3: High Flow
-          ## 	Wert = 4: HAND ein
-          ##	Wert = 5: Umschalt-Check
+          ##    Wert = 1: zu wenig solarer Ertrag
+          ##    Wert = 2: Low Flow
+          ##    Wert = 3: High Flow
+          ##    Wert = 4: HAND ein
+          ##    Wert = 5: Umschalt-Check
           ## 10 Warmwassertemperatur Speichermitte (Bypass) 1 °C
           ## 11 Anlagenrücklauftemperatur (Bypass) 1 °C
           ## 12 Vorlauftemperatur Wärmemengenzähler 1 °C
@@ -300,39 +327,39 @@ if EI == 1:
           ## Die mit * gekennzeichneten Werte können nur im "Direkt-Modus" empfangen werden.
  
           self.output_functions = [
-              (self.to_bits,[3,4,5,6,0,0,0,0]),
-              (self.to_bits,[7,8,9,10,11,12,13,14]),
-              (self.to_bits,[15,16,17,18,19,0,0,0]),
-              (lambda x: [(float(x)/10)],[20]),
-              (lambda x: [(float(x)/10)],[21]),
-              (lambda x: [x],[22]),
-              (lambda x: [x],[23]),
-              (self.to_bits,[24,25,26,27,28,29,0,0]),
-              (lambda x: [x],[30]),
-              (self.to_bits,[31,32,33,34,35,36,0,0]),
-              (lambda x: [x],[37]),
-              (lambda x: [x],[38]),
-              (lambda x: [x],[39]),
-              (lambda x: [x],[40]),
-              (lambda x: [x],[41]),
-              (lambda x: [x],[42]),			  
-              (lambda x: [x],[43]),
-              (lambda x: [x],[44]),
-              (lambda x: [x],[45]),
-              (lambda x: [x],[46]),
-              (lambda x: [x],[47]),
-              (lambda x: [x],[48]),
-              (lambda x: [x],[49]),
-              (lambda x: [x],[50]),
-              (lambda x: [x],[51]),
-              (lambda x: [x],[52]),
-              (lambda x: [x],[53]),
-              (lambda x: [x],[54]),
-              (lambda x: [x],[55]),
-              (lambda x: [x],[56]),
-              (lambda x: [x],[57]),
-              (lambda x: [x],[58]),
-              (lambda x: [x],[59]),
+              (self.to_bits,[3,4,5,6,0,0,0,0],"AN"),
+              (self.to_bits,[7,8,9,10,11,12,13,14],"AN"),
+              (self.to_bits,[15,16,17,18,19,0,0,0],"AN"),
+              (lambda x: [(float(x)/10)],[2],"SN"),   # Byte2 * 256
+              (lambda x: [(float(x)/10)],[3],"SN"),   # Byte1 + Byte2 * 256 => Kollektor Temperatur ist [21]+256*[20]
+              (lambda x: [x],[21],"AN"),
+              (lambda x: [x],[22],"AN"),
+              (lambda x: [x],[23],"AN"),
+              (lambda x: [x],[24],"AN"),
+              (lambda x: [x],[25],"AN"),
+              (lambda x: [x],[26],"AN"),
+              (lambda x: [x],[27],"AN"),
+              (lambda x: [x],[28],"AN"),
+              (lambda x: [x],[29],"AN"),
+              (lambda x: [x],[4],"SN"),
+              (lambda x: [x],[5],"SN"),
+              (lambda x: [x],[6],"SN"),
+              (lambda x: [x],[7],"SN"),
+              (lambda x: [x],[8],"SN"),
+              (lambda x: [x],[9],"SN"),
+              (lambda x: [x],[10],"SN"),
+              (lambda x: [x],[11],"SN"),
+              (lambda x: [x],[12],"SN"),
+              (lambda x: [x],[13],"SN"),
+              (lambda x: [x],[14],"SN"),
+              (lambda x: [x],[15],"SN"),
+              (lambda x: [x],[16],"SN"),
+              (lambda x: [x],[35],"AN"),
+              (lambda x: [x],[36],"AN"),
+              (lambda x: [x],[37],"AN"),
+              (lambda x: [x],[17],"SN"),
+              (lambda x: [x],[18],"SN"),
+              (lambda x: [x],[19],"SN"),
           ]
 
           self.get_monitor_data()
@@ -371,10 +398,14 @@ if EI == 1:
           #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
           for _x in xrange(_len):
               _offset = offset + _x
-              _func, _out = self.output_functions[_offset]
+              _func, _out, _feld = self.output_functions[_offset]
               _ret = _func( ord(data[_x]) )
               for _xx in xrange(len(_ret)):
-                  self.send_to_output(_out[_xx] , _ret[_xx], sbc=True)
+                  if _feld == "AN":
+                     self.send_to_output(_out[_xx] , _ret[_xx], sbc=True)
+                  else:
+                     self.localvars[_feld][_out[_xx]] = _ret[_xx]
+                     self.localvars["SC"][_out[_xx]] = 1
               
           #self.debug("Zustand: %r" % (self.current_status,) )
 
@@ -429,6 +460,24 @@ postlogik=[0,"",r"""
 
 #* Glykolanteil 10% genau Stellbereich:  20 - 50% (0-5)
 5012|0|"EC[8]"|"SN[1].set_value(EN[8], offset='1C', byte=1, min=0, max=5, resolution=10, localvars=locals())"|""|0|0|0|0
+
+#* Kollektortemperature 0,1 C
+5012|0|"SC[2] or SC[3]"|"SN[2]*256+SN[3]"|""|20|0|0|0
+#* Anlagenvolumenstrom in l/h
+5012|0|"SC[4] or SC[5]"|"SN[4]*256+SN[5]"|""|30|0|0|0
+#* Momentaleistung Solar in W
+5012|0|"SC[6] or SC[7]"|"SN[6]*256+SN[7]"|""|31|0|0|0
+#* SP1 eingebrachte Wärmemenge in kWh
+5012|0|"SC[8] or SC[9] or SC[10]"|"(float(SN[8]*65536+SN[9]*256+SN[10])/10)"|""|32|0|0|0
+#* SP2 eingebrachte Wärmemenge in kWh
+5012|0|"SC[11] or SC[12] or SC[13]"|"(float(SN[11]*65536+SN[12]*256+SN[13])/10)"|""|33|0|0|0
+#* Betriebsstunden SP1 in Std
+5012|0|"SC[14] or SC[15] or SC[16]"|"(float(SN[14]*65536+SN[15]*256+SN[16])/60)"|""|34|0|0|0
+#* Betriebsstunden SP1 in Std
+5012|0|"SC[17] or SC[18] or SC[19]"|"(float(SN[17]*65536+SN[18]*256+SN[19])/60)"|""|38|0|0|0
+
+
+
 """]
 
 ####################################################################################################################################################
