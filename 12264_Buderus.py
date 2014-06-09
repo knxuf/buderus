@@ -47,32 +47,78 @@ LOGIKNAME="Buderus"
 LOGIKID="12264"
 
 ## Ordner im GLE
-LOGIKCAT="www.knx-user-forum.de"
+LOGIKCAT="www.knx-user-forum.de\Buderus"
 
 
 ## Beschreibung
 LOGIKDESC="""
-<P>Der Baustein bildet stellt die zentrale Kommunication zwischen einem Esycom RS232 Gateway 
-von Buderus zum ECOCAN Logamatic 4000, wo die RS232 Schnittstelle an einen Moxa (also RS232 &lt;-&gt; IP) 
-über TCP verbunden ist. Im Moxa ist dazu TCP-Server eingestellt und ein freier Port gesetzt. Der 
-selbe Port und die IP des Moxa muß in dem Baustein eingetragen werden.</P>
-<P>Diese Schnittstelle ist bietet viele Möglichkeiten Monitordaten der Heizung mitzulesen und aber auch 
-Konfigurationen der Heizungsanlage zu verändern. Dasverändert sollte man aber, erstmal dem Heizungfachmann
- überlassen. Weiter ist jeder Schreiben Zugriff ein Flash schreiben, das laut Buderus nur 1.000.000 Mal geht.
+<P>Der Baustein stellt die zentrale Kommunikation zwischen einem &quot;Logamatic Gateway RS232&quot; 
+von Buderus her, wenn an dieses ein RS232 nach IP Umsetzter wie zum Beispiel ein Moxa angeschlossen ist. Dies stellt die Anwendung 1 dar
+
+Zitat von der Buderus Produkt Seite:
+Anwendung 1: Kommunikationsschnittstelle Logamatic 4000 / EMS zu übergeordneten DDC-/GLT- Anlagen z. B. Betriebsartenumschaltung, 
+Sollwerte ändern, Istwerte anzeigen, Weiterleitung von Betriebs- und Störmeldungen. 
+(Offenlegung Kommunikationsprotokoll zu Logamatic auf Anfrage)
+
+Auf der einen Seite des &quot;Logamatic Gateway RS232&quot; ist der ECO-CAN Bus der Logamatic 4000 Heizungsanlage angeschlossen.
+NICHT EMS !!! Dies ist ein anderes Protokoll. Die LED ECO-BUS muß blinken !!!
+An der RS232 Schnittstelle des &quot;Logamatic Gateway RS232&quot; ist der Moxa (also RS232 &lt;-&gt; IP Umsetzter)
+angeschlossen. Die IP Verbindung ist eine TCP Verbindung, wobei der Moxa der TCP Server ist und der Baustein im HS der TCP Client.
+Im Moxa sind folgende Einstellungen zu tätigen (ggf. können einzelne Werte auch anders sein, diese wurden beim Test verwendet):
+
+Für die RS232 Seite (Serial Settings):
+Baudrate: 9600
+Data Bits: 8
+Stop Bits: 1
+Parity: Keine
+FIFO: Ja
+Interface: RS232
+
+Auf der IP Seite (Operational Setting):
+- Operation Mode: TCP Server
+- TCP alive check time: 7 min
+- Inactivity time: 0 ms
+- Max Connection: 1 (das kann nur eine sein !!! Der ECO-CAN Bus ist so aufgebaut)
+- Local TCP Port:  5508 (Hier muß ein freier Port verwendet werden. Dieser muß dann im Baustein eingetragen werden.)
+- Command Port: ist hier nicht relevant, kann irgend ein freier port sein.
+Data packaging:
+- Packing length: 0
+- Delimiter 1: keiner
+- Delimiter 2: keiner
+- Delimiter process: keiner
+- Force transmit: Nein
+  
+Der Moxa hat auch eine IP Adresse: z.B. 192.168.2.17 zusammen mit dem Local Port: hier z.B. 5208 stellt man das im Baustein 
+dann so dar: 192.168.2.17:5208
+Der Baustein öffnet also eine Verbindung zu diesem Port und erhält sie kontinuierlich aufrecht. Diese Kommunikation ist noch mit dem
+ R3964R Protokoll geschützt. Dies macht der Baustein aber alles intern und nur die ausgepackten Informationen werden weitergegeben.
+ </P>
+<P>Diese Schnittstelle bietet viele Möglichkeiten Monitordaten der Heizung mitzulesen und aber auch 
+Konfigurationen der Heizungsanlage zu verändern. Das Verändern sollte man aber dem Heizungfachmann
+ überlassen. Weiter ist jeder Schreiben Zugriff, ein Schreiben auf den Flash Speicher. Laut Buderus geht das pro Wert nur 1.000.000 Mal.
  </P>
  <P>Also, aus diesem Grund gibt es hier die sehr ernst gemeinte Empfehlung nur lesend diesem Baustein zu verwenden.<BR>
- Die Config Option &quot;readonly=1&quot; sollte immer gesetzt bleiben. </P>
+ Die Config Option &quot;readonly=1&quot; sollte deshalb immer gesetzt bleiben. </P>
 <P>Für die eigentlich Kommunikation sind zwingend folgende Beschreibungen von Buderus zu beachten:<BR>
 7747004149 – 01/2009 DE - Technische Information - Monitordaten - System 4000<BR>
 7747004150 – 05/2009 DE - Technische Information - Einstellbare Parameter - Logamatic 4000<BR>
 Weiter ist folgende Beschreibung sehr Wertvoll:<BR>
  Funktionsbeschreibung - KM471- RS232-Schnittstelle (3964R) - Für Programmversion 1.07<BR>
-Die Kommunikationskarte KM471 ist das Modul was auf der Buderus Seite mit dem die Daten ausgetauscht werden.<BR>
+Die Kommunikationskarte KM471 ist das Modul, was auf der Buderus Seite den Datenaustauch abwickelt.<BR>
 Zumindest ist in dem heutigen Easycom RS232 Gateway etwas vergleichbares drin.</P>
-<P>Der Baustein kapselt für den Benutzer komplett die 3964R Procedure. Auch schaltet er automatisch bei Kommandos die den &quot;Direktmode&quot; benötigen,<BR>
-automatisch in diesen und erkennt auch das Ende und schalten den Direktmode automatisch wieder aus. Ein Warten (und damit Blockieren), dass der<BR>
-Normal-Mode erst nach einem Timeout erreicht wird, kann somit verhindert werden. Man kann sagen der Benutzer braucht sich um Normal-Mode und <BR>
-Direkt-Mode gar nicht kümmern. Dies geschieht alles automatisch.   </P>
+<P>Der Baustein kapselt für den Benutzer komplett die 3964R Procedure. Auch schaltet er automatisch in den Direkt Mode um, bei Kommandos 
+die den &quot;Direktmode&quot; benötigen. Er erkennt automatisch das Ende und schalten automatisch wieder in den Normal Mode zurück.
+Ein Warten (und damit blockierend), dass in den Normal-Mode erst nach einem Timeout zurück geschaltet wird, kann somit vermieden werden. 
+Man kann sagen der Benutzer braucht sich um Normal-Mode und Direkt-Mode gar nicht kümmern. Dies geschieht alles automatisch.   </P>
+Für die Auswertung der Daten, die auf dem Ausgang 1 ausgegeben werden, gibt es für jeden DatenType dann einen eigenen Baustein. Dieser ist dann immer
+über ein iKO vom Type 14Byte dann dort an zu schliessen. NIE DIREKT !!! Als erster wird der Solar DatenTyp veröffentlicht, weitere werden folgen.
+
+Welche DatenTypen an welchen Regelgeräten angeschlossen sind kann man im SystemLog sehen. Die Regelgeräte haben meist die Nummer 0 wenn nur eins angeschlossen ist. 
+Sonst dann 1, 2 , wenn es mehrere sind.
+
+Wenn man nun nach dem SystemStart=1 des HS zum Beispiel mit A100 alle Monitordaten des Regelgerätes 0 abfragt, werden alle Monitordaten einmal ausgelesen.
+Ändern sich dann später ein Wert, werden diese im Normal-Mode automatisch gesendet und im HS dann auch aktualisiert. 
+
 <P>Folgende Kommandos sind getestet:<BR>
 # Zeit abfragen mit &quot;B1&quot;: ok<BR>
 EN[3]:&quot;B1&quot;   <BR>
@@ -86,7 +132,7 @@ EN[3]:&quot;A000&quot;<BR>
 #                           Endekennung muß also 0x08 0x[89abcdef]? sein. ; Das ist die Version des EasyCom: 15.23 Sieht man nur über die ECO-SOFT.<BR>
 Mit diesem Kommando &quot;A000&quot; kann man zum Beispiel nach dem System Start erstmal den Bus abfragen welche Geräte existieren. Hier sind auf dem ECOCAN Bus<BR>
  die Adressen 1 und 2 vergeben. </P>
-<P>Nun kann man mit A1 gefolgt von der Adresse des Regelgeräts alle einstallbaren Parameter abfragen: <BR>
+<P>Nun kann man mit A1 gefolgt von der Adresse des Regelgeräts alle einstellbaren Parameter abfragen: <BR>
 ##Anfordern aller einstellbaren Parameter eines Gerätes <BR>
 #EN[3]:&quot;A101&quot;<BR>
 #EN[3]:&quot;A102&quot;<BR>
@@ -110,8 +156,15 @@ EN[3]:&quot;B401&quot;<BR>
 EN[3]:&quot;B402&quot;<BR>
 ## Endekennung &quot;AC&lt;busnr&gt;  hier also AC01 oder AC02 ## beides Ok</P>
 
+Kommandos können auch durch ein &quot;*&quot; Zeichen getrennt gebündelt gesendet werden (z.B. &quot;A101*A102&quot;). Der Baustein 
+sendet sie dann nacheinander weiter. 
+
+Rechtliche Hinweise:
+Die Produkte &quot;Logamatic 4000&quot;,  &quot;Logamatic Gateway RS232&quot; sind Produkte der Buderus Heiztechnik GmbH. - www.Buderus.de
+Die Benutzung dieses Bausteins geschieht auf eigene Gefahr. 
+
 """
-VERSION="V0.16"
+VERSION="V0.17"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -166,12 +219,12 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|3|"E1 IP:Port"|"E2 config"|"E3 senden"|2|"A1 Daten"|"A2 SystemLog"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|3|"E1 IP-Adresse:Port"|"E2 config"|"E3 senden"|2|"A1 Daten"|"A2 SystemLog"
 
 5001|3|2|0|1|1
 
 # EN[x]
-5002|1|"192.168.178.10:22"|1 #* IP:Port <BR>Des Moxa
+5002|1|"192.168.2.17:5208"|1 #* IP-Adresse:Port <BR>des Moxa
 5002|2|"debug=5*readonly=1*writetime=0"|1 #* config <BR>(mit debug=5 wird diese Konfiguration auf SystemLog ausgegeben, readonly=1 weist schreibende Kommandos ab, und writetime=1 erlaubt die BUS Zeit zu setzen) Der * ist das Trennzeichen.
 5002|3|""|1 #* Senden <BR>(Hier werden die Kommandos an den ECOCAN Bus gesendet)
 
@@ -179,7 +232,7 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 5003|1||0 #* logic
 
 # Ausgänge
-5004|1|""|0|1|1 #* Daten <BR>(Hier werden alle Antworten vom ECOCAN ausgegeben, hier müssen die Auswerte Bausteine am besten mit einem Konnector angeschlossen werden)
+5004|1|""|0|1|1 #* Daten <BR>(Hier werden alle Antworten vom ECOCAN ausgegeben, hier müssen die Auswerte Bausteine immer über ein iKO angeschlossen werden)
 5004|2|""|0|1|1 #* SystemLog <BR>(Ausgang an den SystemLog)
 
 #################################################
