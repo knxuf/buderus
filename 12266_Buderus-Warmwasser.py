@@ -47,14 +47,42 @@ LOGIKNAME="Buderus-Warmwasser"
 LOGIKID="12266"
 
 ## Ordner im GLE
-LOGIKCAT="www.knx-user-forum.de"
+LOGIKCAT="www.knx-user-forum.de\Buderus"
 
 
 ## Beschreibung
 LOGIKDESC="""
+Dieser Baustein wertet alle Daten für den Datentyp 0x84 Warmwasser, die vom Buderus Baustein 12264 kommen aus und gibt
+ die Zustände auf die entsprechenden Ausgänge aus. 
+ <div class="hinw">
+ Wichtig: Eingang 1 und Ausgang 1 dürfen NIE direkt mit dem Buderus Baustein 12264 verbunden werden. Bitte immer die 
+ Verbindung indirekt über ein iKO herstellen !!!! 
+</div>
+ Auf Eingang 1 werden die Daten vom Buderus Baustein empfangen. Auf dem Eingang 2 stellt man die Adresse 
+ des Regelgerätes ein. 
+ 
+ Hier ein Tip: Man kann im SystemLog des Buderus Bausteines sehen, an welchen Regelgeräten welche DatenTypen
+ erkannt wurden.  Hier ist der DatenTyp Solar relevant. Ist dieser am Regelgerät 2 erkannt worden, ist hier 
+ eine 2 einzugeben. 
+ 
+ Damit werden nunmehr aus dem gesamten Datenstrom des ECOCAN Bus nur noch genau diese Daten gefilter und auf 
+ den Ausgängen ausgegeben.
+ <div class="hinw">
+ Allgemeines: Ein Istwert von 110 °C beschreibt für den betroffenen Fühler einen Fühler defekt. Es kann auch sein,
+ das hier einfach kein Fühler angeschlossen wurde. Messwerte in diesem Bereich hören bei 109 auf und gehen bei 111 weiter. 
+</div>
 
+Für die eigentliche Kommunikation sind zwingend folgende Beschreibungen von Buderus zu beachten:
+7747004149 – 01/2009 DE - Technische Information - Monitordaten - System 4000
+7747004150 – 05/2009 DE - Technische Information - Einstellbare Parameter - Logamatic 4000
+
+Die weiteren Eingänge 3-8 sind zum Verändern von Parametern der Anlage. Diese Wert stellen bei jedem Scheiben ein
+ physikalischen Schreiben auf den Flashspeicher dar. Dieser ist auf 1.000.000 mal Schreiben pro Wert begrenzt.
+ Es wird also sehr davon abgeraten, dies aus einer Logik zu tun. Am besten wird hier nie geschrieben und 
+ man setzt im Buderus Baustein die Konfiguration auf ReadOnly. Dann werden dort alle Schreib-Kommandos verworfen.
+ Fast alle Schreib Kommandos wirken auf Service Parameter, die normalerweise NUR der Heizungsfachman verändert.
 """
-VERSION="V0.9"
+VERSION="V0.10"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -120,11 +148,11 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 5002|4|70|0 #* Warmwassersolltemperatur für die Zeit der thermischen Desinfektion Auflösung: 1 °C Stellbereich: 65 - 75 °C WE: 70 °C
 5002|5|1|0 #* Desinfektionstag Stellbereich: 0 bis 7 WE: 1 0 = Montag 1 = Dienstag 2 = Mittwoch 3 = Donnerstag 4 = Freitag 5 = Samstag 6 = Sonntag 7 = täglich
 5002|6|1|0 #* Uhrzeit an der die thermische Desinfektion starten soll Auflösung: 1 h Stellbereich: 0 - 23 h WE: 1
-5002|7|60|0 #* Warmwassersolltemperatur Auflösung: 1 °C Stellbereich: 30 bis 60 °C WE: 60 °C
+5002|7|60|0 #* Warmwassersolltemperatur (in 1 °C) Stellbereich: 30 bis 60 °C WE: 60 °C
 5002|8|2|0 #* Betriebsart Warmwasser Stellbereich: 0 bis 2 WE: 2 0 = Manuell Nacht 1 = Manuell Tag 2 = Automatik
 5002|9|2|0 #* Zirkulationspumpenläufe pro Stunde  Stellbereich: 0 bis 7 WE: 2 0 = ständig aus (läuft nur bei Einmalladung) 1 = ständig an
 5002|10|2|0 #* Betriebsart Stellbereich: 0 bis 2 WE: 2 0 = Manuell Nacht 1 = Manuell Tag 2 = Automatik
-5002|11|24|0 #* Uhrzeit zu der die tägliche Aufheizung gestartet wird Auflösung: 1 h Stellbereich: 0 - 24 h WE: 24 h Hinweis:Wenn auf obere Grenze ((4) gestellt wird, findet keine tägliche Aufheizung statt.
+5002|11|24|0 #* Uhrzeit zu der die tägliche Aufheizung gestartet wird (in 1 Std) Stellbereich: 0 - 24 h WE: 24 Std Hinweis:Wenn auf obere Grenze (24) gestellt wird, findet keine tägliche Aufheizung statt.
 
 # Speicher
 5003|1||0 #* logic
