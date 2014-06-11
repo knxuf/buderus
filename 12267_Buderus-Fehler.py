@@ -47,14 +47,75 @@ LOGIKNAME="Buderus-Fehler"
 LOGIKID="12267"
 
 ## Ordner im GLE
-LOGIKCAT="www.knx-user-forum.de"
+LOGIKCAT="www.knx-user-forum.de\Buderus"
 
 
 ## Beschreibung
 LOGIKDESC="""
+Dieser Baustein wertet alle Fehler aus, die vom Buderus Baustein 12264 kommen und gibt die Fehlerinformationen
+ auf die entsprechenden Ausgänge aus. Der Baustein tut dies für alle angeschlossenen Regelgeräte.
+ Der Baustein ist also nur einmal pro ECOCAN Bus notwendig.
+ <div class="acht">
+ Wichtig: Der Eingang 1 darf NIE direkt mit dem Buderus Baustein verbunden werden. Bitte immer die 
+ Verbindung indirekt über ein iKO herstellen !!!! 
+</div>
+Zitat aus der Buderus Beschreibung: Technische Information - Monitordaten - System 4000
+<i>Ein Regelgerät am ECOCAN-BUS kann zur Zeit ca. 213 verschiedene Fehler erzeugen. Bei der Zahl von
+15 Regelgeräten am ECOCAN-BUS müßten somit ca. 1500 Fehlerquellen auf „Kommen“ bzw. „Gehen“
+untersucht werden. Da die Verarbeitung einer so großen Zahl von Fehlermeldungen unrealistisch
+erscheint, werden nur die zur Zeit offenen Fehler aus dem Fehlerprotokoll (z. Zt. 4 Stück) an die
+Kommunikationskarte übergeben.
+</i>
+ Auf Eingang 1 werden die Daten vom Buderus Baustein empfangen. Auf dem Eingang 2 kann man später 
+ mal etwas konfigurieren. 
+ <div class="hinw">
+ <i>Hier ein Tip:</i> Man kann im SystemLog des Buderus Bausteines sehen, an welchen Regelgeräten welche DatenTypen
+ erkannt wurden.  Wenn man es so als Störung konfiguriert hat, kann man durch die Handschalter an der Regelung
+ auch Fehler/Störungen manuel setzten und löschen. So kann man die Funktion leicht testen. 
+ </div>
+ Damit werden nunmehr aus dem gesamten Datenstrom des ECOCAN Bus nur noch die Fehler  
+ gefilter und auf den Ausgängen ausgegeben. Der Fehlerstatus wird auf dem ECOCAN Bus, 
+ außer nach einem Reset der Kommunikationskarte, nur bei einer Änderung versendet. 
+
+ <div class="hinw">
+ <i>Allgemeines:</i> Ein Istwert von 110 °C beschreibt für den betroffenen Fühler einen Fühler defekt. Es kann auch sein,
+ das hier einfach kein Fühler angeschlossen wurde. Messwerte in diesem Bereich hören bei 109 auf und gehen bei 111 weiter. 
+</div>
+
+Alle Fehlertexte und Fehlercodes/nummern sind in folgender Beschreibungen von Buderus nachzulesen:
+7747004149 – 01/2009 DE - Technische Information - Monitordaten - System 4000
+
+Ausgegeben werden die Fehler einmal auf den SystemLog Ausgang 1 sowie auf den XML Ausgang 3. Mit dem Ausgang 2 wird angezeigt,
+ob es auf dem ECOCAN Bus ingesamt einen Fehler gibt. 
+Auf dem Ausgang 3 gibt es für jedes Regelgerät so einen XML Block:
+
+<p>&lt;busnr_1&gt;<br />
+    &lt;errno_34&gt;1&lt;/errno_34&gt;<br />
+    &lt;errno_35&gt;1&lt;/errno_35&gt;<br />
+    &lt;slot_0&gt;<br />
+        &lt;errno&gt;35&lt;/errno&gt;<br />
+        &lt;errmsg&gt;Vorlauffühler HK6 defekt !&lt;/errmsg&gt;<br />
+        &lt;errtime&gt;18:09:59 10.06.2014&lt;/errtime&gt;<br />
+    &lt;/slot_0&gt;<br />
+    &lt;slot_1&gt;<br />
+        &lt;errno&gt;34&lt;/errno&gt;<br />
+        &lt;errmsg&gt;Vorlauffühler HK5 defekt !&lt;/errmsg&gt;<br />
+        &lt;errtime&gt;18:09:59 10.06.2014&lt;/errtime&gt;<br />
+    &lt;/slot_1&gt;<br />
+    &lt;slot_2&gt;<br />
+        &lt;errno&gt;&lt;/errno&gt;<br />
+        &lt;errmsg&gt;&lt;/errmsg&gt;<br />
+        &lt;errtime&gt;&lt;/errtime&gt;<br />
+    &lt;/slot_2&gt;<br />
+    &lt;slot_3&gt;<br />
+        &lt;errno&gt;&lt;/errno&gt;<br />
+        &lt;errmsg&gt;&lt;/errmsg&gt;<br />
+        &lt;errtime&gt;&lt;/errtime&gt;<br />
+    &lt;/slot_3&gt;<br />
+&lt;/busnr_1&gt;</p>
 
 """
-VERSION="V0.9"
+VERSION="V0.10"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -122,8 +183,8 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 
 # Ausgänge
 5004|1|""|0|1|1 #* SystemLog
-5004|2|0|1|1|0 #* SystemLog
-5004|3|""|0|1|1 #* SystemLog
+5004|2|0|1|1|0 #* Störung Flag (insgesamt für den ECOCAN Bus)
+5004|3|""|0|1|1 #* Störstatus XML
 
 #################################################
 '''
@@ -473,7 +534,7 @@ if EI == 1:
               for _slot in xrange(4):
                   
                   ## default status ist alle wert für die xml2test/xml2num Bausteine löschen
-                  _status = "<errno></errno><errmsg></errmsg><errtime></errtime>"
+                  _status = "<errno>0</errno><errmsg></errmsg><errtime></errtime>"
                   
                   ## Wenn Slotnummer gefüllt
                   if len(_active_errors) > _slot:
@@ -573,11 +634,13 @@ if EI == 1:
 
       def parse(self,payload):
           import time
+          found = 0
           
           ## Payload nach Fehlerregex ## <Kennung Fehlerstatus(0xAE)> <Geräteadresse> < Fehler 1> < Fehler 2> < Fehler 3> < Fehler 4> durchsuchen
           _error = self.error_regex.search( payload )
           if _error:
-              
+              # 0xAE gefunden
+              found = 1
               ## Busnr ist Hex wandeln in Int Base 10
               _busnr = int(_error.group("busnr"),16)
 
@@ -639,6 +702,7 @@ if EI == 1:
                       
                       ## Fehlerstatus auf 0 setzen
                       self.set_error_status( _busnr,_err, 0 )
+          return found
     
       def incomming(self, payload, localvars):
           ## 3. Auswerten von Fehlerprotokollen des "Normal-Modus"
@@ -658,7 +722,7 @@ if EI == 1:
           self.debug("incomming message %r" % payload)
           
           ## Die Payload parsen
-          self.parse(payload)
+          found = self.parse(payload)
           
           ## Wenn es Meldungen im log_queue gibt 
           if self.log_queue:
@@ -669,8 +733,8 @@ if EI == 1:
           self.send_to_output( 2, int(len(self.active_errors) >0) )
           
           ## Status XML für Ausgang 3
-          self.get_status_xml()
-
+          if found:
+              self.get_status_xml()
 
 
 """])
