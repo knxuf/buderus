@@ -83,7 +83,7 @@ Die weiteren Eingänge 3-8 sind zum Verändern von Parametern der Anlage. Diese We
  Fast alle Schreib Kommandos wirken auf Service Parameter, die normalerweise NUR der Heizungsfachman verändert.
 
  """
-VERSION="V0.6"
+VERSION="V0.7"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -360,6 +360,9 @@ if EI == 1:
               (lambda x: [x],[17],"SN"),
               (lambda x: [x],[18],"SN"),
               (lambda x: [x],[19],"SN"),
+              (lambda x: [x],[0],"AN"),
+              (lambda x: [x],[0],"AN"),
+              (lambda x: [x],[0],"AN"),
           ]
 
           self.get_monitor_data()
@@ -390,6 +393,7 @@ if EI == 1:
           self.send_to_output( 2, _msg )
 
       def parse(self,offset, data):
+          # offset von Hex in integer wandeln
           offset = int(offset,16)
           #if offset > len(self.current_status):
           #    self.debug("Daten offset größer als vorhandene Daten")
