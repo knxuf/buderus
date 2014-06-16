@@ -52,19 +52,19 @@ LOGIKCAT="www.knx-user-forum.de\Buderus"
 
 ## Beschreibung
 LOGIKDESC="""
-Dieser Baustein wertet alle Daten für den Datentyp Solar, die vom Buderus Baustein 12264 kommen aus und gibt
+Dieser Baustein wertet alle Daten für den Datentyp Solar, die vom Buderus Baustein 12264 kommen, aus und gibt
  die Zustände auf die entsprechenden Ausgänge aus. 
- <div class="hinw">
+ <div class="acht">
  Wichtig: Eingang 1 und Ausgang 1 dürfen NIE direkt mit dem Buderus Baustein verbunden werden. Bitte immer die 
  Verbindung indirekt über ein iKO herstellen !!!! 
 </div>
  Auf Eingang 1 werden die Daten vom Buderus Baustein empfangen. Auf dem Eingang 2 stellt man die Adresse 
  des Regelgerätes ein. 
- 
+ <div class="hinw">
  Hier ein Tip: Man kann im SystemLog des Buderus Bausteines sehen, an welchen Regelgeräten welche DatenTypen
  erkannt wurden.  Hier ist der DatenTyp Solar relevant. Ist dieser am Regelgerät 2 erkannt worden, ist hier 
  eine 2 einzugeben. 
- 
+ </div>
  Damit werden nunmehr aus dem gesamten Datenstrom des ECOCAN Bus nur noch genau diese Daten gefilter und auf 
  den Ausgängen ausgegeben.
  <div class="hinw">
@@ -76,14 +76,17 @@ Für die eigentliche Kommunikation sind zwingend folgende Beschreibungen von Bude
 7747004149 – 01/2009 DE - Technische Information - Monitordaten - System 4000
 7747004150 – 05/2009 DE - Technische Information - Einstellbare Parameter - Logamatic 4000
 
-Die weiteren Eingänge 3-8 sind zum Verändern von Parametern der Anlage. Diese Wert stellen bei jedem Scheiben ein
- physikalischen Schreiben auf den Flashspeicher dar. Dieser ist auf 1.000.000 mal Schreiben pro Wert begrenzt.
- Es wird also sehr davon abgeraten, dies aus einer Logik zu tun. Am besten wird hier nie geschrieben und 
- man setzt im Buderus Baustein die Konfiguration auf ReadOnly. Dann werden dort alle Schreib-Kommandos verworfen.
- Fast alle Schreib Kommandos wirken auf Service Parameter, die normalerweise NUR der Heizungsfachman verändert.
-
+Die weiteren Eingänge 3-8 sind zum Verändern von Parametern der Anlage. 
+<div class="acht">
+ Diese Eingänge sind jedes Mal ein physikalisches Schreiben auf den Flashspeicher. 
+ Dieser ist auf 1.000.000 mal Schreiben pro Wert begrenzt. Es wird also sehr davon abgeraten, 
+ dies aus einer Logik zu tun. Am besten wird hier nie geschrieben und  man setzt im Buderus 
+ Baustein die Konfiguration auf ReadOnly. Dann werden dort alle Schreib-Kommandos zentral verworfen.
+ 
+ Fast alle Schreib Kommandos wirken übrigens auf Service Parameter, die normalerweise NUR der Heizungsfachman verändert!
+</div>
  """
-VERSION="V0.7"
+VERSION="V0.8"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -155,24 +158,24 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 
 # Speicher
 5003|1||0 #* logic
-5003|2||0 #* Byte2 Kollektortemperature 0,1 C
-5003|3||0 #* Byte1 Kollektortemperature 0,1 C
-5003|4||0 #* Byte2 Anlagenvolumenstrom
-5003|5||0 #* Byte1 Anlagenvolumenstrom
-5003|6||0 #* Byte2 Momentaleistung Solar
-5003|7||0 #* Byte1 Momentaleistung Solar
-5003|8||0 #* Byte3 Eingebrachte Wärmemenge Solar SP1
-5003|9||0 #* Byte2 Eingebrachte Wärmemenge Solar SP1
-5003|10||0 #* Byte1 Eingebrachte Wärmemenge Solar SP1
-5003|11||0 #* Byte3 Eingebrachte Wärmemenge Solar SP2
-5003|12||0 #* Byte2 Eingebrachte Wärmemenge Solar SP2
-5003|13||0 #* Byte1 Eingebrachte Wärmemenge Solar SP2
-5003|14||0 #* Byte3 Betriebsstunden SP1
-5003|15||0 #* Byte2 Betriebsstunden SP1
-5003|16||0 #* Byte1 Betriebsstunden SP1
-5003|17||0 #* Byte3 Betriebsstunden SP2
-5003|18||0 #* Byte2 Betriebsstunden SP2
-5003|19||0 #* Byte1 Betriebsstunden SP2
+5003|2|0.0|0 #* Byte2 Kollektortemperature 0,1 C
+5003|3|0.0|0 #* Byte1 Kollektortemperature 0,1 C
+5003|4|0|0 #* Byte2 Anlagenvolumenstrom
+5003|5|0|0 #* Byte1 Anlagenvolumenstrom
+5003|6|0|0 #* Byte2 Momentaleistung Solar
+5003|7|0|0 #* Byte1 Momentaleistung Solar
+5003|8|0|0 #* Byte3 Eingebrachte Wärmemenge Solar SP1
+5003|9|0|0 #* Byte2 Eingebrachte Wärmemenge Solar SP1
+5003|10|0|0 #* Byte1 Eingebrachte Wärmemenge Solar SP1
+5003|11|0|0 #* Byte3 Eingebrachte Wärmemenge Solar SP2
+5003|12|0|0 #* Byte2 Eingebrachte Wärmemenge Solar SP2
+5003|13|0|0 #* Byte1 Eingebrachte Wärmemenge Solar SP2
+5003|14|0|0 #* Byte3 Betriebsstunden SP1
+5003|15|0|0 #* Byte2 Betriebsstunden SP1
+5003|16|0|0 #* Byte1 Betriebsstunden SP1
+5003|17|0|0 #* Byte3 Betriebsstunden SP2
+5003|18|0|0 #* Byte2 Betriebsstunden SP2
+5003|19|0|0 #* Byte1 Betriebsstunden SP2
 
 
 # Ausgänge
@@ -466,19 +469,19 @@ postlogik=[0,"",r"""
 5012|0|"EC[8]"|"SN[1].set_value(EN[8], offset='1C', byte=1, min=0, max=5, resolution=10, localvars=locals())"|""|0|0|0|0
 
 #* Kollektortemperature 0,1 C
-5012|0|"SC[2] or SC[3]"|"SN[2]*256+SN[3]"|""|20|0|0|0
+5012|0|"SC[2] or SC[3]"|"float(float(SN[2])*256+float(SN[3]))"|""|20|0|0|0
 #* Anlagenvolumenstrom in l/h
-5012|0|"SC[4] or SC[5]"|"SN[4]*256+SN[5]"|""|30|0|0|0
+5012|0|"SC[4] or SC[5]"|"int(int(SN[4])*256+int(SN[5]))"|""|30|0|0|0
 #* Momentaleistung Solar in W
-5012|0|"SC[6] or SC[7]"|"SN[6]*256+SN[7]"|""|31|0|0|0
+5012|0|"SC[6] or SC[7]"|"int(int(SN[6])*256+int(SN[7]))"|""|31|0|0|0
 #* SP1 eingebrachte Wärmemenge in kWh
-5012|0|"SC[8] or SC[9] or SC[10]"|"(float(SN[8]*65536+SN[9]*256+SN[10])/10)"|""|32|0|0|0
+5012|0|"SC[8] or SC[9] or SC[10]"|"float(float(SN[8])*65536+float(SN[9])*256+float(SN[10]))/10"|""|32|0|0|0
 #* SP2 eingebrachte Wärmemenge in kWh
-5012|0|"SC[11] or SC[12] or SC[13]"|"(float(SN[11]*65536+SN[12]*256+SN[13])/10)"|""|33|0|0|0
+5012|0|"SC[11] or SC[12] or SC[13]"|"float(float(SN[11])*65536+float(SN[12])*256+float(SN[13]))/10"|""|33|0|0|0
 #* Betriebsstunden SP1 in Std
-5012|0|"SC[14] or SC[15] or SC[16]"|"(float(SN[14]*65536+SN[15]*256+SN[16])/60)"|""|34|0|0|0
+5012|0|"SC[14] or SC[15] or SC[16]"|"float(float(SN[14])*65536+float(SN[15])*256+float(SN[16]))/60"|""|34|0|0|0
 #* Betriebsstunden SP1 in Std
-5012|0|"SC[17] or SC[18] or SC[19]"|"(float(SN[17]*65536+SN[18]*256+SN[19])/60)"|""|38|0|0|0
+5012|0|"SC[17] or SC[18] or SC[19]"|"float(float(SN[17])*65536+float(SN[18])*256+float(SN[19]))/60"|""|38|0|0|0
 
 
 
