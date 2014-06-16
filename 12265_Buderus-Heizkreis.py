@@ -47,14 +47,47 @@ LOGIKNAME="Buderus-Heizkreis"
 LOGIKID="12265"
 
 ## Ordner im GLE
-LOGIKCAT="www.knx-user-forum.de"
+LOGIKCAT="www.knx-user-forum.de\Buderus"
 
 
 ## Beschreibung
 LOGIKDESC="""
+Dieser Baustein wertet alle Daten für den Datentyp Heizkeis, die vom Buderus Baustein 12264 kommen, aus und gibt
+ die Zustände auf die entsprechenden Ausgänge aus. Da es mehrere Heizkreise gibt, muß neben dem Regelgerät auch 
+ die Nummer des Heizkreises angegeben werden. Dann filtert der Baustein genau auf diese Werte und gibt sie aus. 
+ <div class="acht">
+ Wichtig: Eingang 1 und Ausgang 1 dürfen NIE direkt mit dem Buderus Baustein verbunden werden. Bitte immer die 
+ Verbindung indirekt über ein iKO herstellen !!!! 
+</div>
+ Auf Eingang 1 werden die Daten vom Buderus Baustein empfangen. Auf dem Eingang 2 stellt man die Adresse 
+ des Regelgerätes ein. Auf dem Eingang 3 die Nummer des Heizkreises.
+ <div class="hinw">
+ Hier ein Tip: Man kann im SystemLog des Buderus Bausteines sehen, an welchen Regelgeräten welche DatenTypen
+ erkannt wurden.  Hier ist der DatenTyp Solar relevant. Ist dieser am Regelgerät 2 erkannt worden, ist hier 
+ eine 2 einzugeben. Auch ist hier zu sehen, welcher Heizkreis vorhanden ist.
+ </div>
+ Damit werden nunmehr aus dem gesamten Datenstrom des ECOCAN Bus nur noch genau diese Daten gefilter und auf 
+ den Ausgängen ausgegeben.
+ <div class="hinw">
+ Allgemeines: Ein Istwert von 110 °C beschreibt für den betroffenen Fühler einen Fühler defekt. Es kann auch sein,
+ das hier einfach kein Fühler angeschlossen wurde. Messwerte in diesem Bereich hören bei 109 auf und gehen bei 111 weiter. 
+</div>
 
+Für die eigentliche Kommunikation sind zwingend folgende Beschreibungen von Buderus zu beachten:
+7747004149 – 01/2009 DE - Technische Information - Monitordaten - System 4000
+7747004150 – 05/2009 DE - Technische Information - Einstellbare Parameter - Logamatic 4000
+
+Die weiteren Eingänge 4-11 sind zum Verändern von Parametern der Anlage. 
+<div class="acht">
+ Diese Eingänge sind jedes Mal ein physikalisches Schreiben auf den Flashspeicher. 
+ Dieser ist auf 1.000.000 mal Schreiben pro Wert begrenzt. Es wird also sehr davon abgeraten, 
+ dies aus einer Logik zu tun. Am besten wird hier nie geschrieben und  man setzt im Buderus 
+ Baustein die Konfiguration auf ReadOnly. Dann werden dort alle Schreib-Kommandos zentral verworfen.
+ 
+ Fast alle Schreib Kommandos wirken übrigens auf Service Parameter, die normalerweise NUR der Heizungsfachman verändert!
+</div>
 """
-VERSION="V0.9"
+VERSION="V0.10"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -109,13 +142,13 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|11|"E1 Payload IN"|"E2 ECOCAN Bus"|"E3 Heizkreis"|"E4 Umschaltschwelle"|"E5 Nachtraumsolltemperatur"|"E6 Tagsolltemperatur"|"E7 Betriebsmode"|"E8 Absenkart Ferien"|"E9 Umschalttemperatur Aussen"|"E10 Auslegungstemperatur"|"E11 Heizsystem"|34|"A1 Payload OUT"|"A2 SystemLog"|"A3 Ausschaltoptimierung Status"|"A4 Einschaltoptimierung Status"|"A5 Automatik"|"A6 Warmwasservorrang"|"A7 Estrichtrocknung"|"A8 Ferien"|"A9 Frostschutz"|"A10 Manuell"|"A11 Sommer"|"A12 Tag"|"A13 keine Kommunikation mit FB"|"A14 FB fehlerhaft"|"A15 Fehler Vorlauffühler"|"A16 maximaler Vorlauf"|"A17 externer Störeingang"|"A18 Party / Pause"|"A19 Vorlaufsolltemperatur"|"A20 Vorlaufistwert"|"A21 Raumsollwert"|"A22 Raumistwert"|"A23 Einschaltoptimierung"|"A24 Ausschaltoptimierung"|"A25 Pumpe"|"A26 Stellglied"|"A27 HK-Eingang WF2"|"A28 HK-Eingang WF3"|"A29 HK-Schalter 0"|"A30 Schalter Hand"|"A31 Schalter AUTO"|"A32 Heizkennlinie + 10"|"A33 Heizkennlinie 0"|"A34 Heizkennlinie - 10"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|11|"E1 Payload IN"|"E2 Regelgerät Adr."|"E3 Heizkreis"|"E4 Umschaltschwelle"|"E5 Nachtraumsolltemperatur"|"E6 Tagsolltemperatur"|"E7 Betriebsmode"|"E8 Absenkart Ferien"|"E9 Umschalttemperatur Aussen"|"E10 Auslegungstemperatur"|"E11 Heizsystem"|34|"A1 Payload OUT"|"A2 SystemLog"|"A3 Ausschaltoptimierung Status"|"A4 Einschaltoptimierung Status"|"A5 Automatik"|"A6 Warmwasservorrang"|"A7 Estrichtrocknung"|"A8 Ferien"|"A9 Frostschutz"|"A10 Manuell"|"A11 Sommer"|"A12 Tag"|"A13 keine Kommunikation mit FB"|"A14 FB fehlerhaft"|"A15 Fehler Vorlauffühler"|"A16 maximaler Vorlauf"|"A17 externer Störeingang"|"A18 Party / Pause"|"A19 Vorlaufsolltemperatur"|"A20 Vorlaufistwert"|"A21 Raumsollwert"|"A22 Raumistwert"|"A23 Einschaltoptimierung"|"A24 Ausschaltoptimierung"|"A25 Pumpe"|"A26 Stellglied"|"A27 HK-Eingang WF2"|"A28 HK-Eingang WF3"|"A29 HK-Schalter 0"|"A30 Schalter Hand"|"A31 Schalter AUTO"|"A32 Heizkennlinie + 10"|"A33 Heizkennlinie 0"|"A34 Heizkennlinie - 10"
 
 5001|11|34|0|1|1
 
 # EN[x]
 5002|1|""|1 #* Payload IN
-5002|2|1|0 #* ECOCAN Bus ID
+5002|2|1|0 #* Regelgerät Adresse
 5002|3|1|0 #* Heizkreis Nr
 5002|4|17|0 #* Sommer/Winter Umschaltschwelle 1° genau Stellbereich: 9 - 31 °C
 5002|5|34|0 #* Nachtraumsolltemperatur 0.5° genau Stellbereich: 2 - 30 °C
