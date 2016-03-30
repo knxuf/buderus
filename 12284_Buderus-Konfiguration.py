@@ -2,7 +2,7 @@
 ## -----------------------------------------------------
 ## Logik-Generator  V1.5
 ## -----------------------------------------------------
-## Copyright © 2012, knx-user-forum e.V, All rights reserved.
+## Copyright Â© 2012, knx-user-forum e.V, All rights reserved.
 ##
 ## This program is free software; you can redistribute it and/or modify it under the terms
 ## of the GNU General Public License as published by the Free Software Foundation; either
@@ -52,47 +52,47 @@ LOGIKCAT="www.knx-user-forum.de\Buderus"
 
 ## Beschreibung
 LOGIKDESC="""
-Dieser Baustein wertet alle Daten für den Datentyp 0x89 Konfiguration, die vom Buderus Baustein 12264 kommen, aus und gibt
- die Zustände auf die entsprechenden Ausgänge aus. 
+Dieser Baustein wertet alle Daten fÃ¼r den Datentyp 0x89 Konfiguration, die vom Buderus Baustein 12264 kommen, aus und gibt
+ die ZustÃ¤nde auf die entsprechenden AusgÃ¤nge aus. 
  <div class="hinw">
- Wichtig: Eingang 1 und Ausgang 1 dürfen NIE direkt mit dem Buderus Baustein 12264 verbunden werden. Bitte immer die 
- Verbindung indirekt über ein iKO herstellen !!!! 
+ Wichtig: Eingang 1 und Ausgang 1 dÃ¼rfen NIE direkt mit dem Buderus Baustein 12264 verbunden werden. Bitte immer die 
+ Verbindung indirekt Ã¼ber ein iKO herstellen !!!! 
 </div>
  Auf Eingang 1 werden die Daten vom Buderus Baustein empfangen. Auf dem Eingang 2 stellt man die Adresse 
- des Regelgerätes ein. 
+ des RegelgerÃ¤tes ein. 
  
- Hier ein Tip: Man kann im SystemLog des Buderus Bausteines sehen, an welchen Regelgeräten welche DatenTypen
- erkannt wurden.  Hier ist der DatenTyp Solar relevant. Ist dieser am Regelgerät 2 erkannt worden, ist hier 
+ Hier ein Tip: Man kann im SystemLog des Buderus Bausteines sehen, an welchen RegelgerÃ¤ten welche DatenTypen
+ erkannt wurden.  Hier ist der DatenTyp Solar relevant. Ist dieser am RegelgerÃ¤t 2 erkannt worden, ist hier 
  eine 2 einzugeben. 
  
  Damit werden nunmehr aus dem gesamten Datenstrom des ECOCAN Bus nur noch genau diese Daten gefilter und auf 
- den Ausgängen ausgegeben.
+ den AusgÃ¤ngen ausgegeben.
  <div class="hinw">
- Allgemeines: Ein Istwert von 110 °C beschreibt für den betroffenen Fühler einen Fühler defekt. Es kann auch sein,
- das hier einfach kein Fühler angeschlossen wurde. Messwerte in diesem Bereich hören bei 109 auf und gehen bei 111 weiter. 
+ Allgemeines: Ein Istwert von 110 Â°C beschreibt fÃ¼r den betroffenen FÃ¼hler einen FÃ¼hler defekt. Es kann auch sein,
+ das hier einfach kein FÃ¼hler angeschlossen wurde. Messwerte in diesem Bereich hÃ¶ren bei 109 auf und gehen bei 111 weiter. 
 </div>
 
-Für die eigentliche Kommunikation sind zwingend folgende Beschreibungen von Buderus zu beachten:
-7747004149 – 01/2009 DE - Technische Information - Monitordaten - System 4000
-7747004150 – 05/2009 DE - Technische Information - Einstellbare Parameter - Logamatic 4000
+FÃ¼r die eigentliche Kommunikation sind zwingend folgende Beschreibungen von Buderus zu beachten:
+7747004149 â€“ 01/2009 DE - Technische Information - Monitordaten - System 4000
+7747004150 â€“ 05/2009 DE - Technische Information - Einstellbare Parameter - Logamatic 4000
 
 D
 """
 VERSION="V1.0"
 
 
-## Bedingung wann die kompilierte Zeile ausgeführt werden soll
+## Bedingung wann die kompilierte Zeile ausgefÃ¼hrt werden soll
 BEDINGUNG="EI"
 ## Formel die in den Zeitspeicher geschrieben werden soll
 ZEITFORMEL=""
 ## Nummer des zu verwenden Zeitspeichers
 ZEITSPEICHER="0"
 
-## AUF True setzen um Binären Code zu erstellen
+## AUF True setzen um BinÃ¤ren Code zu erstellen
 doByteCode=False
 #doByteCode=True
 
-## Base64Code über SN[x] cachen
+## Base64Code Ã¼ber SN[x] cachen
 doCache=False
 
 ## Doku erstellen Ja/Nein
@@ -111,7 +111,7 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 ##
 ## erstellt am: '''+time.strftime("%Y-%m-%d %H:%M")+'''
 ## -----------------------------------------------------
-## Copyright © '''+ time.strftime("%Y") + ''', knx-user-forum e.V, All rights reserved.
+## Copyright Â© '''+ time.strftime("%Y") + ''', knx-user-forum e.V, All rights reserved.
 ##
 ## This program is free software; you can redistribute it and/or modify it under the terms
 ## of the GNU General Public License as published by the Free Software Foundation; either
@@ -126,30 +126,30 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 
 ## -- ''' +re.sub("\n","\n## -- ",LOGIKDESC)+ ''' 
 
-#5000|"Text"|Remanent(1/0)|Anz.Eingänge|.n.|Anzahl Ausgänge|.n.|.n.
-#5001|Anzahl Eingänge|Ausgänge|Offset|Speicher|Berechnung bei Start
+#5000|"Text"|Remanent(1/0)|Anz.EingÃ¤nge|.n.|Anzahl AusgÃ¤nge|.n.|.n.
+#5001|Anzahl EingÃ¤nge|AusgÃ¤nge|Offset|Speicher|Berechnung bei Start
 #5002|Index Eingang|Default Wert|0=numerisch 1=alphanummerisch
 #5003|Speicher|Initwert|Remanent
-#5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
+#5004|ausgang|Initwert|runden binÃ¤r (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|2|"E1 Payload IN"|"E2 ECOCAN Bus ID"|20|"A1 SystemLog"|"A2 Außentemperatur"|"A3 gedämpfte Außentemperatur"|"A4 Version"|"A5 Modul in Slot 1"|"A6 Modul in Slot 2"|"A7 Modul in Slot 3"|"A8 Modul in Slot 4"|"A9 Modul in Slot A"|"A10 Fehler bei Slot 1"|"A11 Fehler bei Slot 2"|"A12 Fehler bei Slot 3"|"A13 Fehler bei Slot 4"|"A14 Fehler bei Slot A"|"A15 Anlagenvorlaufsolltemperatur"|"A16 Anlagenvorlaufisttemperatur"|"A17 Betriebsflags der Anlage"|"A18 Max. Anst. Heizkreispumpe"|"A19 Max. Anst. Stellglied"|"A20 Regelg. Vorlaufisttemp."
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|2|"E1 Payload IN"|"E2 ECOCAN Bus ID"|20|"A1 SystemLog"|"A2 AuÃŸentemperatur"|"A3 gedÃ¤mpfte AuÃŸentemperatur"|"A4 Version"|"A5 Modul in Slot 1"|"A6 Modul in Slot 2"|"A7 Modul in Slot 3"|"A8 Modul in Slot 4"|"A9 Modul in Slot A"|"A10 Fehler bei Slot 1"|"A11 Fehler bei Slot 2"|"A12 Fehler bei Slot 3"|"A13 Fehler bei Slot 4"|"A14 Fehler bei Slot A"|"A15 Anlagenvorlaufsolltemperatur"|"A16 Anlagenvorlaufisttemperatur"|"A17 Betriebsflags der Anlage"|"A18 Max. Anst. Heizkreispumpe"|"A19 Max. Anst. Stellglied"|"A20 Regelg. Vorlaufisttemp."
 
 5001|2|20|0|3|1
 
 # EN[x]
 5002|1|""|1 #* Payload IN
-5002|2|1|0 #* ECOCAN Bus ID des Regelgerätes
+5002|2|1|0 #* ECOCAN Bus ID des RegelgerÃ¤tes
 
 # Speicher
 5003|1||0 #* logic
 5003|2||0 #* Version (Vorkomma)
 5003|3||0 #* Version (Nachkomma)
 
-# Ausgänge
+# AusgÃ¤nge
 5004|1|""|0|1|1 #* SystemLog
-5004|2|0|0|1|0 #* Außentemperatur (in °C) 
-5004|3|0|0|1|0 #* gedämpfte Außentemperatur (in °C)
+5004|2|0|0|1|0 #* AuÃŸentemperatur (in Â°C) 
+5004|3|0|0|1|0 #* gedÃ¤mpfte AuÃŸentemperatur (in Â°C)
 5004|4|""|0|1|1 #* Version des Bus (Vorkomma.Nachkomma) 
 5004|5|""|0|1|1 #* Modul in Slot 1  
 5004|6|""|0|1|1 #* Modul in Slot 2  
@@ -161,12 +161,12 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 5004|12|""|0|1|1 #* Fehler bei Slot 3 
 5004|13|""|0|1|1 #* Fehler bei Slot 4 
 5004|14|""|0|1|1 #* Fehler bei Slot A 
-5004|15|0|0|1|0 #* Anlagenvorlaufsolltemperatur (in °C) 
-5004|16|0|0|1|0 #* Anlagenvorlaufisttemperatur (in °C) 
+5004|15|0|0|1|0 #* Anlagenvorlaufsolltemperatur (in Â°C) 
+5004|16|0|0|1|0 #* Anlagenvorlaufisttemperatur (in Â°C) 
 5004|17|0|0|1|0 #* Betriebsflags der Anlage 
-5004|18|0|0|1|0 #* Max. Ansteuerung für Heizkreispumpe (in %) 
-5004|19|0|0|1|0 #* Max. Ansteuerung für Stellglied (in %) 
-5004|20|0|0|1|0 #* Regelgerätevorlaufisttemperatur (in °C) 
+5004|18|0|0|1|0 #* Max. Ansteuerung fÃ¼r Heizkreispumpe (in %) 
+5004|19|0|0|1|0 #* Max. Ansteuerung fÃ¼r Stellglied (in %) 
+5004|20|0|0|1|0 #* RegelgerÃ¤tevorlaufisttemperatur (in Â°C) 
 
 #################################################
 '''
@@ -197,9 +197,9 @@ if EI == 1:
 
           self.payload_regex = re.compile( "(?P<mode>AB|A7)%s89(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ) )
 
-          ## Offset   Name    Auflösung
-          ##  0 Außentemperatur 1 °C (Werte größer 128 = negativ)                ## Ausgang 3
-          ##  1 gedämpfte Außentemperatur 1 °C (Werte größer 128 = negativ)        ## Ausgang 4
+          ## Offset   Name    AuflÃ¶sung
+          ##  0 AuÃŸentemperatur 1 Â°C (Werte grÃ¶ÃŸer 128 = negativ)                ## Ausgang 3
+          ##  1 gedÃ¤mpfte AuÃŸentemperatur 1 Â°C (Werte grÃ¶ÃŸer 128 = negativ)        ## Ausgang 4
           ##  2 Version Vorkomma *                                                ## Ausgang 5
           ##  3 Version Nachkomma *                                                ## Ausgang 5
           ##  4 FREI *
@@ -207,24 +207,24 @@ if EI == 1:
           ##  6 Modul in Slot 1   Die Bedeutung der Werte :                        ## Ausgang 6
           ##                      0 = defekt
           ##                      1 = frei
-          ##                      2 = ZM432 (Kessel für 4311)
+          ##                      2 = ZM432 (Kessel fÃ¼r 4311)
           ##                      3 = FM442 (2x Heizkreis)
           ##                      4 = FM441 (1x Heizkreis + 1x Warmwasser)
           ##                      5 = FM447 (Strategie)
-          ##                      6 = ZM432 (Kessel für 4211, Warmwasser +
+          ##                      6 = ZM432 (Kessel fÃ¼r 4211, Warmwasser +
           ##                                 1x ungemischter Heizkreis)
-          ##                      7 = FM445 (LAP – Modul)
+          ##                      7 = FM445 (LAP â€“ Modul)
           ##                      8 = FM451 (KSE1)
           ##                      9 = FM454 (KSE4)
-          ##                      10 = ZM424 (Kessel für 4111,Heizkreise,WW)
+          ##                      10 = ZM424 (Kessel fÃ¼r 4111,Heizkreise,WW)
           ##                      11 = UBA
           ##                      12 = FM452 (KSE2)
-          ##                      13 = FM448 (Störmeldemodul)
+          ##                      13 = FM448 (StÃ¶rmeldemodul)
           ##                      14 = ZM433 (Unterstation mit Pumpe und
           ##                                 1 x gemischter Heizkreis)
-          ##                      15 = FM446 EIB – Modul
+          ##                      15 = FM446 EIB â€“ Modul
           ##                      16 = FM443 Solarmodul
-          ##                      21 = FM444 Alternativer Wärmeerzeuger - Modul
+          ##                      21 = FM444 Alternativer WÃ¤rmeerzeuger - Modul
           ##  7 Modul in Slot 2                                                    ## Ausgang 7
           ##  8 Modul in Slot 3                                                    ## Ausgang 8
           ##  9 Modul in Slot 4                                                    ## Ausgang 9
@@ -233,8 +233,8 @@ if EI == 1:
           ##  12 Fehler bei Slot 1 *   Bedeutung der Werte:                        ## Ausgang 11
           ##                           0 = kein Fehler 
           ##                           1 = unbekanntes Modul
-          ##                           2 = Fehler bei CAN – Adresse
-          ##                           3 = SOLL // IST – Fehler
+          ##                           2 = Fehler bei CAN â€“ Adresse
+          ##                           3 = SOLL // IST â€“ Fehler
           ##                           4 = keine Antwort
           ##                           5 = Handbetrieb
           ##  13 Fehler bei Slot 2 *                                            ## Ausgang 12
@@ -242,43 +242,43 @@ if EI == 1:
           ##  15 Fehler bei Slot 4 *                                            ## Ausgang 14
           ##  16 Fehler bei Slot A *                                            ## Ausgang 15
           ##  17 FREI *
-          ##  18 Anlagenvorlaufsolltemperatur 1 °C                              ## Ausgang 16
-          ##  19 Anlagenvorlaufisttemperatur 1 °C                               ## Ausgang 17
+          ##  18 Anlagenvorlaufsolltemperatur 1 Â°C                              ## Ausgang 16
+          ##  19 Anlagenvorlaufisttemperatur 1 Â°C                               ## Ausgang 17
           ##  20 Betriebsflags der Anlage     Bedeutung der Werte               ## Ausgang 18
           ##                                  1 = Pufferspeicher bleibt kalt        
-          ##                                  2 = Fühler UST-FK defekt
-          ##                                  3 = Wartezeit läuft
-          ##  21 Max. Ansteuerung für Heizkreispumpe 1 %                        ## Ausgang 19
-          ##  22 max. Ansteuerung für Stellglied 1 %                            ## Ausgang 20
-          ##  23 Regelgerätevorlaufisttemperatur 1 °C                           ## Ausgang 21
+          ##                                  2 = FÃ¼hler UST-FK defekt
+          ##                                  3 = Wartezeit lÃ¤uft
+          ##  21 Max. Ansteuerung fÃ¼r Heizkreispumpe 1 %                        ## Ausgang 19
+          ##  22 max. Ansteuerung fÃ¼r Stellglied 1 %                            ## Ausgang 20
+          ##  23 RegelgerÃ¤tevorlaufisttemperatur 1 Â°C                           ## Ausgang 21
 
           ## Buderus Fehlermeldungen
           self.slot_module = {
               0 : "defekt",
               1 : "frei",
-              2 : "ZM432", #(Kessel für 4311)",
+              2 : "ZM432", #(Kessel fÃ¼r 4311)",
               3 : "FM442", #(2x Heizkreis)",
               4 : "FM441", #(1x Heizkreis + 1x Warmwasser)",
               5 : "FM447", #(Strategie)",
-              6 : "ZM432", #(Kessel für 4211, WW + 1x ungem. Heizkreis)",
-              7 : "FM445", #(LAP – Modul)",
+              6 : "ZM432", #(Kessel fÃ¼r 4211, WW + 1x ungem. Heizkreis)",
+              7 : "FM445", #(LAP â€“ Modul)",
               8 : "FM451", #(KSE1)",
               9 : "FM454", #(KSE4)",
-             10 : "ZM424", #(Kessel für 4111,Heizkreise,WW)",
+             10 : "ZM424", #(Kessel fÃ¼r 4111,Heizkreise,WW)",
              11 : "UBA",
              12 : "FM452", #(KSE2)",
-             13 : "FM448", #(Störmeldemodul)",
+             13 : "FM448", #(StÃ¶rmeldemodul)",
              14 : "ZM433", #(Unterstation m. Pumpe u. 1 x gem. Heizkreis)",
-             15 : "FM446", #EIB – Modul",
+             15 : "FM446", #EIB â€“ Modul",
              16 : "FM443", #Solarmodul",
-             21 : "FM444", #Alternativer Wärmeerzeuger Modul",
+             21 : "FM444", #Alternativer WÃ¤rmeerzeuger Modul",
           }
           
           self.slot_error = {
               0 : "kein Fehler",
               1 : "unbekanntes Modul",
-              2 : "Fehler bei CAN – Adresse",
-              3 : "SOLL // IST – Fehler",
+              2 : "Fehler bei CAN â€“ Adresse",
+              3 : "SOLL // IST â€“ Fehler",
               4 : "keine Antwort",
               5 : "Handbetrieb",
           }
@@ -346,7 +346,7 @@ if EI == 1:
       def parse(self,offset, data):
           offset = int(offset,16)
           #if offset > len(self.current_status):
-          #    self.debug("Daten offset größer als vorhandene Daten")
+          #    self.debug("Daten offset grÃ¶ÃŸer als vorhandene Daten")
           #    return
           _len = len(data)
           #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
@@ -384,7 +384,7 @@ if EI == 1:
       def set_value(self, val, offset, byte,localvars, min=-99999, max=99999, resolution=1):
           self.localvars = localvars
           if val < min or val > max:
-              self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
+              self.log("ungÃ¼ltiger Wert %r (%s-%s)" % (val,min,max) )
           _val = val * resolution
           if _val < 0:
               (_val * -1) + 128
@@ -666,7 +666,7 @@ def symbolize(LOGIK,code):
               isunique=False
           except KeyError:
               pass
-          ## überprüft auch die alternativen Varianten
+          ## Ã¼berprÃ¼ft auch die alternativen Varianten
           if re.match("[ACN]",i[2][-1:]):
               try:
                   type(symbols[i[2][:-1]])
@@ -699,7 +699,7 @@ for codepart in code:
     if codepart[0]==0 or codepart[0]==3:
         commentcode.append("##########################\n###### Quelltext: ########\n##########################"+"\n##".join(codepart[2].split("\n"))+"\n")
     #else:
-    #    commentcode.append("#"+codepart[2].split("\n")[1]+"\n################################\n## Quelltext nicht Öffentlich ##\n################################")
+    #    commentcode.append("#"+codepart[2].split("\n")[1]+"\n################################\n## Quelltext nicht Ã–ffentlich ##\n################################")
 
 
 NLOGIK,postlogik = symbolize(LOGIK,postlogik)
@@ -939,7 +939,7 @@ if debug and not livedebug:
       print """
 ###############################################
 ### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ###
-### !!!ACHTUNG: sehr lange Ausfürungszeit!! ###
+### !!!ACHTUNG: sehr lange AusfÃ¼rungszeit!! ###
 ### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ###
 ###############################################
 """
@@ -967,7 +967,7 @@ if livedebug:
     sock.close()
 
 if doSend:
-    ## Das auslösen über den Debug verhindern
+    ## Das auslÃ¶sen Ã¼ber den Debug verhindern
     sendVars="EC["+str(ANZIN+1)+"]=0\n"+sendVars
     sock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
     sock.connect((livehost,liveport))
@@ -1025,8 +1025,8 @@ Neuberechnung beim Start: """+CALCSTART+"""
 Baustein ist remanent: """+LOGIKREMANT+"""
 Interne Bezeichnung: """+LOGIKID+"""
 Kategorie: '"""+LOGIKCAT+"""'
-Anzahl Eingänge: """+str(ANZIN)+"""   """+repr(EN)+"""
-Anzahl Ausgänge: """+str(ANZOUT)+"""  """+repr(AN)+"""
+Anzahl EingÃ¤nge: """+str(ANZIN)+"""   """+repr(EN)+"""
+Anzahl AusgÃ¤nge: """+str(ANZOUT)+"""  """+repr(AN)+"""
 Interne Speicher: """+str(ANZSP)+"""  """+repr(SN)+"""
 """
 
