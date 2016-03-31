@@ -71,6 +71,7 @@ Baudrate: 9600
 Data Bits: 8
 Stop Bits: 1
 Parity: Keine
+Flow Control: None !!!!
 FIFO: Ja
 Interface: RS232
 
@@ -164,7 +165,7 @@ Die Produkte &quot;Logamatic 4000&quot;,  &quot;Logamatic Gateway RS232&quot; si
 Die Benutzung dieses Bausteins geschieht auf eigene Gefahr. 
 
 """
-VERSION="V0.17"
+VERSION="V0.19"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -379,7 +380,7 @@ if EI == 1:
           self.directmode_regex = re.compile("(?P<id>A0|A1|A2|B3|B4)(?P<busnr>[0-9a-fA-F]{2})")
           self.directmode_A3_regex = re.compile("(?P<id>A3)(?P<busnr>[0-9a-fA-F]{2})(?P<Data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})")
           ## das sind die schreibenden Kommandos
-          self.directmode_B0_regex = re.compile("(?P<id>B0)(?P<busnr>[0-9a-fA-F]{2})(?P<Data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})")
+          self.directmode_B0_regex = re.compile("(?P<id>B0)(?P<busnr>[0-9a-fA-F]{2})(?P<Data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})[0-9a-fA-F]{12}")
    
           ## Im "Normal-Modus" werden die Monitordaten nach folgendem Muster übertragen: 
           ## 0xA7 <ECOCAN-BUS-Adresse> <TYP> <OFFSET> <DATUM> 
@@ -469,7 +470,7 @@ if EI == 1:
           if (self.config.get("debug") == 5 and lvl == 5):
             self.log(msg,severity='debug')
           elif (self.config.get("debug") == 10 and lvl == 10):
-            print "%s DEBUG: %r" % (time.strftime("%H:%M:%S"),msg,)
+            print "%s DEBUG-12264: %r" % (time.strftime("%H:%M:%S"),msg,)
 
       def connect(self):
           ## _connect als Thread starten
@@ -501,7 +502,7 @@ if EI == 1:
                      _direct_mode = self.directmode_B1_regex.search(msg)
                      if (not _direct_mode and self.config.get("writetime") == 1):
                         _direct_mode = self.directmode_B2_regex.search(msg)
-                     elif (not _direct_mode and not self.config.get("readonly")):
+                     if (not _direct_mode and not self.config.get("readonly")):
                         _direct_mode = self.directmode_B0_regex.search(msg)
               ## wenn keine gültige SENDE payload
               if not _direct_mode:
@@ -513,11 +514,13 @@ if EI == 1:
                  _busnr = "B1"
               elif (_cmdid == "B2"):
                  _busnr = "B2"
+#              elif (_cmdid == "B0"):
+#                 _busnr = "B0"
               else:
                  _busnr = _direct_mode.group("busnr")
 
               ## Wenn eine direct-mode anfrage
-              if (_cmdid == "A3" or _cmdid == "A2" or _cmdid == "A1" or _cmdid == "A0" or _cmdid == "B0" or _cmdid == "B3" or _cmdid == "B4"):
+              if (_cmdid == "A3" or _cmdid == "A2" or _cmdid == "A1" or _cmdid == "A0" or _cmdid == "B3" or _cmdid == "B4"):
                   if _busnr not in self.waiting_direct_bus:
                       ## busnr zur liste auf Antwort wartender hinzu
                       self.add_direct_waiting(_busnr)
