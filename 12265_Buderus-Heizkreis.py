@@ -87,7 +87,7 @@ Die weiteren Eingänge 4-11 sind zum Verändern von Parametern der Anlage.
  Fast alle Schreib Kommandos wirken übrigens auf Service Parameter, die normalerweise NUR der Heizungsfachman verändert!
 </div>
 """
-VERSION="V0.10"
+VERSION="V0.12"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -332,7 +332,8 @@ if EI == 1:
 
       def debug(self,msg):
           #self.log(msg,severity='debug')
-          print "DEBUG: %r" % (msg,)
+          #print "DEBUG-12265: %r" % (msg,)
+          pass
 
       def send_to_output(self,out,msg,sbc=False):
           if sbc and msg == self.localvars["AN"]:
@@ -412,13 +413,13 @@ postlogik=[0,"",r"""
 5012|0|"EC[7]"|"SN[1].set_value(EN[7], offset='00', byte=5, min=0, max=2, resolution=1, localvars=locals())"|""|0|0|0|0
 
 #* Absenkart Ferien 0 Abschalt (Frostschutz aktiv) / 1 Reduziert / 2 Raumhalt / 4 Außenhalt
-5012|0|"EC[8]"|"SN[1].set_value(EN[8], offset='0E', byte=5, min=0, max=4, resolution=1, localvars=locals())"|""|0|0|0|0
+5012|0|"EC[8]"|"SN[1].set_value(EN[8], offset='3F', byte=1, min=0, max=4, resolution=1, localvars=locals())"|""|0|0|0|0
 
 #* Umschalttemperatur für Absenkart "Außenhalt" bei Ferienbetrieb 1° genau Stellbereich -20 bis 10 °C
-5012|0|"EC[9]"|"SN[1].set_value(EN[9], offset='3F', byte=1, min=-20, max=10, resolution=1, localvars=locals())"|""|0|0|0|0
+5012|0|"EC[9]"|"SN[1].set_value(EN[9], offset='3F', byte=2, min=-20, max=10, resolution=1, localvars=locals())"|""|0|0|0|0
 
 #* Auslegungstemperatur Heizkreis 1° genau Stellbereich 30-90 °C
-5012|0|"EC[10]"|"SN[1].set_value(EN[10], offset='3F', byte=2, min=30, max=90, resolution=1, localvars=locals())"|""|0|0|0|0
+5012|0|"EC[10]"|"SN[1].set_value(EN[10], offset='3F', byte=5, min=30, max=90, resolution=1, localvars=locals())"|""|0|0|0|0
 
 #* Heizsystem 0 kein Heizsystem / 1 Heizkörper / 2 Konvektor / 3 Fussboden / 4 Fusspunkt / 5 konstant / 6 Raumregler / 7 EIB
 5012|0|"EC[11]"|"SN[1].set_value(EN[11], offset='38', byte=2, min=0, max=7, resolution=1, localvars=locals())"|""|0|0|0|0
