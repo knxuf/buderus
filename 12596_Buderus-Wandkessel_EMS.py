@@ -76,8 +76,8 @@ Dieser Baustein wertet alle Daten für den Datentyp Wandhängender Kessel (nur EMS
 </div>
 
 Für die eigentliche Kommunikation sind zwingend folgende Beschreibungen von Buderus zu beachten:
-7747004149 – 01/2009 DE - Technische Information - Monitordaten - System 4000
-7747004150 – 05/2009 DE - Technische Information - Einstellbare Parameter - Logamatic 4000
+7747004149 - 01/2009 DE - Technische Information - Monitordaten - System 4000
+7747004150 - 05/2009 DE - Technische Information - Einstellbare Parameter - Logamatic 4000
 
 Die Monitorwerte für wandhängende Kessel (UBA) setzen sich zur Zeit aus insgesamt 60 Werten zusammen 
 und gehören zu einem der nachfolgenden Typen: 
@@ -145,7 +145,7 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|3|"E1 Payload IN"|"E2 Regelgerät Adresse"|"E3 Wandhängender Kessel Nr"|67|"A1 Payload OUT"|"A2 SystemLog"|"A3 1.Bit, Anlagenfehler eines EMS-Kessel, Luftfühler Feuerungsautomat defekt"|"A4 2.Bit, Anlagenfehler eines EMS-Kessel, Betriebstemperatur wird nicht erreicht"|"A5 3.Bit, Anlagenfehler eines EMS-Kessel, Ölvorwärmer Dauersignal"|"A6 4.Bit, Anlagenfehler eines EMS-Kessel, Ölvorwärmer ohne Signal"|"A7 1.Bit, Anlagenfehler von EMS- Warmwasser, 1.Wasserfühler Feuerungsautomat defekt"|"A8 2.Bit, Anlagenfehler von EMS- Warmwasser, 2.Wasserfühler Feuerungsautomat defekt"|"A9 3.Bit, Anlagenfehler von EMS- Warmwasser, Warmwasser bleibt kalt"|"A10 4.Bit, Anlagenfehler von EMS- Warmwasser, Desinfektion misslungen"|"A11 Betriebscode EMS-System ASCII"|"A12 Fehlernummer Feuerungsautomat  (200-499: UBA-Fehler; 500-799: SAFE-Fehler; 800-999: EMS-Anlagen-Fehler)"|"A13 1.Bit, Brennertyp des Kessel, Stufen des Brenners (wenn 0, dann mod.Brenner)"|"A14 2.Bit, Brennertyp des Kessel, Stufen des Brenners (wenn 0, dann mod.Brenner)"|"A15 3.Bit, Brennertyp des Kessel, Stufen des Brenners (wenn 0, dann mod.Brenner)"|"A16 7.Bit, Brennertyp des Kessel, Gasbrenner"|"A17 8.Bit, Brennertyp des Kessel, Ölbrenner"|"A18 max. Leistung des Brenners (in kW)"|"A19 min. Leistung des Brenners (in %)"|"A20 Flammenstrom müA (255=Fühler defekt)"|"A21 Abgastemperatur über Feuerungsautomat °C (255=Fühler defekt)"|"A22 Temperatur Ansaugluft °C (255=Fühler defekt)"|"A23 Wasserdruck in der Anlage bar (255=Fühler defekt)"|"A24 1.Bit, Betriebszustände des Brennerautomaten, Heizanforderung liegt an"|"A25 2.Bit, Betriebszustände des Brennerautomaten, Warmwasseranforderung liegt vor"|"A26 3.Bit, Betriebszustände des Brennerautomaten, 11kW Jumper wurde entfernt"|"A27 4.Bit, Betriebszustände des Brennerautomaten, Kessel wird mit Betriebstemperatur betrieben"|"A28 5.Bit, Betriebszustände des Brennerautomaten, Kesselschutz zwecks Taupunktüberschreitung"|"A29 6.Bit, Betriebszustände des Brennerautomaten, Feuerungsautomat ist verrriegelt (Serviceeinsatz)"|"A30 7.Bit, Betriebszustände des Brennerautomaten, Feuerungsautomat ist blockiert"|"A31 8.Bit, Betriebszustände des Brennerautomaten, Servicemeldung vom Feuerungsautomat"|"A32 1.Bit, Relaiszustände 1 des Brennerautomaten, Magnetventil für 1. Stufe"|"A33 2.Bit, Relaiszustände 1 des Brennerautomaten, Magnetventil für 2. Stufe"|"A34 3.Bit, Relaiszustände 1 des Brennerautomaten, Gebläserelais"|"A35 4.Bit, Relaiszustände 1 des Brennerautomaten, Zündungsrelais"|"A36 5.Bit, Relaiszustände 1 des Brennerautomaten, Ölvorwärmung/ Abgassperrklappe"|"A37 6.Bit, Relaiszustände 1 des Brennerautomaten, Kesselkreispumpe/ Heizkreisumwälzpumpe"|"A38 7.Bit, Relaiszustände 1 des Brennerautomaten, 3-Wegeventil"|"A39 8.Bit, Relaiszustände 1 des Brennerautomaten, Warmwasser Zirkulationspumpe"|"A40 1.Bit, Relaiszustände 2 des Brennerautomaten, Warmwasserladepumpe"|"A41 2.Bit, Relaiszustände 2 des Brennerautomaten, Flüssiggasventil"|"A42 3.Bit, Relaiszustände 2 des Brennerautomaten, QWP Umwälzpumpe"|"A43 Vorlaufsolltemperatur die vom Feuerungsautomat angestrebt wird °C"|"A44 Wie wird Warmwasser geladen (0=kein Warmwasser; 1=nach Durchlaufprinzip; 2=Durchlaufprinzip mit kleinem Speicher; 3=Speicherprinzip)"|"A45 1.Bit  mögliche Fehleinstellungen am EMS-Kessel, 11kW Jumper in Kaskade gezogen"|"A46 2.Bit  mögliche Fehleinstellungen am EMS-Kessel, Kessel über BC10 im Notbetrieb"|"A47 3.Bit  mögliche Fehleinstellungen am EMS-Kessel, WW- Poti nicht auf Stellung AUT"|"A48 4.Bit  mögliche Fehleinstellungen am EMS-Kessel, Kesselpoti nicht auf AUT/ 90°C"|"A49 5.Bit  mögliche Fehleinstellungen am EMS-Kessel, Anforderung über Klemme WA"|"A50 7.Bit  mögliche Fehleinstellungen am EMS-Kessel, Kommunikation vorhanden (nur mit FM458)"|"A51 8.Bit  mögliche Fehleinstellungen am EMS-Kessel, keine Kommunikation (nur mit FM458)"|"A52 1.Bit  EMS-Servicemeldungen, es steht keine Meldung an"|"A53 2.Bit  EMS-Servicemeldungen, Abgastemperatur zu hoch"|"A54 3.Bit  EMS-Servicemeldungen, Gebläse schwergängig"|"A55 4.Bit  EMS-Servicemeldungen, Flammstrom ist niedrig"|"A56 5.Bit  EMS-Servicemeldungen, Flammenverzugszeit ist hoch"|"A57 6.Bit  EMS-Servicemeldungen, häufiger Flammenabriss"|"A58 7.Bit  EMS-Servicemeldungen, Wasserdruck der Anlage ist niedrig"|"A59 8.Bit  EMS-Servicemeldungen, vorgegebenes Datum überschritten"|"A60 Betriebszeit 2.Stufe (in Std.)"|"A61 Kennzeichnung/ Identifizierung des EMS-Masters (64=Feuerungsautomat UBA3, Master; 65=RC10; 66=RC20, 67=RC30; 68=BC10; 69=MM10; 70=Gaswärmepumpe; 71=Weichenmodul; 72=MC10; 73=Solar; 74=EED; 75=SAFE; 76=ES73; 77=M300; 78=M400; 79=M100; 80=M200; 81=Kaskade; 82=LPG)"|"A62 Version Vor- Nachkommastelle des EMS-Master"|"A63 Kennung des SAFe (z.Zt. 75)"|"A64 Version Vor- Nachkommastelle des Feuerungsautomaten (SAFe)"|"A65 BCM/ BIM- Nummer (0-255= UBA1; 1000-4999= UBA3; 5000-9999=SAFe)"|"A66 Versions-Nr. des BCM/BIM"|"A67 Betriebstemperatur des Kessel °C
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''"|0|3|"E1 Payload IN"|"E2 Regelgerät Adresse"|"E3 Wandhängender Kessel Nr"|67|"A1 Payload OUT"|"A2 SystemLog"|"A3 1.Bit, Anlagenfehler eines EMS-Kessel, Luftfühler Feuerungsautomat defekt"|"A4 2.Bit, Anlagenfehler eines EMS-Kessel, Betriebstemperatur wird nicht erreicht"|"A5 3.Bit, Anlagenfehler eines EMS-Kessel, Ölvorwärmer Dauersignal"|"A6 4.Bit, Anlagenfehler eines EMS-Kessel, Ölvorwärmer ohne Signal"|"A7 1.Bit, Anlagenfehler von EMS- Warmwasser, 1.Wasserfühler Feuerungsautomat defekt"|"A8 2.Bit, Anlagenfehler von EMS- Warmwasser, 2.Wasserfühler Feuerungsautomat defekt"|"A9 3.Bit, Anlagenfehler von EMS- Warmwasser, Warmwasser bleibt kalt"|"A10 4.Bit, Anlagenfehler von EMS- Warmwasser, Desinfektion misslungen"|"A11 Betriebscode EMS-System ASCII"|"A12 Fehlernummer Feuerungsautomat  (200-499: UBA-Fehler; 500-799: SAFE-Fehler; 800-999: EMS-Anlagen-Fehler)"|"A13 1.Bit, Brennertyp des Kessel, Stufen des Brenners (wenn 0, dann mod.Brenner)"|"A14 2.Bit, Brennertyp des Kessel, Stufen des Brenners (wenn 0, dann mod.Brenner)"|"A15 3.Bit, Brennertyp des Kessel, Stufen des Brenners (wenn 0, dann mod.Brenner)"|"A16 7.Bit, Brennertyp des Kessel, Gasbrenner"|"A17 8.Bit, Brennertyp des Kessel, Ölbrenner"|"A18 max. Leistung des Brenners (in kW)"|"A19 min. Leistung des Brenners (in %)"|"A20 Flammenstrom müA (255=Fühler defekt)"|"A21 Abgastemperatur über Feuerungsautomat °C (255=Fühler defekt)"|"A22 Temperatur Ansaugluft °C (255=Fühler defekt)"|"A23 Wasserdruck in der Anlage bar (255=Fühler defekt)"|"A24 1.Bit, Betriebszustände des Brennerautomaten, Heizanforderung liegt an"|"A25 2.Bit, Betriebszustände des Brennerautomaten, Warmwasseranforderung liegt vor"|"A26 3.Bit, Betriebszustände des Brennerautomaten, 11kW Jumper wurde entfernt"|"A27 4.Bit, Betriebszustände des Brennerautomaten, Kessel wird mit Betriebstemperatur betrieben"|"A28 5.Bit, Betriebszustände des Brennerautomaten, Kesselschutz zwecks Taupunktüberschreitung"|"A29 6.Bit, Betriebszustände des Brennerautomaten, Feuerungsautomat ist verrriegelt (Serviceeinsatz)"|"A30 7.Bit, Betriebszustände des Brennerautomaten, Feuerungsautomat ist blockiert"|"A31 8.Bit, Betriebszustände des Brennerautomaten, Servicemeldung vom Feuerungsautomat"|"A32 1.Bit, Relaiszustände 1 des Brennerautomaten, Magnetventil für 1. Stufe"|"A33 2.Bit, Relaiszustände 1 des Brennerautomaten, Magnetventil für 2. Stufe"|"A34 3.Bit, Relaiszustände 1 des Brennerautomaten, Gebläserelais"|"A35 4.Bit, Relaiszustände 1 des Brennerautomaten, Zündungsrelais"|"A36 5.Bit, Relaiszustände 1 des Brennerautomaten, Ölvorwärmung/ Abgassperrklappe"|"A37 6.Bit, Relaiszustände 1 des Brennerautomaten, Kesselkreispumpe/ Heizkreisumwälzpumpe"|"A38 7.Bit, Relaiszustände 1 des Brennerautomaten, 3-Wegeventil"|"A39 8.Bit, Relaiszustände 1 des Brennerautomaten, Warmwasser Zirkulationspumpe"|"A40 1.Bit, Relaiszustände 2 des Brennerautomaten, Warmwasserladepumpe"|"A41 2.Bit, Relaiszustände 2 des Brennerautomaten, Flüssiggasventil"|"A42 3.Bit, Relaiszustände 2 des Brennerautomaten, QWP Umwälzpumpe"|"A43 Vorlaufsolltemperatur die vom Feuerungsautomat angestrebt wird °C"|"A44 Wie wird Warmwasser geladen (0=kein Warmwasser; 1=nach Durchlaufprinzip; 2=Durchlaufprinzip mit kleinem Speicher; 3=Speicherprinzip)"|"A45 1.Bit  mögliche Fehleinstellungen am EMS-Kessel, 11kW Jumper in Kaskade gezogen"|"A46 2.Bit  mögliche Fehleinstellungen am EMS-Kessel, Kessel über BC10 im Notbetrieb"|"A47 3.Bit  mögliche Fehleinstellungen am EMS-Kessel, WW- Poti nicht auf Stellung AUT"|"A48 4.Bit  mögliche Fehleinstellungen am EMS-Kessel, Kesselpoti nicht auf AUT/ 90°C"|"A49 5.Bit  mögliche Fehleinstellungen am EMS-Kessel, Anforderung über Klemme WA"|"A50 7.Bit  mögliche Fehleinstellungen am EMS-Kessel, Kommunikation vorhanden (nur mit FM458)"|"A51 8.Bit  mögliche Fehleinstellungen am EMS-Kessel, keine Kommunikation (nur mit FM458)"|"A52 1.Bit  EMS-Servicemeldungen, es steht keine Meldung an"|"A53 2.Bit  EMS-Servicemeldungen, Abgastemperatur zu hoch"|"A54 3.Bit  EMS-Servicemeldungen, Gebläse schwergängig"|"A55 4.Bit  EMS-Servicemeldungen, Flammstrom ist niedrig"|"A56 5.Bit  EMS-Servicemeldungen, Flammenverzugszeit ist hoch"|"A57 6.Bit  EMS-Servicemeldungen, häufiger Flammenabriss"|"A58 7.Bit  EMS-Servicemeldungen, Wasserdruck der Anlage ist niedrig"|"A59 8.Bit  EMS-Servicemeldungen, vorgegebenes Datum überschritten"|"A60 Betriebszeit 2.Stufe (in Std.)"|"A61 Kennzeichnung/ Identifizierung des EMS-Masters (64=Feuerungsautomat UBA3, Master; 65=RC10; 66=RC20, 67=RC30; 68=BC10; 69=MM10; 70=Gaswärmepumpe; 71=Weichenmodul; 72=MC10; 73=Solar; 74=EED; 75=SAFE; 76=ES73; 77=M300; 78=M400; 79=M100; 80=M200; 81=Kaskade; 82=LPG)"|"A62 Version Vor- Nachkommastelle des EMS-Master"|"A63 Kennung des SAFe (z.Zt. 75)"|"A64 Version Vor- Nachkommastelle des Feuerungsautomaten (SAFe)"|"A65 BCM/ BIM- Nummer (0-255= UBA1; 1000-4999= UBA3; 5000-9999=SAFe)"|"A66 Versions-Nr. des BCM/BIM"|"A67 Betriebstemperatur des Kessel °C"|"'''+VERSION+'''"
 
 5001|3|67|0|16|1
 
@@ -274,22 +274,22 @@ if EI == 1:
 
           self.device_types = {
               "XX" : "kein wandhängender Kessel",
-              "92" : "wandhängender Kessel 1",
-              "93" : "wandhängender Kessel 2",
-              "94" : "wandhängender Kessel 3",
-              "95" : "wandhängender Kessel 4",
-              "96" : "wandhängender Kessel 5",
-              "97" : "wandhängender Kessel 6",
-              "98" : "wandhängender Kessel 7",
-              "99" : "wandhängender Kessel 8",
+              "92" : "Kessel 1 wandhängend",
+              "93" : "Kessel 2 wandhängend",
+              "94" : "Kessel 3 wandhängend",
+              "95" : "Kessel 4 wandhängend",
+              "96" : "Kessel 5 wandhängend",
+              "97" : "Kessel 6 wandhängend",
+              "98" : "Kessel 7 wandhängend",
+              "99" : "Kessel 8 wandhängend",
           }
 
           self.recv_selector = ["XX","92","93","94","95","96","97","98","99"]  
           self.send_selector = ["16","07","08","09","0A","16","18","1A"] 
           
-          #self.debug("wandhängender Kessel %d" % EN[3])
+          #self.debug("Kessel %d wandhängend" % EN[3])
           if EN[3] < 1 or EN[3] > 8:
-              self.debug("Ungültiger wandhängender Kessel %d" % EN[3])
+              self.debug("Ungültiger Kessel %d wandhängend" % EN[3])
               _id = "XX"
               self.send_prefix = None
           else:
@@ -417,7 +417,7 @@ if EI == 1:
               (lambda x: [x],[20],"AN"),
               (lambda x: [x],[21],"AN"),
               (lambda x: [x],[22],"AN"),
-              (lambda x: [x],[23],"AN"),
+              (lambda x: x==255 and -1 or [float(x)/10],[23],"AN"),
               (self.to_bits,[24,25,26,27,28,29,30,31],"AN"),
               (self.to_bits,[32,33,34,35,36,37,38,39],"AN"),
               (self.to_bits,[40,41,42,0,0,0,0,0],"AN"),
@@ -452,12 +452,11 @@ if EI == 1:
 
 
       def debug(self,msg):
-          #self.log(msg,severity='debug')
-          print "DEBUG-12596: %r" % (msg,)
-          pass
+          self.log(msg,severity='debug')
+          #print "DEBUG-12596: %r" % (msg,)
 
       def send_to_output(self,out,msg,sbc=False):
-          if sbc and msg == self.localvars["AN"]:
+          if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
               return
           self.localvars["AN"][out] = msg
           self.localvars["AC"][out] = 1
@@ -484,7 +483,7 @@ if EI == 1:
           for _x in xrange(_len):
               _offset = offset - 22 + _x
               if (_offset < 0):
-                 self.debug("Daten offset: %d " % _offset )
+                 #self.debug("Daten offset: %d " % _offset )
                  continue
               _func, _out, _feld = self.output_functions[_offset]
               _ret = _func( ord(data[_x]) )
@@ -503,7 +502,7 @@ if EI == 1:
       def incomming(self,msg, localvars):
           import binascii
           self.localvars = localvars
-          self.debug("incomming message %r" % msg)
+          #self.debug("incomming message %r" % msg)
           msg = msg.replace(' ','')
           _data = self.payload_regex.search(msg)
           if _data:
