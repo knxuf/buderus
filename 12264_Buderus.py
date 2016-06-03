@@ -220,7 +220,7 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|3|"E1 IP-Adresse:Port"|"E2 config"|"E3 senden"|2|"A1 Daten"|"A2 SystemLog"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''"|0|3|"E1 IP-Adresse:Port"|"E2 config"|"E3 senden"|2|"A1 Daten"|"A2 SystemLog"|"'''+VERSION+'''"
 
 5001|3|2|0|1|1
 
