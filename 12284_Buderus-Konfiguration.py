@@ -73,8 +73,8 @@ Dieser Baustein wertet alle Daten für den Datentyp 0x89 Konfiguration, die vom B
 </div>
 
 Für die eigentliche Kommunikation sind zwingend folgende Beschreibungen von Buderus zu beachten:
-7747004149 – 01/2009 DE - Technische Information - Monitordaten - System 4000
-7747004150 – 05/2009 DE - Technische Information - Einstellbare Parameter - Logamatic 4000
+7747004149 - 01/2009 DE - Technische Information - Monitordaten - System 4000
+7747004150 - 05/2009 DE - Technische Information - Einstellbare Parameter - Logamatic 4000
 
 D
 """
@@ -133,9 +133,9 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|2|"E1 Payload IN"|"E2 ECOCAN Bus ID"|20|"A1 SystemLog"|"A2 Außentemperatur"|"A3 gedämpfte Außentemperatur"|"A4 Version"|"A5 Modul in Slot 1"|"A6 Modul in Slot 2"|"A7 Modul in Slot 3"|"A8 Modul in Slot 4"|"A9 Modul in Slot A"|"A10 Fehler bei Slot 1"|"A11 Fehler bei Slot 2"|"A12 Fehler bei Slot 3"|"A13 Fehler bei Slot 4"|"A14 Fehler bei Slot A"|"A15 Anlagenvorlaufsolltemperatur"|"A16 Anlagenvorlaufisttemperatur"|"A17 Betriebsflags der Anlage"|"A18 Max. Anst. Heizkreispumpe"|"A19 Max. Anst. Stellglied"|"A20 Regelg. Vorlaufisttemp."
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''"|0|2|"E1 Payload IN"|"E2 ECOCAN Bus ID"|21|"A1 Payload OUT"|"A2 SystemLog"|"A3 Außentemperatur"|"A4 gedämpfte Außentemperatur"|"A5 Version"|"A6 Modul in Slot 1"|"A7 Modul in Slot 2"|"A8 Modul in Slot 3"|"A9 Modul in Slot 4"|"A10 Modul in Slot A"|"A11 Fehler bei Slot 1"|"A12 Fehler bei Slot 2"|"A13 Fehler bei Slot 3"|"A14 Fehler bei Slot 4"|"A15 Fehler bei Slot A"|"A16 Anlagenvorlaufsolltemperatur"|"A17 Anlagenvorlaufisttemperatur"|"A18 Betriebsflags der Anlage"|"A19 Max. Anst. Heizkreispumpe"|"A20 Max. Anst. Stellglied"|"A21 Regelg. Vorlaufisttemp."|'''+VERSION+'''
 
-5001|2|20|0|3|1
+5001|2|21|0|3|1
 
 # EN[x]
 5002|1|""|1 #* Payload IN
@@ -147,26 +147,27 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 5003|3||0 #* Version (Nachkomma)
 
 # Ausgänge
-5004|1|""|0|1|1 #* SystemLog
-5004|2|0|0|1|0 #* Außentemperatur (in °C) 
-5004|3|0|0|1|0 #* gedämpfte Außentemperatur (in °C)
-5004|4|""|0|1|1 #* Version des Bus (Vorkomma.Nachkomma) 
-5004|5|""|0|1|1 #* Modul in Slot 1  
-5004|6|""|0|1|1 #* Modul in Slot 2  
-5004|7|""|0|1|1 #* Modul in Slot 3  
-5004|8|""|0|1|1 #* Modul in Slot 4  
-5004|9|""|0|1|1 #* Modul in Slot A 
-5004|10|""|0|1|1 #* Fehler bei Slot 1 
-5004|11|""|0|1|1 #* Fehler bei Slot 2 
-5004|12|""|0|1|1 #* Fehler bei Slot 3 
-5004|13|""|0|1|1 #* Fehler bei Slot 4 
-5004|14|""|0|1|1 #* Fehler bei Slot A 
-5004|15|0|0|1|0 #* Anlagenvorlaufsolltemperatur (in °C) 
-5004|16|0|0|1|0 #* Anlagenvorlaufisttemperatur (in °C) 
-5004|17|0|0|1|0 #* Betriebsflags der Anlage 
-5004|18|0|0|1|0 #* Max. Ansteuerung für Heizkreispumpe (in %) 
-5004|19|0|0|1|0 #* Max. Ansteuerung für Stellglied (in %) 
-5004|20|0|0|1|0 #* Regelgerätevorlaufisttemperatur (in °C) 
+5004|1|""|0|1|1 #* Payload OUT
+5004|2|""|0|1|1 #* SystemLog
+5004|3|0|0|1|0 #* Außentemperatur (in °C) 
+5004|4|0|0|1|0 #* gedämpfte Außentemperatur (in °C)
+5004|5|""|0|1|1 #* Version des Bus (Vorkomma.Nachkomma) 
+5004|6|""|0|1|1 #* Modul in Slot 1  
+5004|7|""|0|1|1 #* Modul in Slot 2  
+5004|8|""|0|1|1 #* Modul in Slot 3  
+5004|9|""|0|1|1 #* Modul in Slot 4  
+5004|10|""|0|1|1 #* Modul in Slot A 
+5004|11|""|0|1|1 #* Fehler bei Slot 1 
+5004|12|""|0|1|1 #* Fehler bei Slot 2 
+5004|13|""|0|1|1 #* Fehler bei Slot 3 
+5004|14|""|0|1|1 #* Fehler bei Slot 4 
+5004|15|""|0|1|1 #* Fehler bei Slot A 
+5004|16|0|0|1|0 #* Anlagenvorlaufsolltemperatur (in °C) 
+5004|17|0|0|1|0 #* Anlagenvorlaufisttemperatur (in °C) 
+5004|18|0|0|1|0 #* Betriebsflags der Anlage 
+5004|19|0|0|1|0 #* Max. Ansteuerung für Heizkreispumpe (in %) 
+5004|20|0|0|1|0 #* Max. Ansteuerung für Stellglied (in %) 
+5004|21|0|0|1|0 #* Regelgerätevorlaufisttemperatur (in °C) 
 
 #################################################
 '''
@@ -213,7 +214,7 @@ if EI == 1:
           ##                      5 = FM447 (Strategie)
           ##                      6 = ZM432 (Kessel für 4211, Warmwasser +
           ##                                 1x ungemischter Heizkreis)
-          ##                      7 = FM445 (LAP – Modul)
+          ##                      7 = FM445 (LAP - Modul)
           ##                      8 = FM451 (KSE1)
           ##                      9 = FM454 (KSE4)
           ##                      10 = ZM424 (Kessel für 4111,Heizkreise,WW)
@@ -222,7 +223,7 @@ if EI == 1:
           ##                      13 = FM448 (Störmeldemodul)
           ##                      14 = ZM433 (Unterstation mit Pumpe und
           ##                                 1 x gemischter Heizkreis)
-          ##                      15 = FM446 EIB – Modul
+          ##                      15 = FM446 EIB - Modul
           ##                      16 = FM443 Solarmodul
           ##                      17 = FM455 (KSE5 ?)
           ##                      21 = FM444 Alternativer Wärmeerzeuger - Modul
@@ -234,8 +235,8 @@ if EI == 1:
           ##  12 Fehler bei Slot 1 *   Bedeutung der Werte:                        ## Ausgang 11
           ##                           0 = kein Fehler 
           ##                           1 = unbekanntes Modul
-          ##                           2 = Fehler bei CAN – Adresse
-          ##                           3 = SOLL // IST – Fehler
+          ##                           2 = Fehler bei CAN - Adresse
+          ##                           3 = SOLL // IST - Fehler
           ##                           4 = keine Antwort
           ##                           5 = Handbetrieb
           ##  13 Fehler bei Slot 2 *                                            ## Ausgang 12
@@ -262,7 +263,7 @@ if EI == 1:
               4 : "FM441", #(1x Heizkreis + 1x Warmwasser)",
               5 : "FM447", #(Strategie)",
               6 : "ZM432", #(Kessel für 4211, WW + 1x ungem. Heizkreis)",
-              7 : "FM445", #(LAP – Modul)",
+              7 : "FM445", #(LAP - Modul)",
               8 : "FM451", #(KSE1)",
               9 : "FM454", #(KSE4)",
              10 : "ZM424", #(Kessel für 4111,Heizkreise,WW)",
@@ -270,7 +271,7 @@ if EI == 1:
              12 : "FM452", #(KSE2)",
              13 : "FM448", #(Störmeldemodul)",
              14 : "ZM433", #(Unterstation m. Pumpe u. 1 x gem. Heizkreis)",
-             15 : "FM446", #EIB – Modul",
+             15 : "FM446", #EIB - Modul",
              16 : "FM443", #Solarmodul",
              17 : "FM455", #KSE5 ?",
              21 : "FM444", #Alternativer Wärmeerzeuger Modul",
@@ -279,37 +280,37 @@ if EI == 1:
           self.slot_error = {
               0 : "kein Fehler",
               1 : "unbekanntes Modul",
-              2 : "Fehler bei CAN – Adresse",
-              3 : "SOLL // IST – Fehler",
+              2 : "Fehler bei CAN - Adresse",
+              3 : "SOLL // IST - Fehler",
               4 : "keine Antwort",
               5 : "Handbetrieb",
           }
 
           self.output_functions = [
-              (self.to_128,[2],"AN"),
               (self.to_128,[3],"AN"),
+              (self.to_128,[4],"AN"),
               (lambda x: [x],[2],"SN"),
               (lambda x: [x],[3],"SN"),
               (lambda x: [x],[0],"AN"),
               (lambda x: [x],[0],"AN"),
-              (lambda x: [self.slot_module.get(x,"unbekannt {0}".format(x))],[5],"AN"),
               (lambda x: [self.slot_module.get(x,"unbekannt {0}".format(x))],[6],"AN"),
               (lambda x: [self.slot_module.get(x,"unbekannt {0}".format(x))],[7],"AN"),
               (lambda x: [self.slot_module.get(x,"unbekannt {0}".format(x))],[8],"AN"),
               (lambda x: [self.slot_module.get(x,"unbekannt {0}".format(x))],[9],"AN"),
+              (lambda x: [self.slot_module.get(x,"unbekannt {0}".format(x))],[10],"AN"),
               (lambda x: [x],[0],"AN"),
-              (lambda x: [self.slot_error.get(x,"unbekannt {0}".format(x))],[10],"AN"),
               (lambda x: [self.slot_error.get(x,"unbekannt {0}".format(x))],[11],"AN"),
               (lambda x: [self.slot_error.get(x,"unbekannt {0}".format(x))],[12],"AN"),
               (lambda x: [self.slot_error.get(x,"unbekannt {0}".format(x))],[13],"AN"),
               (lambda x: [self.slot_error.get(x,"unbekannt {0}".format(x))],[14],"AN"),
+              (lambda x: [self.slot_error.get(x,"unbekannt {0}".format(x))],[15],"AN"),
               (lambda x: [x],[0],"AN"),
-              (lambda x: [x],[15],"AN"),
               (lambda x: [x],[16],"AN"),
               (lambda x: [x],[17],"AN"),
               (lambda x: [x],[18],"AN"),
               (lambda x: [x],[19],"AN"),
               (lambda x: [x],[20],"AN"),
+              (lambda x: [x],[21],"AN"),
               (lambda x: [x],[0],"AN"),
               (lambda x: [x],[0],"AN"),
               (lambda x: [x],[0],"AN"),
@@ -324,12 +325,11 @@ if EI == 1:
           self.send_to_output(1,"A2%s" % self.bus_id)
 
       def debug(self,msg):
-          #self.log(msg,severity='debug')
+          self.log(msg,severity='debug')
           #print "DEBUG-12284: %r" % (msg,)
-          pass
 
       def send_to_output(self,out,msg,sbc=False):
-          if sbc and msg == self.localvars["AN"]:
+          if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
               return
           self.localvars["AN"][out] = msg
           self.localvars["AC"][out] = 1
@@ -378,7 +378,7 @@ if EI == 1:
       def incomming(self,msg, localvars):
           import binascii
           self.localvars = localvars
-          self.debug("incomming message %r" % msg)
+          #self.debug("incomming message %r" % msg)
           msg = msg.replace(' ','')
           _data = self.payload_regex.search(msg)
           if _data:
@@ -406,7 +406,7 @@ postlogik=[0,"",r"""
 5012|0|"EC[1]"|"SN[1].incomming(EN[1],locals())"|""|0|0|0|0
 
 #* Version Vorkomma.Nachkomma
-5012|0|"SC[2] or SC[3]"|"str(SN[2])+"."+str(SN[3])"|""|4|0|0|0
+5012|0|"SC[2] or SC[3]"|"str(SN[2])+"."+str(SN[3])"|""|5|0|0|0
 
 """]
 
