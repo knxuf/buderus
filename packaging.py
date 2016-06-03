@@ -36,6 +36,9 @@ package = {
     "12267_Buderus-Fehler.py": None,
     "12282_Buderus-Solar.py": None,
     "12283_Buderus-alternativer_Waermeerzeuger.py": None,
+    "12284_Buderus-Konfiguration.py": None,
+    "12285_Buderus-Wandkessel_UBA.py": None,
+    "12596_Buderus-Wandkessel_EMS.py": None,
 }
 
 diffs=[]
