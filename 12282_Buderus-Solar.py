@@ -73,8 +73,8 @@ Dieser Baustein wertet alle Daten für den Datentyp Solar, die vom Buderus Bauste
 </div>
 
 Für die eigentliche Kommunikation sind zwingend folgende Beschreibungen von Buderus zu beachten:
-7747004149 – 01/2009 DE - Technische Information - Monitordaten - System 4000
-7747004150 – 05/2009 DE - Technische Information - Einstellbare Parameter - Logamatic 4000
+7747004149 - 01/2009 DE - Technische Information - Monitordaten - System 4000
+7747004150 - 05/2009 DE - Technische Information - Einstellbare Parameter - Logamatic 4000
 
 Die weiteren Eingänge 3-8 sind zum Verändern von Parametern der Anlage. 
 <div class="acht">
@@ -86,7 +86,7 @@ Die weiteren Eingänge 3-8 sind zum Verändern von Parametern der Anlage.
  Fast alle Schreib Kommandos wirken übrigens auf Service Parameter, die normalerweise NUR der Heizungsfachman verändert!
 </div>
  """
-VERSION="V0.8"
+VERSION="V0.20"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -141,14 +141,14 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|8|"E1 Payload IN"|"E2 ECOCAN Bus ID des Regelgeräts"|"E3 Betriebsart Stellbereich"|"E4 Umschaltung für Verbraucher"|"E5 Maximaltemperatur SP1"|"E6 Minimaltemperatur SP1"|"E7 Maximaltemperatur SP2"|"E8 Glykolanteil"|38|"A1 Payload OUT"|"A2 SystemLog"|"A3 Fehler Einstellung Hysterese"|"A4 SP2 auf max Temp"|"A5 SP1 auf max Temp"|"A6 Kollektor auf max Temp"|"A7 Fehler Fühler Anlagenrücklauf Bypass"|"A8 Fehler Fühler Speichermitte Bypass"|"A9 Fehler Volumenstromzähler WZ"|"A10 Fehler Fühler Rücklauf"|"A11 Fehler Fühler Vorlauf"|"A12 Fehler Fühler SP2 unten"|"A13 Fehler Fühler SP1 unten"|"A14 Fehler Fühler Kollektor"|"A15 Umschaltventil SP2 zu"|"A16 Umschaltventil SP2 auf/Speicherladepumpe2"|"A17 Umschaltventil Bypass zu"|"A18 Umschaltventil Bypass auf"|"A19 Sekundärpumpe SP2 Betrieb"|"A20 Kollektortemperatur in 0.1°C"|"A21 SP Modulation 1%"|"A22 Warmwassertemperatur unten 1°C"|"A23 Betriebsstatus Speicher 1"|"A24 SP2 Warmwassertemperatur unten"|"A25 Betriebsstatus Speicher 2"|"A26 Warmwassertemperatur Speicher mitte"|"A27 Anlagenrücklauf"|"A28 Vorlauftemperatur Wärmemengenzähler"|"A29 Rücklauftemperatur Wärmemengenzähler"|"A30 Anlagen Volumenstrom in l/h"|"A31 Momentan Leistung Solar in W"|"A32 SP1 eingebrachte Wärmemenge in kWh"|"A33 SP2 eingebrachte Wärmemenge in kWh"|"A34 SP1 Betriebsstunden in Std"|"A35 Warmwassersolltemperaturabsenkung Solarertrag 1K"|"A36 Warmwassersolltemperaturabsenkung Wärmekapazität 1K"|"A37 Kollektortemperatur"|"A38 SP2 Betriebsstunden in Std"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''"|0|8|"E1 Payload IN"|"E2 ECOCAN Bus ID des Regelgeräts"|"E3 Betriebsart Stellbereich"|"E4 Umschaltung für Verbraucher"|"E5 Maximaltemperatur SP1"|"E6 Minimaltemperatur SP1"|"E7 Maximaltemperatur SP2"|"E8 Glykolanteil"|38|"A1 Payload OUT"|"A2 SystemLog"|"A3 Fehler Einstellung Hysterese"|"A4 SP2 auf max Temp"|"A5 SP1 auf max Temp"|"A6 Kollektor auf max Temp"|"A7 Fehler Fühler Anlagenrücklauf Bypass"|"A8 Fehler Fühler Speichermitte Bypass"|"A9 Fehler Volumenstromzähler WZ"|"A10 Fehler Fühler Rücklauf"|"A11 Fehler Fühler Vorlauf"|"A12 Fehler Fühler SP2 unten"|"A13 Fehler Fühler SP1 unten"|"A14 Fehler Fühler Kollektor"|"A15 Umschaltventil SP2 zu"|"A16 Umschaltventil SP2 auf/Speicherladepumpe2"|"A17 Umschaltventil Bypass zu"|"A18 Umschaltventil Bypass auf"|"A19 Sekundärpumpe SP2 Betrieb"|"A20 Kollektortemperatur in 0.1°C"|"A21 SP Modulation 1%"|"A22 Warmwassertemperatur unten 1°C"|"A23 Betriebsstatus Speicher 1"|"A24 SP2 Warmwassertemperatur unten"|"A25 Betriebsstatus Speicher 2"|"A26 Warmwassertemperatur Speicher mitte"|"A27 Anlagenrücklauf"|"A28 Vorlauftemperatur Wärmemengenzähler"|"A29 Rücklauftemperatur Wärmemengenzähler"|"A30 Anlagen Volumenstrom in l/h"|"A31 Momentan Leistung Solar in W"|"A32 SP1 eingebrachte Wärmemenge in kWh"|"A33 SP2 eingebrachte Wärmemenge in kWh"|"A34 SP1 Betriebsstunden in Std"|"A35 Warmwassersolltemperaturabsenkung Solarertrag 1K"|"A36 Warmwassersolltemperaturabsenkung Wärmekapazität 1K"|"A37 Kollektortemperatur"|"A38 SP2 Betriebsstunden in Std"|"'''+VERSION+'''"
 
 5001|8|38|0|19|1
 
 # EN[x]
 5002|1|""|1 #* Payload IN
 5002|2|1|0 #* ECOCAN Bus ID des Regelgeräts
-5002|3|1|0 #* Betriebsart Stellbereich: 0 – 2 / 0 = Aus / 1 = Auto / 2 = EIN
+5002|3|1|0 #* Betriebsart Stellbereich: 0 - 2 / 0 = Aus / 1 = Auto / 2 = EIN
 5002|4|2|0 #* Umschaltung für Verbraucher Stellbereich: 0 - 2 / 0 = Auto / 1 = nur SP1 / 2 = nur SP2
 5002|5|60|0 #* Maximaltemperatur SP1 1° genau Stellbereich: 30 - 90 °C
 5002|6|55|0 #* Minimaltemperatur SP1 1° genau Stellbereich: 30 - 55 °C
@@ -378,7 +378,7 @@ if EI == 1:
           print "DEBUG: %r" % (msg,)
 
       def send_to_output(self,out,msg,sbc=False):
-          if sbc and msg == self.localvars["AN"]:
+          if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
               return
           self.localvars["AN"][out] = msg
           self.localvars["AC"][out] = 1
