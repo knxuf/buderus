@@ -78,7 +78,7 @@ Für die eigentliche Kommunikation sind zwingend folgende Beschreibungen von Bude
 
 D
 """
-VERSION="V1.3"
+VERSION="V0.20"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll

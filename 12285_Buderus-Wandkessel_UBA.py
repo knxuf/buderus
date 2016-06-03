@@ -89,7 +89,7 @@ bleiben diese Wert bei 0. Aus diesem Grund werde die hier ignoriert.
 Soll ein EMS Kessel ausgewertet werden, ist ein neuer Baustein zu schreiben. 
 </div>
 """
-VERSION="V1.0"
+VERSION="V0.20"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
