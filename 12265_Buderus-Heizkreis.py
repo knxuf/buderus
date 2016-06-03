@@ -47,7 +47,7 @@ LOGIKNAME="Buderus-Heizkreis"
 LOGIKID="12265"
 
 ## Ordner im GLE
-LOGIKCAT="www.knx-user-forum.de\Buderus"
+LOGIKCAT="Buderus"
 
 
 ## Beschreibung

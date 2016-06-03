@@ -47,7 +47,7 @@ LOGIKNAME="Buderus-Fehler"
 LOGIKID="12267"
 
 ## Ordner im GLE
-LOGIKCAT="www.knx-user-forum.de\Buderus"
+LOGIKCAT="Buderus"
 
 
 ## Beschreibung

@@ -47,7 +47,7 @@ LOGIKNAME="Buderus-alternativer_Waermeerzeuger"
 LOGIKID="12283"
 
 ## Ordner im GLE
-LOGIKCAT="www.knx-user-forum.de"
+LOGIKCAT="Buderus"
 
 
 ## Beschreibung

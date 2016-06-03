@@ -47,7 +47,7 @@ LOGIKNAME="Buderus-Solar"
 LOGIKID="12282"
 
 ## Ordner im GLE
-LOGIKCAT="www.knx-user-forum.de\Buderus"
+LOGIKCAT="Buderus"
 
 
 ## Beschreibung
