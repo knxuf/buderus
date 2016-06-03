@@ -52,34 +52,34 @@ LOGIKCAT="www.knx-user-forum.de\Buderus"
 
 ## Beschreibung
 LOGIKDESC="""
-Dieser Baustein wertet alle Daten fÃ¼r den Datentyp WandhÃ¤ngender Kessel (UBA), die vom Buderus Baustein 12264 kommen aus und gibt
- die ZustÃ¤nde auf die entsprechenden AusgÃ¤nge aus. Da es mehrere WandhÃ¤ngender Kessel an einem RegelgerÃ¤t geben kann, muÃŸ 
- neben dem RegelgerÃ¤t auch die Nummer des WandhÃ¤ngender Kessel angegeben werden. Dann filtert der Baustein genau auf diese Werte
+Dieser Baustein wertet alle Daten für den Datentyp Wandhängender Kessel (UBA), die vom Buderus Baustein 12264 kommen aus und gibt
+ die Zustände auf die entsprechenden Ausgänge aus. Da es mehrere Wandhängender Kessel an einem Regelgerät geben kann, muß 
+ neben dem Regelgerät auch die Nummer des Wandhängender Kessel angegeben werden. Dann filtert der Baustein genau auf diese Werte
  und gibt sie aus. 
  <div class="acht">
- Wichtig: Eingang 1 und Ausgang 1 dÃ¼rfen NIE direkt mit dem Buderus Baustein verbunden werden. Bitte immer die 
- Verbindung indirekt Ã¼ber ein iKO herstellen !!!! 
+ Wichtig: Eingang 1 und Ausgang 1 dürfen NIE direkt mit dem Buderus Baustein verbunden werden. Bitte immer die 
+ Verbindung indirekt über ein iKO herstellen !!!! 
 </div>
  Auf Eingang 1 werden die Daten vom Buderus Baustein empfangen. Auf dem Eingang 2 stellt man die Adresse 
- des RegelgerÃ¤tes ein. Auf dem Eingang 3 die Nummer des WandhÃ¤ngender Kessel mit UBA an diesem RegelgerÃ¤t.
+ des Regelgerätes ein. Auf dem Eingang 3 die Nummer des Wandhängender Kessel mit UBA an diesem Regelgerät.
  <div class="hinw">
- Hier ein Tip: Man kann im SystemLog des Buderus Bausteines sehen, an welchen RegelgerÃ¤ten welche DatenTypen
- erkannt wurden.  Hier ist der DatenTyp WandhÃ¤ngender Kessel (UBA) relevant. Ist dieser am RegelgerÃ¤t 2 erkannt worden, ist hier 
- eine 2 einzugeben. Auch ist hier zu sehen, welche Nummer der WandhÃ¤ngender Kessel (UBA) an dem RegelgerÃ¤t hat.
+ Hier ein Tip: Man kann im SystemLog des Buderus Bausteines sehen, an welchen Regelgeräten welche DatenTypen
+ erkannt wurden.  Hier ist der DatenTyp Wandhängender Kessel (UBA) relevant. Ist dieser am Regelgerät 2 erkannt worden, ist hier 
+ eine 2 einzugeben. Auch ist hier zu sehen, welche Nummer der Wandhängender Kessel (UBA) an dem Regelgerät hat.
  </div>
  Damit werden nunmehr aus dem gesamten Datenstrom des ECOCAN Bus nur noch genau diese Daten gefilter und auf 
- den AusgÃ¤ngen ausgegeben.
+ den Ausgängen ausgegeben.
  <div class="hinw">
- Allgemeines: Ein Istwert von 110 Â°C beschreibt fÃ¼r den betroffenen FÃ¼hler einen FÃ¼hler defekt. Es kann auch sein,
- das hier einfach kein FÃ¼hler angeschlossen wurde. Messwerte in diesem Bereich hÃ¶ren bei 109 auf und gehen bei 111 weiter. 
+ Allgemeines: Ein Istwert von 110 °C beschreibt für den betroffenen Fühler einen Fühler defekt. Es kann auch sein,
+ das hier einfach kein Fühler angeschlossen wurde. Messwerte in diesem Bereich hören bei 109 auf und gehen bei 111 weiter. 
 </div>
 
-FÃ¼r die eigentliche Kommunikation sind zwingend folgende Beschreibungen von Buderus zu beachten:
-7747004149 â€“ 01/2009 DE - Technische Information - Monitordaten - System 4000
-7747004150 â€“ 05/2009 DE - Technische Information - Einstellbare Parameter - Logamatic 4000
+Für die eigentliche Kommunikation sind zwingend folgende Beschreibungen von Buderus zu beachten:
+7747004149 - 01/2009 DE - Technische Information - Monitordaten - System 4000
+7747004150 - 05/2009 DE - Technische Information - Einstellbare Parameter - Logamatic 4000
 
-Die Monitorwerte fÃ¼r wandhÃ¤ngende Kessel (UBA) setzen sich zur Zeit aus insgesamt 60 Werten zusammen 
-und gehÃ¶ren zu einem der nachfolgenden Typen: 
+Die Monitorwerte für wandhängende Kessel (UBA) setzen sich zur Zeit aus insgesamt 60 Werten zusammen 
+und gehören zu einem der nachfolgenden Typen: 
 (0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99) 
 (Je nach dem welche Nummer der Kessel hat.)
 <div class="acht">
@@ -92,18 +92,18 @@ Soll ein EMS Kessel ausgewertet werden, ist ein neuer Baustein zu schreiben.
 VERSION="V1.0"
 
 
-## Bedingung wann die kompilierte Zeile ausgefÃ¼hrt werden soll
+## Bedingung wann die kompilierte Zeile ausgeführt werden soll
 BEDINGUNG="EI"
 ## Formel die in den Zeitspeicher geschrieben werden soll
 ZEITFORMEL=""
 ## Nummer des zu verwenden Zeitspeichers
 ZEITSPEICHER="0"
 
-## AUF True setzen um BinÃ¤ren Code zu erstellen
+## AUF True setzen um Binären Code zu erstellen
 doByteCode=False
 #doByteCode=True
 
-## Base64Code Ã¼ber SN[x] cachen
+## Base64Code über SN[x] cachen
 doCache=False
 
 ## Doku erstellen Ja/Nein
@@ -122,7 +122,7 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 ##
 ## erstellt am: '''+time.strftime("%Y-%m-%d %H:%M")+'''
 ## -----------------------------------------------------
-## Copyright Â© '''+ time.strftime("%Y") + ''', knx-user-forum e.V, All rights reserved.
+## Copyright © '''+ time.strftime("%Y") + ''', knx-user-forum e.V, All rights reserved.
 ##
 ## This program is free software; you can redistribute it and/or modify it under the terms
 ## of the GNU General Public License as published by the Free Software Foundation; either
@@ -137,21 +137,21 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 
 ## -- ''' +re.sub("\n","\n## -- ",LOGIKDESC)+ ''' 
 
-#5000|"Text"|Remanent(1/0)|Anz.EingÃ¤nge|.n.|Anzahl AusgÃ¤nge|.n.|.n.
-#5001|Anzahl EingÃ¤nge|AusgÃ¤nge|Offset|Speicher|Berechnung bei Start
+#5000|"Text"|Remanent(1/0)|Anz.Eingänge|.n.|Anzahl Ausgänge|.n.|.n.
+#5001|Anzahl Eingänge|Ausgänge|Offset|Speicher|Berechnung bei Start
 #5002|Index Eingang|Default Wert|0=numerisch 1=alphanummerisch
 #5003|Speicher|Initwert|Remanent
-#5004|ausgang|Initwert|runden binÃ¤r (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
+#5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|3|"E1 Payload IN"|"E2 RegelgerÃ¤t Adresse"|"E3 WandhÃ¤ngender Kessel Nr"|42|"A1 Payload OUT"|"A2 SystemLog"|"A3 Sollmodulation Brenner"|"A4 Istmodulationswert"|"A5 Brennerstunden"|"A6 Brennerminuten"|"A7 Vorlaufsolltemp."|"A8 Vorlaufisttemp."|"A9 WW - Solltemp."|"A10 WW - Isttemp."|"A11 Antipendeltimer"|"A12 Flag-Antipendel"|"A13 Flag-keine Komm. mit KSE"|"A14 Flag-UBA UmwÃ¤lzpumpe AN"|"A15 Flag-UBA Schornsteinfeger An"|"A16 Flag-UBA keine Komm. mit UBA"|"A17 Flag-UBA keine Komm. mit KSE"|"A18 Flag-UBA Antipendel AN"|"A19 Flag-UBA Umschaltventil WW"|"A20 Flag-UBA AbgaswÃ¤chter"|"A21 Flag-UBA Pumpenschalter"|"A22 Status-UBA Untergr. Bit 0"|"A23 Status-UBA Untergr. Bit 1"|"A24 Status-UBA Untergr. Bit 2"|"A25 Status-UBA Hauptgr. Bit 0"|"A26 Status-UBA Hauptgr. Bit 1"|"A27 Status-UBA Hauptgr. Bit 2"|"A28 Status-UBA Hauptgr. Bit 3"|"A29 Status-UBA Blockierender Fehler UBA"|"A30 HD-Mode UBA WW-Anforderung"|"A31 HD-Mode UBA EIN/AUS von Raumthermostat"|"A32 HD-Mode UBA Anforderung Ã¼ber Schnittst."|"A33 HD-Mode UBA Frostschutz"|"A34 HD-Mode UBA Pumpennachlauf wegen WW-Anf."|"A35 HD-Mode UBA WW-Anforderung Ã¼. FÃ¼hler"|"A36 HD-Mode UBA WW-Anforderung Ã¼. DurchfluÃŸ"|"A37 HD-Mode UBA Brenner an"|"A38 Brennerstarts"|"A39 Versionsnummer der UBA-Software"|"A40 Nummer der KIM"|"A41 RÃ¼cklauftemperatur d. UBA"|"A42 Modulationswert der UBA-Pumpe"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''"|0|3|"E1 Payload IN"|"E2 Regelgerät Adresse"|"E3 Wandhängender Kessel Nr"|42|"A1 Payload OUT"|"A2 SystemLog"|"A3 Sollmodulation Brenner"|"A4 Istmodulationswert"|"A5 Brennerstunden"|"A6 Brennerminuten"|"A7 Vorlaufsolltemp."|"A8 Vorlaufisttemp."|"A9 WW - Solltemp."|"A10 WW - Isttemp."|"A11 Antipendeltimer"|"A12 Flag-Antipendel"|"A13 Flag-keine Komm. mit KSE"|"A14 Flag-UBA Umwälzpumpe AN"|"A15 Flag-UBA Schornsteinfeger An"|"A16 Flag-UBA keine Komm. mit UBA"|"A17 Flag-UBA keine Komm. mit KSE"|"A18 Flag-UBA Antipendel AN"|"A19 Flag-UBA Umschaltventil WW"|"A20 Flag-UBA Abgaswächter"|"A21 Flag-UBA Pumpenschalter"|"A22 Status-UBA Untergr. Bit 0"|"A23 Status-UBA Untergr. Bit 1"|"A24 Status-UBA Untergr. Bit 2"|"A25 Status-UBA Hauptgr. Bit 0"|"A26 Status-UBA Hauptgr. Bit 1"|"A27 Status-UBA Hauptgr. Bit 2"|"A28 Status-UBA Hauptgr. Bit 3"|"A29 Status-UBA Blockierender Fehler UBA"|"A30 HD-Mode UBA WW-Anforderung"|"A31 HD-Mode UBA EIN/AUS von Raumthermostat"|"A32 HD-Mode UBA Anforderung über Schnittst."|"A33 HD-Mode UBA Frostschutz"|"A34 HD-Mode UBA Pumpennachlauf wegen WW-Anf."|"A35 HD-Mode UBA WW-Anforderung ü. Fühler"|"A36 HD-Mode UBA WW-Anforderung ü. Durchfluß"|"A37 HD-Mode UBA Brenner an"|"A38 Brennerstarts"|"A39 Versionsnummer der UBA-Software"|"A40 Nummer der KIM"|"A41 Rücklauftemperatur d. UBA"|"A42 Modulationswert der UBA-Pumpe"|"'''+VERSION+'''"
 
 5001|3|42|0|8|1
 
 # EN[x]
 5002|1|""|1 #* Payload IN
-5002|2|1|0 #* RegelgerÃ¤t Adresse
-5002|3|1|0 #* WandhÃ¤ngender Kessel Nr
+5002|2|1|0 #* Regelgerät Adresse
+5002|3|1|0 #* Wandhängender Kessel Nr
 
 
 # Speicher
@@ -165,27 +165,27 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 5003|8|""|0 #* Versionsnummer der UBA-Software
 
 
-# AusgÃ¤nge
+# Ausgänge
 5004|1|""|0|1|1 #* Payload OUT
 5004|2|""|0|1|1 #* SystemLog
 5004|3|0|0|1|0 #* Sollmodulationswert des Brenners (in %)
 5004|4|0|0|1|0 #* Istmodulationswert (in %)
 5004|5|0|0|1|0 #* Brennerstunden (in Std.)
 5004|6|0|0|1|0 #* Brennerminuten (in min)
-5004|7|0|0|1|0 #* Vorlaufsolltemperatur des Kessels (in Â°C)
-5004|8|0|0|1|0 #* Vorlaufisttemperatur (in Â°C) 
-5004|9|0|0|1|0 #* WW - Solltemperatur (in Â°C)
-5004|10|0|0|1|0 #* WW - Isttemperatur (in Â°C)
+5004|7|0|0|1|0 #* Vorlaufsolltemperatur des Kessels (in °C)
+5004|8|0|0|1|0 #* Vorlaufisttemperatur (in °C) 
+5004|9|0|0|1|0 #* WW - Solltemperatur (in °C)
+5004|10|0|0|1|0 #* WW - Isttemperatur (in °C)
 5004|11|0|0|1|0 #* Antipendeltimer (in min)
 5004|12|0|1|1|0 #* Betriebsflag-Antipendel
 5004|13|0|1|1|0 #* Betriebsflag-keine Kommunikation mit KSE
-5004|14|0|1|1|0 #* Betriebsflags UBA-UmwÃ¤lzpumpe
+5004|14|0|1|1|0 #* Betriebsflags UBA-Umwälzpumpe
 5004|15|0|1|1|0 #* Betriebsflags UBA-Schornsteinfeger
 5004|16|0|1|1|0 #* Betriebsflags UBA-keine Kommunikation mit UBA
 5004|17|0|1|1|0 #* Betriebsflags UBA-keine Kommunikation mit KSE
 5004|18|0|1|1|0 #* Betriebsflags UBA-Antipendel
 5004|19|0|1|1|0 #* Betriebsflags UBA-Umschaltventil WW
-5004|20|0|1|1|0 #* Betriebsflags UBA-AbgaswÃ¤chter
+5004|20|0|1|1|0 #* Betriebsflags UBA-Abgaswächter
 5004|21|0|1|1|0 #* Betriebsflags UBA-Pumpenschalter
 5004|22|0|1|1|0 #* Status der UBA-Untergruppe Bit 0
 5004|23|0|1|1|0 #* Status der UBA-Untergruppe Bit 1
@@ -197,16 +197,16 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 5004|29|0|1|1|0 #* Status der UBA-Blockierender Fehler UBA
 5004|30|0|1|1|0 #* HD-Mode UBA-WW-Anforderung
 5004|31|0|1|1|0 #* HD-Mode UBA-EIN/AUS von Raumthermostat
-5004|32|0|1|1|0 #* HD-Mode UBA-Anforderung Ã¼ber Schnittstelle
+5004|32|0|1|1|0 #* HD-Mode UBA-Anforderung über Schnittstelle
 5004|33|0|1|1|0 #* HD-Mode UBA-Frostschutz
 5004|34|0|1|1|0 #* HD-Mode UBA-Pumpennachlauf wegen WW-Anforderung
-5004|35|0|1|1|0 #* HD-Mode UBA-WW-Anforderung Ã¼ber FÃ¼hler
-5004|36|0|1|1|0 #* HD-Mode UBA-WW-Anforderung Ã¼ber DurchfluÃŸ
+5004|35|0|1|1|0 #* HD-Mode UBA-WW-Anforderung über Fühler
+5004|36|0|1|1|0 #* HD-Mode UBA-WW-Anforderung über Durchfluß
 5004|37|0|1|1|0 #* HD-Mode UBA-Brenner an
 5004|38|0|0|1|0 #* Brennerstarts
 5004|39|""|0|1|1 #* Versionsnummer der UBA-Software
 5004|40|0|0|1|0 #* Nummer der KIM
-5004|41|0|0|1|0 #* RÃ¼cklauftemperatur der UBA (in Â°C)
+5004|41|0|0|1|0 #* Rücklauftemperatur der UBA (in °C)
 5004|42|0|0|1|0 #* Modulationswert der UBA-Pumpe (in %)
 
 
@@ -234,32 +234,32 @@ if EI == 1:
           self.current_status = [ ]
           self.status_length = 18
 
-          ## 2.3.8 Monitorwerte fÃ¼r wandhÃ¤ngende Kessel (UBA)
-          ## Die Monitorwerte fÃ¼r wandhÃ¤ngende Kessel (UBA) setzen sich zur Zeit 
-          ## aus insgesamt 60 Werten zusammen und gehÃ¶ren zu einem der 
+          ## 2.3.8 Monitorwerte für wandhängende Kessel (UBA)
+          ## Die Monitorwerte für wandhängende Kessel (UBA) setzen sich zur Zeit 
+          ## aus insgesamt 60 Werten zusammen und gehören zu einem der 
           ## nachfolgenden Typen: (0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99)
           ## Es werden hier nur die ersten 21 Werte verwendet, da bei UBA Kessel nur diese versorgt werden.
           ## Wert ab 22 beziehen sich auf EMS Kessel an der Logamatic. Ist nur ein UBA Kessel angeschlossen
           ## bleiben diese Wert bei 0. Aus diesem Grund werde diese hier ignoriert.
 
           self.device_types = {
-              "XX" : "kein wandhÃ¤ngender Kessel",
-              "92" : "wandhÃ¤ngender Kessel 1",
-              "93" : "wandhÃ¤ngender Kessel 2",
-              "94" : "wandhÃ¤ngender Kessel 3",
-              "95" : "wandhÃ¤ngender Kessel 4",
-              "96" : "wandhÃ¤ngender Kessel 5",
-              "97" : "wandhÃ¤ngender Kessel 6",
-              "98" : "wandhÃ¤ngender Kessel 7",
-              "99" : "wandhÃ¤ngender Kessel 8",
+              "XX" : "kein wandhängender Kessel",
+              "92" : "Kessel 1 wandhängend",
+              "93" : "Kessel 2 wandhängend",
+              "94" : "Kessel 3 wandhängend",
+              "95" : "Kessel 4 wandhängend",
+              "96" : "Kessel 5 wandhängend",
+              "97" : "Kessel 6 wandhängend",
+              "98" : "Kessel 7 wandhängend",
+              "99" : "Kessel 8 wandhängend",
           }
 
           self.recv_selector = ["XX","92","93","94","95","96","97","98","99"]  
           self.send_selector = ["16","07","08","09","0A","16","18","1A"] 
           
-          #self.debug("wandhÃ¤ngender Kessel %d" % EN[3])
+          #self.debug("Kessel %d wandhängend" % EN[3])
           if EN[3] < 1 or EN[3] > 8:
-              self.debug("UngÃ¼ltiger wandhÃ¤ngender Kessel %d" % EN[3])
+              self.debug("Ungültiger Kessel %d wandhängend" % EN[3])
               _id = "XX"
               self.send_prefix = None
           else:
@@ -272,19 +272,19 @@ if EI == 1:
 
           self.payload_regex = re.compile( "(?P<mode>AB|A7)%s%s(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ,_id) )
 
-            ## Offset Name            AuflÃ¶sung
+            ## Offset Name            Auflösung
             ## 0 Sollmodulationswert des Brenners in %                          ## Ausgang 3
             ## 1 Istmodulationswert 1 %                                         ## Ausgang 4
             ## 2 Brennerstunden Byte 3 (Byte3 * 65536) + (Byte2 * 256) + Byte1  ## interner Speicher 2
             ## 3 Brennerstunden Byte 2                                          ## interner Speicher 3
             ## 4 Brennerstunden Byte 1                                          ## interner Speicher 4  ## Ausgang 5
             ## 5 Brennerminuten 1 min                                           ## Ausgang 6
-            ## 6 Vorlaufsolltemperatur des Kessels 1 Â°C                         ## Ausgang 7
-            ## 7 Vorlaufisttempeartur 1 Â°C                                      ## Ausgang 8
-            ## 8 WW - Solltemperatur 1 Â°C                                       ## Ausgang 9
-            ## 9 WW - Isttemperatur 1 Â°C                                        ## Ausgang 10
+            ## 6 Vorlaufsolltemperatur des Kessels 1 °C                         ## Ausgang 7
+            ## 7 Vorlaufisttempeartur 1 °C                                      ## Ausgang 8
+            ## 8 WW - Solltemperatur 1 °C                                       ## Ausgang 9
+            ## 9 WW - Isttemperatur 1 °C                                        ## Ausgang 10
             ## 10 Antipendeltimer 1 min                                         ## Ausgang 11
-            ## 11 Betriebsflag aus 1.Bit = Antipendel RegelgerÃ¤t                ## Ausgang 12
+            ## 11 Betriebsflag aus 1.Bit = Antipendel Regelgerät                ## Ausgang 12
             ##                     2.Bit = keine Kommunikation mit KSE          ## Ausgang 13
             ##                     3.Bit = frei
             ##                     4.Bit = frei
@@ -292,13 +292,13 @@ if EI == 1:
             ##                     6.Bit = frei
             ##                     7.Bit = frei
             ##                     8.Bit = frei
-            ## 12 Betriebsflags UBA 1.Bit = UmwÃ¤lzpumpe aus KSE                 ## Ausgang 14
+            ## 12 Betriebsflags UBA 1.Bit = Umwälzpumpe aus KSE                 ## Ausgang 14
             ##                      2.Bit = Schornsteinfeger                    ## Ausgang 15
             ##                      3.Bit = keine Kommunikation mit UBA         ## Ausgang 16
             ##                      4.Bit = keine Kommunikation mit KSE         ## Ausgang 17
             ##                      5.Bit = Antipendel                          ## Ausgang 18
             ##                      6.Bit = Umschaltventil WW                   ## Ausgang 19
-            ##                      7.Bit = AbgaswÃ¤chter                        ## Ausgang 2ÃŸ
+            ##                      7.Bit = Abgaswächter                        ## Ausgang 2ß
             ##                      8.Bit = Pumpenschalter                      ## Ausgang 21
             ## 13 Status der UBA 1.Bit = Untergruppe Bit 0                      ## Ausgang 22
             ##                   2.Bit = Untergruppe Bit 1                      ## Ausgang 23
@@ -310,20 +310,20 @@ if EI == 1:
             ##                   8.Bit = Blockierender Fehler UBA               ## Ausgang 29
             ## 14 HD-Mode der UBA 1.Bit = WW-Anforderung                        ## Ausgang 30
             ##                    2.Bit = EIN/AUS von Raumthermostat            ## Ausgang 31
-            ##                    3.Bit = Anforderung Ã¼ber Schnittstelle        ## Ausgang 32
+            ##                    3.Bit = Anforderung über Schnittstelle        ## Ausgang 32
             ##                    4.Bit = Frostschutz                           ## Ausgang 33
             ##                    5.Bit = Pumpennachlauf wegen WW-Anforderung   ## Ausgang 34
-            ##                    6.Bit = WW-Anforderung Ã¼ber FÃ¼hler            ## Ausgang 35
-            ##                    7.Bit = WW-Anforderung Ã¼ber DurchfluÃŸ         ## Ausgang 36
+            ##                    6.Bit = WW-Anforderung über Fühler            ## Ausgang 35
+            ##                    7.Bit = WW-Anforderung über Durchfluß         ## Ausgang 36
             ##                    8.Bit = Brenner an                            ## Ausgang 37
             ## 15 Brennerstarts Byte 3 (Byte3 * 65536) + (Byte2 * 256) + Byte1  ## interner Speicher 5
             ## 16 Brennerstarts Byte 2                                          ## interner Speicher 6
             ## 17 Brennerstarts Byte 1                                          ## interner Speicher 7  ## Ausgang 38
             ## 18 Versionsnummer der UBA-Software                               ## Ausgang 39
             ## 19 Nummer der KIM                                                ## Ausgang 40
-            ## 20 RÃ¼cklauftemperatur der UBA 1 Â°C                               ## Ausgang 41
+            ## 20 Rücklauftemperatur der UBA 1 °C                               ## Ausgang 41
             ## 21 Modulationswert der UBA-Pumpe 1 %                             ## Ausgang 42
-            ## 22 und hÃ¶her sind Monitordaten von EMS Kesseln diese werde indm Baustein hier ignoriert.
+            ## 22 und höher sind Monitordaten von EMS Kesseln diese werde indm Baustein hier ignoriert.
             ##    Soll ein EMS Kessel ausgewertet werden sollte ein neuer Baustein geschrieben werden.
 
 
@@ -366,11 +366,11 @@ if EI == 1:
 
 
       def debug(self,msg):
-          #self.log(msg,severity='debug')
-          print "DEBUG: %r" % (msg,)
+          self.log(msg,severity='debug')
+          #print "DEBUG: %r" % (msg,)
 
       def send_to_output(self,out,msg,sbc=False):
-          if sbc and msg == self.localvars["AN"]:
+          if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
               return
           self.localvars["AN"][out] = msg
           self.localvars["AC"][out] = 1
@@ -415,7 +415,7 @@ if EI == 1:
       def incomming(self,msg, localvars):
           import binascii
           self.localvars = localvars
-          self.debug("incomming message %r" % msg)
+          #self.debug("incomming message %r" % msg)
           msg = msg.replace(' ','')
           _data = self.payload_regex.search(msg)
           if _data:
@@ -424,7 +424,7 @@ if EI == 1:
       def set_value(self, val, offset, byte,localvars, min=-99999, max=99999, resolution=1):
           self.localvars = localvars
           if val < min or val > max:
-              self.log("ungÃ¼ltiger Wert %r (%s-%s)" % (val,min,max) )
+              self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
           _val = val * resolution
           if _val < 0:
               (_val * -1) + 128
@@ -736,7 +736,7 @@ def symbolize(LOGIK,code):
               isunique=False
           except KeyError:
               pass
-          ## Ã¼berprÃ¼ft auch die alternativen Varianten
+          ## überprüft auch die alternativen Varianten
           if re.match("[ACN]",i[2][-1:]):
               try:
                   type(symbols[i[2][:-1]])
@@ -1009,7 +1009,7 @@ if debug and not livedebug:
       print """
 ###############################################
 ### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ###
-### !!!ACHTUNG: sehr lange AusfÃ¼rungszeit!! ###
+### !!!ACHTUNG: sehr lange Ausfürungszeit!! ###
 ### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ###
 ###############################################
 """
@@ -1037,7 +1037,7 @@ if livedebug:
     sock.close()
 
 if doSend:
-    ## Das auslÃ¶sen Ã¼ber den Debug verhindern
+    ## Das auslösen über den Debug verhindern
     sendVars="EC["+str(ANZIN+1)+"]=0\n"+sendVars
     sock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
     sock.connect((livehost,liveport))
@@ -1095,8 +1095,8 @@ Neuberechnung beim Start: """+CALCSTART+"""
 Baustein ist remanent: """+LOGIKREMANT+"""
 Interne Bezeichnung: """+LOGIKID+"""
 Kategorie: '"""+LOGIKCAT+"""'
-Anzahl EingÃ¤nge: """+str(ANZIN)+"""   """+repr(EN)+"""
-Anzahl AusgÃ¤nge: """+str(ANZOUT)+"""  """+repr(AN)+"""
+Anzahl Eingänge: """+str(ANZIN)+"""   """+repr(EN)+"""
+Anzahl Ausgänge: """+str(ANZOUT)+"""  """+repr(AN)+"""
 Interne Speicher: """+str(ANZSP)+"""  """+repr(SN)+"""
 """
 
