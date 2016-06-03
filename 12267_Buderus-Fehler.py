@@ -61,7 +61,7 @@ Dieser Baustein wertet alle Fehler aus, die vom Buderus Baustein 12264 kommen un
 </div>
 Zitat aus der Buderus Beschreibung: Technische Information - Monitordaten - System 4000
 <i>Ein Regelgerät am ECOCAN-BUS kann zur Zeit ca. 213 verschiedene Fehler erzeugen. Bei der Zahl von
-15 Regelgeräten am ECOCAN-BUS müßten somit ca. 1500 Fehlerquellen auf „Kommen“ bzw. „Gehen“
+15 Regelgeräten am ECOCAN-BUS müßten somit ca. 1500 Fehlerquellen auf "Kommen" bzw. "Gehen"
 untersucht werden. Da die Verarbeitung einer so großen Zahl von Fehlermeldungen unrealistisch
 erscheint, werden nur die zur Zeit offenen Fehler aus dem Fehlerprotokoll (z. Zt. 4 Stück) an die
 Kommunikationskarte übergeben.
@@ -83,7 +83,7 @@ Kommunikationskarte übergeben.
 </div>
 
 Alle Fehlertexte und Fehlercodes/nummern sind in folgender Beschreibungen von Buderus nachzulesen:
-7747004149 – 01/2009 DE - Technische Information - Monitordaten - System 4000
+7747004149 - 01/2009 DE - Technische Information - Monitordaten - System 4000
 
 Ausgegeben werden die Fehler einmal auf den SystemLog Ausgang 1 sowie auf den XML Ausgang 3. Mit dem Ausgang 2 wird angezeigt,
 ob es auf dem ECOCAN Bus ingesamt einen Fehler gibt. 
@@ -170,7 +170,7 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|2|"E1 Payload IN"|"E2 Config"|3|"A1 SystemLog"|"A2 Störung"|"A2 Störstatus XML"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''"|0|2|"E1 Payload IN"|"E2 Config"|3|"A1 SystemLog"|"A2 Störung"|"A2 Störstatus XML"|"'''+VERSION+'''"
 
 5001|2|3|0|1|1
 
@@ -610,12 +610,12 @@ if EI == 1:
               return
           import time
           
-          ## FIXME später auf syslog
-          #self.log(msg,severity='debug')
-          
-          print "%s DEBUG: %r" % (time.strftime("%H:%M:%S"),msg,)
+          self.log(msg,severity='debug')
+          #print "%s DEBUG: %r" % (time.strftime("%H:%M:%S"),msg,)
 
-      def send_to_output(self,out,msg):
+      def send_to_output(self,out,msg,sbc=False):
+          if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
+              return
           ## werte fangen bei 0 an also AN[1] == Ausgang[0]#
           self.localvars["AN"][out] = msg
           self.localvars["AC"][out] = 1
@@ -654,6 +654,12 @@ if EI == 1:
               for _err in _error_slots:
                   ## wenn jetziger Fehler noch nicht bekannt
                   if (_busnr,_err) not in self.active_errors:
+                      ## Severity für die Fehlernummer holen
+                      _severity = self.get_severity(_err)
+                        
+                      if not _severity:
+                        continue
+
                       ## Fehler zur Liste bereits bekannter Fehler hinzu
                       self.active_errors.append( (_busnr,_err) )
                       
@@ -669,9 +675,6 @@ if EI == 1:
                           'msg' : _err_message,
                           'bus' : _busnr,
                        }
-                      
-                      ## Severity für die Fehlernummer holen
-                      _severity = self.get_severity(_err)
                       
                       ## Wenn diese nicht None ist
                       if _severity:
@@ -730,7 +733,7 @@ if EI == 1:
               self.send_to_output( 1,self.log_queue)
           
           ## Wenn es aktive Fehler gibt dann Ausgang 2 auf 1
-          self.send_to_output( 2, int(len(self.active_errors) >0) )
+          self.send_to_output( 2, int(len(self.active_errors) >0), sbc=True)
           
           ## Status XML für Ausgang 3
           if found:
