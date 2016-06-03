@@ -87,7 +87,7 @@ Die weiteren Eingänge 4-11 sind zum Verändern von Parametern der Anlage.
  Fast alle Schreib Kommandos wirken übrigens auf Service Parameter, die normalerweise NUR der Heizungsfachman verändert!
 </div>
 """
-VERSION="V0.12"
+VERSION="V0.20"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -142,7 +142,7 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|11|"E1 Payload IN"|"E2 Regelgerät Adr."|"E3 Heizkreis"|"E4 Umschaltschwelle"|"E5 Nachtraumsolltemperatur"|"E6 Tagsolltemperatur"|"E7 Betriebsmode"|"E8 Absenkart Ferien"|"E9 Umschalttemperatur Aussen"|"E10 Auslegungstemperatur"|"E11 Heizsystem"|34|"A1 Payload OUT"|"A2 SystemLog"|"A3 Ausschaltoptimierung Status"|"A4 Einschaltoptimierung Status"|"A5 Automatik"|"A6 Warmwasservorrang"|"A7 Estrichtrocknung"|"A8 Ferien"|"A9 Frostschutz"|"A10 Manuell"|"A11 Sommer"|"A12 Tag"|"A13 keine Kommunikation mit FB"|"A14 FB fehlerhaft"|"A15 Fehler Vorlauffühler"|"A16 maximaler Vorlauf"|"A17 externer Störeingang"|"A18 Party / Pause"|"A19 Vorlaufsolltemperatur"|"A20 Vorlaufistwert"|"A21 Raumsollwert"|"A22 Raumistwert"|"A23 Einschaltoptimierung"|"A24 Ausschaltoptimierung"|"A25 Pumpe"|"A26 Stellglied"|"A27 HK-Eingang WF2"|"A28 HK-Eingang WF3"|"A29 HK-Schalter 0"|"A30 Schalter Hand"|"A31 Schalter AUTO"|"A32 Heizkennlinie + 10"|"A33 Heizkennlinie 0"|"A34 Heizkennlinie - 10"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''"|0|11|"E1 Payload IN"|"E2 Regelgerät Adr."|"E3 Heizkreis"|"E4 Umschaltschwelle"|"E5 Nachtraumsolltemperatur"|"E6 Tagsolltemperatur"|"E7 Betriebsmode"|"E8 Absenkart Ferien"|"E9 Umschalttemperatur Aussen"|"E10 Auslegungstemperatur"|"E11 Heizsystem"|34|"A1 Payload OUT"|"A2 SystemLog"|"A3 Ausschaltoptimierung Status"|"A4 Einschaltoptimierung Status"|"A5 Automatik"|"A6 Warmwasservorrang"|"A7 Estrichtrocknung"|"A8 Ferien"|"A9 Frostschutz"|"A10 Manuell"|"A11 Sommer"|"A12 Tag"|"A13 keine Kommunikation mit FB"|"A14 FB fehlerhaft"|"A15 Fehler Vorlauffühler"|"A16 maximaler Vorlauf"|"A17 externer Störeingang"|"A18 Party / Pause"|"A19 Vorlaufsolltemperatur"|"A20 Vorlaufistwert"|"A21 Raumsollwert"|"A22 Raumistwert"|"A23 Einschaltoptimierung"|"A24 Ausschaltoptimierung"|"A25 Pumpe"|"A26 Stellglied"|"A27 HK-Eingang WF2"|"A28 HK-Eingang WF3"|"A29 HK-Schalter 0"|"A30 Schalter Hand"|"A31 Schalter AUTO"|"A32 Heizkennlinie + 10"|"A33 Heizkennlinie 0"|"A34 Heizkennlinie - 10"|"'''+VERSION+'''"
 
 5001|11|34|0|1|1
 
@@ -336,7 +336,7 @@ if EI == 1:
           pass
 
       def send_to_output(self,out,msg,sbc=False):
-          if sbc and msg == self.localvars["AN"]:
+          if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
               return
           self.localvars["AN"][out] = msg
           self.localvars["AC"][out] = 1
