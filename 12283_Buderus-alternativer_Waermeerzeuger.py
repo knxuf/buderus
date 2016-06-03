@@ -54,7 +54,7 @@ LOGIKCAT="www.knx-user-forum.de"
 LOGIKDESC="""
 
 """
-VERSION="V0.3"
+VERSION="V0.20"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -109,7 +109,7 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|2|"E1 Payload IN"|"E2 ECOCAN Bus"|24|"A1 Payload OUT"|"A2 SystemLog"|"A3 Vorlauf IST (FWV)"|"A4 Rücklauf IST (FWR)"|"A5 Abgas Byte2 (FWG)"|"A6 Abgas Byte1 (FWG)"|"A7 Anl. Rücklauf IST (FWG)"|"A8 Puffer oben IST (FPO)"|"A9 Puffer mitte IST (FPM)"|"A10 Puffer unten IST (FPU)"|"A11 Vorlauf SOLL"|"A12 Sollwert Vorlaufregelung"|"A13 Sollwert Rücklaufregelgung"|"A14 Soll Puffer"|"A15 Soll Anlage"|"A16 Brenner AN"|"A17 SWE AUF"|"A18 Pumpe WE"|"A19 ON/Notkühlung"|"A20 Öl/Gaskessel gesperrt"|"A21 Stellglied SWR"|"A22 Betriebsstunden Byte3"|"A23 Betriebsstunden Byte2"|"A24 Betriebsstunden Byte1"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''"|0|2|"E1 Payload IN"|"E2 ECOCAN Bus"|24|"A1 Payload OUT"|"A2 SystemLog"|"A3 Vorlauf IST (FWV)"|"A4 Rücklauf IST (FWR)"|"A5 Abgas Byte2 (FWG)"|"A6 Abgas Byte1 (FWG)"|"A7 Anl. Rücklauf IST (FWG)"|"A8 Puffer oben IST (FPO)"|"A9 Puffer mitte IST (FPM)"|"A10 Puffer unten IST (FPU)"|"A11 Vorlauf SOLL"|"A12 Sollwert Vorlaufregelung"|"A13 Sollwert Rücklaufregelgung"|"A14 Soll Puffer"|"A15 Soll Anlage"|"A16 Brenner AN"|"A17 SWE AUF"|"A18 Pumpe WE"|"A19 ON/Notkühlung"|"A20 Öl/Gaskessel gesperrt"|"A21 Stellglied SWR"|"A22 Betriebsstunden Byte3"|"A23 Betriebsstunden Byte2"|"A24 Betriebsstunden Byte1"|"'''+VERSION+'''"
 
 5001|2|24|0|1|1
 
@@ -283,7 +283,7 @@ if EI == 1:
           print "DEBUG: %r" % (msg,)
 
       def send_to_output(self,out,msg,sbc=False):
-          if sbc and msg == self.localvars["AN"]:
+          if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
               return
           self.localvars["AN"][out] = msg
           self.localvars["AC"][out] = 1
