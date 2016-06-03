@@ -115,7 +115,7 @@ Auf dem Ausgang 3 gibt es für jedes Regelgerät so einen XML Block:
 &lt;/busnr_1&gt;</p>
 
 """
-VERSION="V0.10"
+VERSION="V0.20"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
