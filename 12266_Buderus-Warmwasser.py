@@ -73,8 +73,8 @@ Dieser Baustein wertet alle Daten für den Datentyp 0x84 Warmwasser, die vom Bude
 </div>
 
 Für die eigentliche Kommunikation sind zwingend folgende Beschreibungen von Buderus zu beachten:
-7747004149 – 01/2009 DE - Technische Information - Monitordaten - System 4000
-7747004150 – 05/2009 DE - Technische Information - Einstellbare Parameter - Logamatic 4000
+7747004149 - 01/2009 DE - Technische Information - Monitordaten - System 4000
+7747004150 - 05/2009 DE - Technische Information - Einstellbare Parameter - Logamatic 4000
 
 Die weiteren Eingänge 3-8 sind zum Verändern von Parametern der Anlage. Diese Wert stellen bei jedem Scheiben ein
  physikalischen Schreiben auf den Flashspeicher dar. Dieser ist auf 1.000.000 mal Schreiben pro Wert begrenzt.
@@ -82,7 +82,7 @@ Die weiteren Eingänge 3-8 sind zum Verändern von Parametern der Anlage. Diese We
  man setzt im Buderus Baustein die Konfiguration auf ReadOnly. Dann werden dort alle Schreib-Kommandos verworfen.
  Fast alle Schreib Kommandos wirken auf Service Parameter, die normalerweise NUR der Heizungsfachman verändert.
 """
-VERSION="V0.10"
+VERSION="V0.20"
 
 
 ## Bedingung wann die kompilierte Zeile ausgeführt werden soll
@@ -137,7 +137,7 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 #5004|ausgang|Initwert|runden binär (0/1)|typ (1-send/2-sbc)|0=numerisch 1=alphanummerisch
 #5012|abbruch bei bed. (0/1)|bedingung|formel|zeit|pin-ausgang|pin-offset|pin-speicher|pin-neg.ausgang
 
-5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''_'''+VERSION+'''"|0|11|"E1 Payload IN"|"E2 ECOCAN Bus"|"E3 Desinfektion"|"E4 Desinfektions Temp"|"E5 Desinfektionstag"|"E6 Desinfektionsstunde"|"E7 Warmwassersoll"|"E8 Betriebsart WW"|"E9 Zirkulation pro Std"|"E10 Betriebsart"|"E11 tgl. Aufheizzeit"|34|"A1 Payload OUT"|"A2 SystemLog"|"A3 Automatik"|"A4 Desinfektion"|"A5 Nachladung"|"A6 Ferien"|"A7 Fehler Desinfektion"|"A8 Fehler Fühler"|"A9 Fehler WW kalt"|"A10 Fehler Anode"|"A11 Laden"|"A12 Manuell"|"A13 Nachladen"|"A14 Ausschaltoptimierung"|"A15 Einschaltoptimierung"|"A16 Tag"|"A17 Warm"|"A18 Vorrang"|"A19 Wassersolltemperatu"|"A20 Wasseristtemperatu"|"A21 Einschaltoptimierungszeit"|"A22 Ladepumpe"|"A23 Zirkulationspumpe"|"A24 Absenkung Solar"|"A25 WW-Eingang 2"|"A26 WW-Eingang 3"|"A27 WW-Eingang Schalter 0"|"A28 WW-Eingang Schalter Hand"|"A29 WW-Eingang Schalter AUT"|"A30 Fehler extern"|"A31 Zirkulationspumpe Tag *"|"A32 Zirkulationspumpe Automatik"|"A33 Zirkulationspumpe Ferien"|"A34 Zirkulationspumpe Einmal"
+5000|"'''+LOGIKCAT+'''\\'''+LOGIKNAME+'''"|0|11|"E1 Payload IN"|"E2 ECOCAN Bus"|"E3 Desinfektion"|"E4 Desinfektions Temp"|"E5 Desinfektionstag"|"E6 Desinfektionsstunde"|"E7 Warmwassersoll"|"E8 Betriebsart WW"|"E9 Zirkulation pro Std"|"E10 Betriebsart"|"E11 tgl. Aufheizzeit"|34|"A1 Payload OUT"|"A2 SystemLog"|"A3 Automatik"|"A4 Desinfektion"|"A5 Nachladung"|"A6 Ferien"|"A7 Fehler Desinfektion"|"A8 Fehler Fühler"|"A9 Fehler WW kalt"|"A10 Fehler Anode"|"A11 Laden"|"A12 Manuell"|"A13 Nachladen"|"A14 Ausschaltoptimierung"|"A15 Einschaltoptimierung"|"A16 Tag"|"A17 Warm"|"A18 Vorrang"|"A19 Wassersolltemperatu"|"A20 Wasseristtemperatu"|"A21 Einschaltoptimierungszeit"|"A22 Ladepumpe"|"A23 Zirkulationspumpe"|"A24 Absenkung Solar"|"A25 WW-Eingang 2"|"A26 WW-Eingang 3"|"A27 WW-Eingang Schalter 0"|"A28 WW-Eingang Schalter Hand"|"A29 WW-Eingang Schalter AUT"|"A30 Fehler extern"|"A31 Zirkulationspumpe Tag *"|"A32 Zirkulationspumpe Automatik"|"A33 Zirkulationspumpe Ferien"|"A34 Zirkulationspumpe Einmal"|"'''+VERSION+'''"
 
 5001|11|34|0|1|1
 
@@ -305,11 +305,11 @@ if EI == 1:
           self.send_to_output(1,"A2%s" % self.bus_id)
 
       def debug(self,msg):
-          #self.log(msg,severity='debug')
-          print "DEBUG: %r" % (msg,)
+          self.log(msg,severity='debug')
+          #print "DEBUG: %r" % (msg,)
 
       def send_to_output(self,out,msg,sbc=False):
-          if sbc and msg == self.localvars["AN"]:
+          if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
               return
           self.localvars["AN"][out] = msg
           self.localvars["AC"][out] = 1
@@ -348,7 +348,7 @@ if EI == 1:
       def incomming(self,msg, localvars):
           import binascii
           self.localvars = localvars
-          self.debug("incomming message %r" % msg)
+          #self.debug("incomming message %r" % msg)
           msg = msg.replace(' ','')
           _data = self.payload_regex.search(msg)
           if _data:
