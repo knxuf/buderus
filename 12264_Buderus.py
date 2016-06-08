@@ -331,7 +331,7 @@ if EI == 1:
                 "97" : ("Kessel 6 wandhängend", 60),
                 "98" : ("Kessel 7 wandhängend", 60),
                 "99" : ("Kessel 8 wandhängend", 60),
-                "9A" : ("unbekannt (9A)",0), ##FIXME##
+                "9A" : ("KNX FM446",60),
                 "9B" : ("Wärmemenge", 36),
                 "9C" : ("Störmeldemodul", 6),
                 "9D" : ("Unterstation", 6),
@@ -783,7 +783,8 @@ if EI == 1:
                         self.log("Keine ECOBUS-Uhrzeit vorhanden")
                     else:
                         _time = self.bustime_to_time(_bustime)
-                        self.log("ECOBUS-Uhrzeit empfangen: {0}".format(time.strftime("%a %d.%m.%Y %H:%M:%S",_time)))
+                        _diff = time.mktime(_time) - time.time()
+                        self.log("ECOBUS-Uhrzeit empfangen: {0} (Differenz {1:.1f}sec)".format(time.strftime("%a %d.%m.%Y %H:%M:%S",_time),_diff))
 
             ## wenn eine Endekennung AC|AA<busnr> empfangen wurde, dann die busnr aus der liste für direct Daten entfernen und evtl direct_mode beenden
             _direct = self.directmode_finish_regex.search(payload)
@@ -1163,7 +1164,7 @@ debugcode = """
 postlogik=[0,"",r"""
 
 5012|0|"EI"|"buderus_connect(locals())"|""|0|0|1|0
-5012|0|"EC[3]"|"SN[1].incomming(EN[3])"|""|0|0|0|0
+5012|0|"EC[3]"|"SN[1].incomming(EN[3].upper())"|""|0|0|0|0
 
 """]
 
