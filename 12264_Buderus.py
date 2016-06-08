@@ -422,6 +422,21 @@ if EI == 1:
             
             ## Uhrzeit Datum ##FIXME##
             self.directmode_finish_AF_regex = re.compile("AF[0-9a-fA-F]{12}|AFFF")
+            ## 
+            ## 1.Byte Sekunden (0-59)
+            ## 2.Byte Minuten (0-59)
+            ## 3.Byte Stunden / Sommerzeit
+            ##      Bit 1-5 Stunden
+            ##      Bit 6 intern
+            ##      Bit 7 Sommerzeit (1=Sommerzeit)
+            ##      Bit 8 Funkuhr (1=ist Funkuhrzeit)
+            ## 4.Byte Tag (1-31)
+            ## 5.Byte Monat / Wochentag
+            ##      Bit 1-4 Monat
+            ##      Bit 5-7 Wochentag
+            ##      Bit 8 Funkuhrempfang zugelassen
+            ## 6.Byte Jahr (89-188) > 100 20xx sonst 19xx
+            ##
 
             ## Consumer Thread der Nachrichten an das Buderus Gerät schickt
             self.buderus_queue_thread = threading.Thread(target=self._send_to_buderus_consumer,name='hs_buderus_consumer')
@@ -449,6 +464,31 @@ if EI == 1:
                 except ValueError:
                     self.log("falscher Wert bei Konfig Option %s=%s (erwartet %r)" % (option,value, _configtype ), severity="error" )
                     pass
+
+        def time_to_bustime(self,set_time,funkuhr=0):
+            return ("B2{0:02x}{1:02x}{2:02x}{3:02x}{4:02x}{5:02x}".format(
+                set_time[5], ## Sekunden
+                set_time[4], ## Minuten
+                set_time[3] + (set_time[8] << 6) + (funkuhr *128) , ## Stunden + Bit 7 Sommerzeit + Bit 8 (Funkuhr)
+                set_time[2], ## Tag
+                set_time[1] + ((set_time[6] + 1) << 4), ## Bit 1-4 Monat + Bit 5-7 (Wochentag +1)
+                set_time[0] - 1900 ## Jahr -1900
+            )).upper()
+
+        def bustime_to_time(self,bustime):
+            import binascii
+            _bustime = [ ord(x) for x in binascii.unhexlify(bustime) ]
+            return [
+                (_bustime[6] + 1900), ## Jahr
+                (_bustime[5] & 0xf), ## Monat
+                _bustime[4], ## Tag
+                _bustime[3] & 0x1f, # Stunden
+                _bustime[2], ## Minuten
+                _bustime[1], ## Sekunden
+                (_bustime[5] >> 4 & 0x7) -1 , ## Wochentag
+                0,
+                _bustime[3] >> 6 & 0x1 ## Sommerzeit
+            ]
 
         def debug(self,msg,lvl=10):
             ## wenn debuglevel zu klein gleich zurück
