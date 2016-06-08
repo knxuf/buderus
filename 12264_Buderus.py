@@ -408,6 +408,8 @@ if EI == 1:
 
             self.payload_regex = re.compile("(?P<id>B8|B9|A9|AB|A7|B7)(?P<busnr>[0-9a-fA-F]{2})(?P<data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{12})+)")
             self.payload_A8_regex = re.compile("(?P<id>A8)(?P<busnr>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{12}))$")
+            ## Uhrzeit Datum
+            self.payload_AF_regex = re.compile("AF(?P<bustime>[0-9a-fA-F]{12}|FF)")
 
 
             ## Als Endekennung für das abgefragte Regelgerät oder falls keine Daten vorhanden sind, wird der 
@@ -420,8 +422,6 @@ if EI == 1:
             self.directmode_finish_A8_regex = re.compile("A8[8-9a-fA-F][0-9a-fA-F]{13}(?P<version_vk>[0-9a-fA-F]{2})(?P<version_nk>[0-9a-fA-F]{2})") 
             self.directmode_finish_AD_regex = re.compile("AD(?P<busnr>[0-9a-fA-F]{2})(?P<data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{12}))")
             
-            ## Uhrzeit Datum ##FIXME##
-            self.directmode_finish_AF_regex = re.compile("AF[0-9a-fA-F]{12}|AFFF")
             ## 
             ## 1.Byte Sekunden (0-59)
             ## 2.Byte Minuten (0-59)
@@ -460,7 +460,7 @@ if EI == 1:
                 try:
                     _val = _configtype(value)
                     self.config[option] = _val
-                    self.debug("Konfig Option %s=%s empfangen" % (option,value ), 5 )
+                    #self.debug("Konfig Option %s=%s empfangen" % (option,value ), 5 )
                 except ValueError:
                     self.log("falscher Wert bei Konfig Option %s=%s (erwartet %r)" % (option,value, _configtype ), severity="error" )
                     pass
@@ -479,27 +479,27 @@ if EI == 1:
             import binascii
             _bustime = [ ord(x) for x in binascii.unhexlify(bustime) ]
             return [
-                (_bustime[6] + 1900), ## Jahr
-                (_bustime[5] & 0xf), ## Monat
-                _bustime[4], ## Tag
-                _bustime[3] & 0x1f, # Stunden
-                _bustime[2], ## Minuten
-                _bustime[1], ## Sekunden
-                (_bustime[5] >> 4 & 0x7) -1 , ## Wochentag
+                (_bustime[5] + 1900), ## Jahr
+                (_bustime[4] & 0xf), ## Monat
+                _bustime[3], ## Tag
+                _bustime[2] & 0x1f, # Stunden
+                _bustime[1], ## Minuten
+                _bustime[0], ## Sekunden
+                (_bustime[4] >> 4 & 0x7) -1 , ## Wochentag
                 0,
-                _bustime[3] >> 6 & 0x1 ## Sommerzeit
+                _bustime[2] >> 6 & 0x1 ## Sommerzeit
             ]
 
-        def debug(self,msg,lvl=10):
+        def debug(self,msg,lvl=8):
             ## wenn debuglevel zu klein gleich zurück
             if self.config.get("debug") == 0:
                 return
             import time
 
             ## FIXME sollte später gesetzt werden
-            if (self.config.get("debug") == 5 and lvl <= 5):
+            if lvl < 10 and lvl <= (self.config.get("debug")):
               self.log(msg,severity='debug')
-            elif (self.config.get("debug") == 10):
+            if (self.config.get("debug") == 10):
               print "%s DEBUG-12264: %r" % (time.strftime("%H:%M:%S"),msg,)
 
         def connect(self):
@@ -677,14 +677,14 @@ if EI == 1:
                 if self.wait_for_ready_to_receive():
 
                     ## Payload jetzt senden
-                    self.debug("jetzt payload %r senden" % (payload,) )
+                    self.debug("jetzt payload %r senden" % (payload,) ,lvl=5)
                     self.send_payload(payload)
 
                     ## returnwert auf True
                     _ret = True
                 else:
                     ## wenn kein DLE auf unser STX kam dann payload verwerfen
-                    self.debug("payload %r verworfen" % (payload,) )
+                    self.debug("payload %r verworfen" % (payload,) ,lvl=4)
 
             except:
                 ## Fehler auf die HS Debugseite
@@ -734,7 +734,7 @@ if EI == 1:
             self.send_to_output( 2, _msg )
 
         def incomming(self,msg):
-            self.debug("incomming message %r" % msg)
+            self.debug("incomming message %r" % (msg), lvl=5)
             ## mit * getrennte messages hinzufügen
             for _msg in msg.split("*"):
 
@@ -771,10 +771,19 @@ if EI == 1:
                     self.log("Datentyp '%s' an Regelgerät %d gefunden" % ( _devicename, int(_payload.group("busnr")) ) , severity="info")
                 return
             else:
-                _payload_A8 = self.payload_A8_regex.search(payload)
-                if _payload_A8 and self.is_directmode():
-                  self.log("Regelgerät %s an ECOCAN BUS gefunden" % (  _payload_A8.group("busnr") ) , severity="info")
+                _payload = self.payload_A8_regex.search(payload)
+                if _payload and self.is_directmode():
+                  self.log("Regelgerät %s an ECOCAN BUS gefunden" % (  _payload.group("busnr") ) , severity="info")
                   return
+
+                _payload = self.payload_AF_regex.search(payload)
+                if _payload:
+                    _bustime = _payload.group("bustime")
+                    if _bustime == "FF":
+                        self.log("Keine ECOBUS-Uhrzeit vorhanden")
+                    else:
+                        _time = self.bustime_to_time(_bustime)
+                        self.log("ECOBUS-Uhrzeit empfangen: {0}".format(time.strftime("%a %d.%m.%Y %H:%M:%S",_time)))
 
             ## wenn eine Endekennung AC|AA<busnr> empfangen wurde, dann die busnr aus der liste für direct Daten entfernen und evtl direct_mode beenden
             _direct = self.directmode_finish_regex.search(payload)
@@ -832,7 +841,7 @@ if EI == 1:
 
                     ## Wenn wir beim warten auf ein DLE ein STX der Gegenseite erhalten stellen wir unsere Sendung zurück und lassen das andere Gerät seine Daten erstmal senden
                     elif data == self._constants['STX']:
-                        self.debug("STX empfangen Initialisierungskonflikt")
+                        self.debug("STX empfangen Initialisierungskonflikt",lvl=5)
                         time.sleep(self._constants['ZVZ'])
 
                         ## DLE senden, dass wir Daten vom anderen Gerät akzeptieren senden
@@ -844,9 +853,9 @@ if EI == 1:
 
                         ### danach loop und erneuter sende Versuch
                     else:
-                        self.debug("%r empfangen" % (data,) )
+                        self.debug("%r empfangen" % (data,),lvl=9 )
 
-            self.debug("Nach 3x STX senden innerhalb QVZ kein DLE")
+            self.debug("Nach 3x STX senden innerhalb QVZ kein DLE",lvl=5)
             return False
 
         ## Verbindung zum Moxa (gethreadet)
@@ -861,7 +870,7 @@ if EI == 1:
                 try:
                     _ip,_port = self.device_connector.split(":")
                     self.sock.connect( ( _ip, int(_port) ) )
-                    self.debug("connect zu moxa an %s:%s" % (_ip,_port))
+                    self.debug("connect zu moxa an %s:%s" % (_ip,_port),lvl=5)
                 except (TypeError,ValueError):
                     self.log("ungültige IP:Port Kombination %r an Eingang 1" % self.device_connector, severity="error")
                     return
@@ -886,7 +895,7 @@ if EI == 1:
 
                             ## wenn keine Daten trotz select dann Verbindung abgebrochen
                             if not data:
-                                self.debug("Verbindung abgebrochen")
+                                self.debug("Verbindung abgebrochen",lvl=3)
                                 break
 
                             ## wenn wir ein STX empfangen
@@ -955,11 +964,11 @@ if EI == 1:
             
             ## Ungültige Payload abfangen um exception zu verhindern
             if len(payload) % 2:
-                self.debug("ungültige Payloadlänge")
+                self.debug("ungültige Payloadlänge",lvl=1)
                 return
                 
             for _loop in xrange(6):
-                self.debug("exklusiv senden / versuch %d" % _loop)
+                self.debug("exklusiv senden / versuch %d" % (_loop),lvl=6)
 
                 ## checksumme
                 _bcc = 0
@@ -967,7 +976,7 @@ if EI == 1:
 
                     ## Byte an Gerät schicken
                     self.sock.send( _byte )
-                    self.debug("Byte %r versendet" % binascii.hexlify(_byte))
+                    self.debug("Byte %r versendet" % (binascii.hexlify(_byte)),lvl=8 )
 
                     ## Checksumme berechnen
                     _bcc ^= ord(_byte)
@@ -977,7 +986,7 @@ if EI == 1:
 
                         ## dann in der payload verdoppeln
                         self.sock.send( _byte )
-                        self.debug("Payload enthällt DLE, ersetzt mit DLE DLE" ) 
+                        self.debug("Payload enthällt DLE, ersetzt mit DLE DLE",lvl=7 ) 
 
                         ## doppeltes DLE auch in die Checksumme einrechenen
                         _bcc ^= ord(_byte)
@@ -1010,7 +1019,7 @@ if EI == 1:
                         self.debug("DLE erhalten")
                         self.debug("Daten %r erfolgreich gesendet" % (payload,),lvl=2)
                         return True
-                self.debug("Kein DLE erhalten loop")
+                self.debug("Kein DLE erhalten loop",lvl=6)
             self.debug("Nach 6x STX senden innerhalb QVZ kein DLE",lvl=1)
 
         def read_payload(self):
@@ -1035,7 +1044,7 @@ if EI == 1:
             import select,binascii,time
             ## 6 versuche sind erlaubt
             for _loop in xrange(6):
-                self.debug("exklusiv lesen / versuch %d" % _loop)
+                self.debug("exklusiv lesen / versuch %d" % (_loop),lvl=8)
 
                 ## speicher für das zuletzt empfangene zeichen um DLE DLE bzw DLE ETX zu erkennen
                 _lastchar = ""
@@ -1081,7 +1090,7 @@ if EI == 1:
 
                     ## wenn keine Daten auf Socket (Verbindungsabbruch)
                     if not data:
-                        self.debug("Keine Daten / verbindung verloren")
+                        self.debug("Keine Daten / verbindung verloren",lvl=3)
                         return
 
                     ## wenn checksumme erwartet wird
@@ -1141,7 +1150,7 @@ if EI == 1:
 
                     ## daten zum packet hinzu
                     _payload.append( binascii.hexlify(data) )
-                    self.debug("Daten %r empfangen" % (binascii.hexlify(data)),lvl=3)
+                    self.debug("Daten %r empfangen" % (binascii.hexlify(data)),lvl=7)
 
                     ## letztes zeichen speichern
                     _lastchar = data
