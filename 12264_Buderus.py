@@ -372,8 +372,8 @@ if EI == 1:
             ## Schnittstelle geschickt werden. Die Schnittstelle schickt diese Daten dann weiter an das entsprechende 
             ## Regelgerät. 
             ## B1 und B2 sind lesen und schreiben der ECOCAN Bus Zeit und Datum
-            self.directmode_B1_regex = re.compile("(?P<id>B1)")
-            self.directmode_B2_regex = re.compile("(?P<id>B2)[0-9a-fA-F]{12}")
+            self.directmode_B1_regex = re.compile("(?P<id>B1)") ## Datum/Uhrzeit vom ECOBUS anfordern ##FIXME##
+            self.directmode_B2_regex = re.compile("(?P<id>B2)[0-9a-fA-F]{12}") ## Datum/Uhrzeit auf ECOBUS schreiben ##FIXME##
             ##Alle andere Abfragen
             self.directmode_regex = re.compile("(?P<id>A0|A1|A2|B3|B4)(?P<busnr>[0-9a-fA-F]{2})")
             self.directmode_A3_regex = re.compile("(?P<id>A3)(?P<busnr>[0-9a-fA-F]{2})(?P<Data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})")
@@ -419,6 +419,8 @@ if EI == 1:
             self.directmode_finish_regex = re.compile("(AC|AA|AD)(?P<busnr>[0-9a-fA-F]{2}$)")
             self.directmode_finish_A8_regex = re.compile("A8[8-9a-fA-F][0-9a-fA-F]{13}(?P<version_vk>[0-9a-fA-F]{2})(?P<version_nk>[0-9a-fA-F]{2})") 
             self.directmode_finish_AD_regex = re.compile("AD(?P<busnr>[0-9a-fA-F]{2})(?P<data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{12}))")
+            
+            ## Uhrzeit Datum ##FIXME##
             self.directmode_finish_AF_regex = re.compile("AF[0-9a-fA-F]{12}|AFFF")
 
             ## Consumer Thread der Nachrichten an das Buderus Gerät schickt
@@ -910,6 +912,12 @@ if EI == 1:
             ## Prozedur den Block und wiederholt in der oben beschriebenen Weise.
             import select,binascii
             ## 6 versuche
+            
+            ## Ungültige Payload abfangen um exception zu verhindern
+            if len(payload) % 2:
+                self.debug("ungültige Payloadlänge")
+                return
+                
             for _loop in xrange(6):
                 self.debug("exklusiv senden / versuch %d" % _loop)
 
