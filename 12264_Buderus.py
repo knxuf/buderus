@@ -490,6 +490,14 @@ if EI == 1:
                 _bustime[2] >> 6 & 0x1 ## Sommerzeit
             ]
 
+        def device_addresses(self,msg):
+            _ret = []
+            _addresses = map(lambda x: x=="1",bin(int(msg,16))[2:][::-1])
+            for _addr in xrange(len(_addresses)):
+                if _addresses[_addr]:
+                    _ret.append(_addr)
+            return _ret
+
         def debug(self,msg,lvl=8):
             ## wenn debuglevel zu klein gleich zurück
             if self.config.get("debug") == 0:
