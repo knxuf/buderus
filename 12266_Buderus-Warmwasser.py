@@ -202,170 +202,168 @@ code=[]
 
 code.append([3,"EI",r"""
 if EI == 1:
-  class buderus_heizkreis(object):
-      def __init__(self,localvars):
-          import re
+    class buderus_heizkreis(object):
+        def __init__(self,localvars):
+            import re
 
-          self.logik = localvars["pItem"]
-          self.MC = self.logik.MC
+            self.logik = localvars["pItem"]
+            self.MC = self.logik.MC
 
-          EN = localvars['EN']
-          
-          self.localvars = localvars
-          
-          self.current_status = [ ]
-          self.status_length = 18
-          
-          self.bus_id = "%.2X" % int(EN[2])
-          self.id = "Warmwasser"
-          self.send_prefix = "B0%.2x0C" % (int(EN[2]))
+            EN = localvars['EN']
+            
+            self.localvars = localvars
+            
+            self.current_status = [ ]
+            self.status_length = 18
+            
+            self.bus_id = "%.2X" % int(EN[2])
+            self.id = "Warmwasser"
+            self.send_prefix = "B0%.2x0C" % (int(EN[2]))
 
-          self.payload_regex = re.compile( "(?P<mode>AB|A7)%s84(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ) )
+            self.payload_regex = re.compile( "(?P<mode>AB|A7)%s84(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ) )
 
-          ## Offset Name Auflösung
-          ## 0     Betriebswerte 1 
-          ##           1. Bit = Automatik             ## Ausgang 3
-          ##           2. Bit = Desinfektion          ## Ausgang 4
-          ##           3. Bit = Nachladung            ## Ausgang 5
-          ##           4. Bit = Ferien                ## Ausgang 6
-          ##           5. Bit = Fehler Desinfektion   ## Ausgang 7
-          ##           6. Bit = Fehler Fühler         ## Ausgang 8
-          ##           7. Bit = Fehler WW bleibt kalt ## Ausgang 9
-          ##           8. Bit = Fehler Anode          ## Ausgang 10
-          ## 1     Betriebswerte 2 
-          ##           1. Bit = Laden                 ## Ausgang 11
-          ##           2. Bit = Manuell               ## Ausgang 12
-          ##           3. Bit = Nachladen             ## Ausgang 13
-          ##           4. Bit = Ausschaltoptimierung  ## Ausgang 14
-          ##           5. Bit = Einschaltoptimierung  ## Ausgang 15
-          ##           6. Bit = Tag                   ## Ausgang 16
-          ##           7. Bit = Warm                  ## Ausgang 17
-          ##           8. Bit = Vorrang               ## Ausgang 18
-          ## 2     Warmwassersolltemperatur 1 °C    ## Ausgang 19
-          ## 3     Warmwasseristtemperatur 1 °C     ## Ausgang 20
-          ## 4     Einschaltoptimierungszeit 1 min  ## Ausgang 21
-          ## 5     Bit-Pumpe 
-          ##           1. Bit = Ladepumpe           ## Ausgang 22
-          ##           2. Bit = Zirkulationspumpe   ## Ausgang 23
-          ##           3. Bit = Absenkung Solar     ## Ausgang 24
-          ##           4. Bit = frei 
-          ##           5. Bit = frei 
-          ##           6. Bit = frei 
-          ##           7. Bit = frei 
-          ##           8. Bit = frei 
-          ## 6     WW-Eingang 
-          ##           1. Bit = Eingang 2         ## Ausgang 25
-          ##           2. Bit = Eingang 3         ## Ausgang 26
-          ##           3. Bit = frei 
-          ##           4. Bit = frei 
-          ##           5. Bit = frei 
-          ##           6. Bit = Schalter 0        ## Ausgang 27
-          ##           7. Bit = Schalter Hand     ## Ausgang 28
-          ##           8. Bit = Schalter AUT      ## Ausgang 29
-          ## 7     Betriebswerte 3 
-          ##           1. Bit = Fehler extern     ## Ausgang 30
-          ##           2. Bit = frei 
-          ##           3. Bit = frei 
-          ##           4. Bit = frei 
-          ##           5. Bit = frei 
-          ##           6. Bit = frei 
-          ##           7. Bit = frei 
-          ##           8. Bit = frei 
-          ## 8     Bit-Zirkulationspumpe 
-          ##           1. Bit = Tag *           ## Ausgang 31
-          ##           2. Bit = Automatik       ## Ausgang 32
-          ##           3. Bit = Ferien          ## Ausgang 33
-          ##           4. Bit = Einmal          ## Ausgang 34
-          ##           5. Bit = frei 
-          ##           6. Bit = frei 
-          ##           7. Bit = frei 
-          ##           8. Bit = frei 
-          ## 9     FREI *
-          ## 10    FREI * 
-          ## 11    FREI *
+            ## Offset Name Auflösung
+            ## 0     Betriebswerte 1 
+            ##           1. Bit = Automatik             ## Ausgang 3
+            ##           2. Bit = Desinfektion          ## Ausgang 4
+            ##           3. Bit = Nachladung            ## Ausgang 5
+            ##           4. Bit = Ferien                ## Ausgang 6
+            ##           5. Bit = Fehler Desinfektion   ## Ausgang 7
+            ##           6. Bit = Fehler Fühler         ## Ausgang 8
+            ##           7. Bit = Fehler WW bleibt kalt ## Ausgang 9
+            ##           8. Bit = Fehler Anode          ## Ausgang 10
+            ## 1     Betriebswerte 2 
+            ##           1. Bit = Laden                 ## Ausgang 11
+            ##           2. Bit = Manuell               ## Ausgang 12
+            ##           3. Bit = Nachladen             ## Ausgang 13
+            ##           4. Bit = Ausschaltoptimierung  ## Ausgang 14
+            ##           5. Bit = Einschaltoptimierung  ## Ausgang 15
+            ##           6. Bit = Tag                   ## Ausgang 16
+            ##           7. Bit = Warm                  ## Ausgang 17
+            ##           8. Bit = Vorrang               ## Ausgang 18
+            ## 2     Warmwassersolltemperatur 1 °C    ## Ausgang 19
+            ## 3     Warmwasseristtemperatur 1 °C     ## Ausgang 20
+            ## 4     Einschaltoptimierungszeit 1 min  ## Ausgang 21
+            ## 5     Bit-Pumpe 
+            ##           1. Bit = Ladepumpe           ## Ausgang 22
+            ##           2. Bit = Zirkulationspumpe   ## Ausgang 23
+            ##           3. Bit = Absenkung Solar     ## Ausgang 24
+            ##           4. Bit = frei 
+            ##           5. Bit = frei 
+            ##           6. Bit = frei 
+            ##           7. Bit = frei 
+            ##           8. Bit = frei 
+            ## 6     WW-Eingang 
+            ##           1. Bit = Eingang 2         ## Ausgang 25
+            ##           2. Bit = Eingang 3         ## Ausgang 26
+            ##           3. Bit = frei 
+            ##           4. Bit = frei 
+            ##           5. Bit = frei 
+            ##           6. Bit = Schalter 0        ## Ausgang 27
+            ##           7. Bit = Schalter Hand     ## Ausgang 28
+            ##           8. Bit = Schalter AUT      ## Ausgang 29
+            ## 7     Betriebswerte 3 
+            ##           1. Bit = Fehler extern     ## Ausgang 30
+            ##           2. Bit = frei 
+            ##           3. Bit = frei 
+            ##           4. Bit = frei 
+            ##           5. Bit = frei 
+            ##           6. Bit = frei 
+            ##           7. Bit = frei 
+            ##           8. Bit = frei 
+            ## 8     Bit-Zirkulationspumpe 
+            ##           1. Bit = Tag *           ## Ausgang 31
+            ##           2. Bit = Automatik       ## Ausgang 32
+            ##           3. Bit = Ferien          ## Ausgang 33
+            ##           4. Bit = Einmal          ## Ausgang 34
+            ##           5. Bit = frei 
+            ##           6. Bit = frei 
+            ##           7. Bit = frei 
+            ##           8. Bit = frei 
+            ## 9     FREI *
+            ## 10    FREI * 
+            ## 11    FREI *
 
-          self.output_functions = [
-              (self.to_bits,[3,4,5,6,7,8,9,10]),
-              (self.to_bits,[11,12,13,14,15,16,17,18]),
-              (lambda x: [x],[19]),
-              (lambda x: [x],[20]),
-              (lambda x: [x],[21]),
-              (self.to_bits,[22,23,24,0,0,0,0,0]),
-              (self.to_bits,[25,26,0,0,0,27,28,29]),
-              (self.to_bits,[30,0,0,0,0,0,0,0]),
-              (self.to_bits,[31,32,33,34,0,0,0,0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-          ]
+            self.output_functions = [
+                (self.to_bits,[3,4,5,6,7,8,9,10]),
+                (self.to_bits,[11,12,13,14,15,16,17,18]),
+                (lambda x: [x],[19]),
+                (lambda x: [x],[20]),
+                (lambda x: [x],[21]),
+                (self.to_bits,[22,23,24,0,0,0,0,0]),
+                (self.to_bits,[25,26,0,0,0,27,28,29]),
+                (self.to_bits,[30,0,0,0,0,0,0,0]),
+                (self.to_bits,[31,32,33,34,0,0,0,0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+            ]
 
-          self.get_monitor_data()
+            self.get_monitor_data()
 
-      def get_monitor_data(self):
-          self.send_to_output(1,"A2%s" % self.bus_id)
+        def get_monitor_data(self):
+            self.send_to_output(1,"A2%s" % self.bus_id)
 
-      def debug(self,msg):
-          self.log(msg,severity='debug')
-          #print "DEBUG: %r" % (msg,)
+        def debug(self,msg):
+            self.log(msg,severity='debug')
+            #print "DEBUG: %r" % (msg,)
 
-      def send_to_output(self,out,msg,sbc=False):
-          if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
-              return
-          self.localvars["AN"][out] = msg
-          self.localvars["AC"][out] = 1
+        def send_to_output(self,out,msg,sbc=False):
+            if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
+                return
+            self.localvars["AN"][out] = msg
+            self.localvars["AC"][out] = 1
 
-      def log(self,msg,severity='info'):
-          import time
-          try:
-              from hashlib import md5
-          except ImportError:
-              import md5 as md5old
-              md5 = lambda x,md5old=md5old: md5old.md5(x)
-          
-          _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
-          _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
-          self.send_to_output( 2, _msg )
+        def log(self,msg,severity='info'):
+            import time
+            try:
+                from hashlib import md5
+            except ImportError:
+                import md5 as md5old
+                md5 = lambda x,md5old=md5old: md5old.md5(x)
+            
+            _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
+            _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
+            self.send_to_output( 2, _msg )
 
-      def parse(self,offset, data):
-          offset = int(offset,16)
-          #if offset > len(self.current_status):
-          #    self.debug("Daten offset größer als vorhandene Daten")
-          #    return
-          _len = len(data)
-          #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
-          for _x in xrange(_len):
-              _offset = offset + _x
-              _func, _out = self.output_functions[_offset]
-              _ret = _func( ord(data[_x]) )
-              for _xx in xrange(len(_ret)):
-                  self.send_to_output(_out[_xx] , _ret[_xx], sbc=True)
-              
-          #self.debug("Zustand: %r" % (self.current_status,) )
+        def parse(self,offset, data):
+            offset = int(offset,16)
+            #if offset > len(self.current_status):
+            #    self.debug("Daten offset größer als vorhandene Daten")
+            #    return
+            _len = len(data)
+            #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
+            for _x in xrange(_len):
+                _offset = offset + _x
+                _func, _out = self.output_functions[_offset]
+                _ret = _func( ord(data[_x]) )
+                for _xx in xrange(len(_ret)):
+                    self.send_to_output(_out[_xx] , _ret[_xx], sbc=True)
+                
+            #self.debug("Zustand: %r" % (self.current_status,) )
 
-      def to_bits(self,byte):
-          return [(byte >> i) & 1 for i in xrange(8)]
+        def to_bits(self,byte):
+            return [(byte >> i) & 1 for i in xrange(8)]
 
-      def incomming(self,msg, localvars):
-          import binascii
-          self.localvars = localvars
-          #self.debug("incomming message %r" % msg)
-          msg = msg.replace(' ','')
-          _data = self.payload_regex.search(msg)
-          if _data:
-              self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
+        def incomming(self,msg, localvars):
+            import binascii
+            self.localvars = localvars
+            #self.debug("incomming message %r" % msg)
+            msg = msg.replace(' ','')
+            _data = self.payload_regex.search(msg)
+            if _data:
+                self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
 
-      def set_value(self, val, offset, byte,localvars, min=-99999, max=99999, resolution=1):
-          self.localvars = localvars
-          if val < min or val > max:
-              self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
-          _val = val * resolution
-          if _val < 0:
-              (_val * -1) + 128
-          _6bytes = [ "65","65","65","65","65","65" ]
-          _6bytes[byte - 1] = "%.2x" % round(_val)
-          self.send_to_output(1,"%s%s%s" % (self.send_prefix, offset.upper(), "".join(_6bytes).upper() ) )
-
-
+        def set_value(self, val, offset, byte,localvars, min=-99999, max=99999, resolution=1):
+            self.localvars = localvars
+            if val < min or val > max:
+                self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
+            _val = val * resolution
+            if _val < 0:
+                (_val * -1) + 128
+            _6bytes = [ "65","65","65","65","65","65" ]
+            _6bytes[byte - 1] = "%.2x" % round(_val)
+            self.send_to_output(1,"%s%s%s" % (self.send_prefix, offset.upper(), "".join(_6bytes).upper() ) )
 """])
 
 debugcode = """

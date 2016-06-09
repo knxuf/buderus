@@ -245,212 +245,208 @@ code=[]
 
 code.append([3,"EI",r"""
 if EI == 1:
-  class buderus_solar(object):
-      def __init__(self,localvars):
-          import re
-          
-          self.logik = localvars["pItem"]
-          self.MC = self.logik.MC
+    class buderus_solar(object):
+        def __init__(self,localvars):
+            import re
+            
+            self.logik = localvars["pItem"]
+            self.MC = self.logik.MC
 
-          EN = localvars['EN']
-          
-          self.localvars = localvars
-          
-          self.current_status = [ ]
-          self.status_length = 54
-          
-          self.bus_id = "%.2X" % int(EN[2])
-          self.id = "Solarfunktion"
-          self.send_prefix = "B0%.2x24" % (int(EN[2]))
+            EN = localvars['EN']
+            
+            self.localvars = localvars
+            
+            self.current_status = [ ]
+            self.status_length = 54
+            
+            self.bus_id = "%.2X" % int(EN[2])
+            self.id = "Solarfunktion"
+            self.send_prefix = "B0%.2x24" % (int(EN[2]))
 
-          self.payload_regex = re.compile( "(?P<mode>AB|A7)%s9E(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ) )
+            self.payload_regex = re.compile( "(?P<mode>AB|A7)%s9E(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ) )
 
-          ## Offset Name Auflösung
-          ## 0 Betriebswerte 1 
-          ##    1. Bit = Fehler Einstellung Hysterese
-          ##    2. Bit = Speicher 2 auf max. Temperatur
-          ##    3. Bit = Speicher 1 auf max. Temperatur
-          ##    4. Bit = Kollektor auf max. Temperatur
-          ## 1 Betriebswerte 2 
-          ##    1. Bit = Fehler Fühler Anlagenrücklauf Bypass defekt
-          ##    2. Bit = Fehler Fühler Speichermitte Bypass defekt
-          ##    3. Bit = Fehler Volumenstromzähler WZ defekt
-          ##    4. Bit = Fehler Fühler Rücklauf WZ defekt
-          ##    5. Bit = Fehler Fühler Vorlauf WZ defekt
-          ##    6. Bit = Fehler Fühler Speicher-unten 2 defekt
-          ##    7. Bit = Fehler Fühler Speicher-unten 1 defekt
-          ##    8. Bit = Fehler Fühler Kollektor defekt
-          ## 2 Betriebswerte 3 
-          ##    1. Bit = Umschaltventil Speicher 2 zu.
-          ##    2. Bit = Umschaltventil Speicher 2 auf/Speicherladepumpe2.
-          ##    3. Bit = Umschaltventil Bypass zu
-          ##    4. Bit = Umschaltventil Bypass auf
-          ##    5. Bit = Sekundärpumpe Speicher 2 Betrieb
-          ## 3 Kollektortemperatur Byte2 0,1 °C
-          ## 4 Kollektortemperatur Byte1 0,1 °C
-          ## 5 Modulation Pumpe Speicher 1 %
-          ## 6 Warmwassertemperatur Speicher 1 unten 1 °C
-          ## 7 Betriebsstatus Speicher 1
-          ##    Wert = 0: Gesperrt
-          ##    Wert = 1: zu wenig solarer Ertrag
-          ##    Wert = 2: Low Flow
-          ##    Wert = 3: High Flow
-          ##    Wert = 4: HAND ein
-          ##    Wert = 5: Umschalt-Check
-          ## 8 Warmwassertemperatur Speicher 2 unten 1 °C
-          ## 9 Betriebsstatus Speicher 2 Wert = 0: Gesperrt
-          ##    Wert = 1: zu wenig solarer Ertrag
-          ##    Wert = 2: Low Flow
-          ##    Wert = 3: High Flow
-          ##    Wert = 4: HAND ein
-          ##    Wert = 5: Umschalt-Check
-          ## 10 Warmwassertemperatur Speichermitte (Bypass) 1 °C
-          ## 11 Anlagenrücklauftemperatur (Bypass) 1 °C
-          ## 12 Vorlauftemperatur Wärmemengenzähler 1 °C
-          ## 13 Rücklauftemperatur Wärmemengenzähler 1 °C
-          ## 14 Anlagen-Volumenstrom Byte 2 (Byte2 * 256) + Byte1
-          ## 15 Anlagen-Volumenstrom Byte 1 l/h
-          ## 16 Momentan-Leistung Solar Byte 2 (Byte2 * 256) + Byte1
-          ## 17 Momentan-Leistung Solar Byte 1 W
-          ## 18 eingebrachte Wärmemenge (Byte3 * 65536) + (Byte2 * 256) + Byte1 Solar in Speicher 1 Byte 3
-          ## 19 eingeb. Wärmem. Sp. 1 Byte 2
-          ## 20 eingeb. Wärmem. Sp. 1 Byte 1 100 Wh
-          ## 21 eingebrachte Wärmemenge (Byte3 * 65536) + (Byte2 * 256) + Byte1 Solar in Speicher 2 Byte 3
-          ## 22 eingeb. Wärmem. Sp. 2 Byte 2
-          ## 23 eingeb. Wärmem. Sp. 2 Byte 1 100 Wh
-          ## 24 Betriebsstunden Speicher 1 Byte 3 (Byte3 * 65536) + (Byte2 * 256) + Byte1 (Pumpenlaufzeit)
-          ## 25 Betriebsstunden Speicher 1 Byte 2
-          ## 26 Betriebsstunden Speicher 1 Byte 1 min
-          ## 27 Warmwassersolltemperaturabsenkung 1 K durch solaren Ertrag
-          ## 28 Warmwassersolltemperaturabsenkung 1 K durch Wärmekapazität (Speicher unten Temperatur)
-          ## 29 Kollektortemperatur 1 °C
-          ## 30 Betriebsstunden Speicher 2 Byte 3 (Byte3 * 65536) + (Byte2 * 256) + Byte1 (Pumpenlaufzeit)
-          ## 31 Betriebsstunden Speicher 2 Byte 2
-          ## 32 Betriebsstunden Speicher 2 Byte 1 min
-          ## Die mit * gekennzeichneten Werte können nur im "Direkt-Modus" empfangen werden.
- 
-          self.output_functions = [
-              (self.to_bits,[3,4,5,6,0,0,0,0],"AN"),
-              (self.to_bits,[7,8,9,10,11,12,13,14],"AN"),
-              (self.to_bits,[15,16,17,18,19,0,0,0],"AN"),
-              (lambda x: [(float(x)/10)],[2],"SN"),   # Byte2 * 256
-              (lambda x: [(float(x)/10)],[3],"SN"),   # Byte1 + Byte2 * 256 => Kollektor Temperatur ist [21]+256*[20]
-              (lambda x: [x],[21],"AN"),
-              (lambda x: [x],[22],"AN"),
-              (lambda x: [x],[23],"AN"),
-              (lambda x: [x],[24],"AN"),
-              (lambda x: [x],[25],"AN"),
-              (lambda x: [x],[26],"AN"),
-              (lambda x: [x],[27],"AN"),
-              (lambda x: [x],[28],"AN"),
-              (lambda x: [x],[29],"AN"),
-              (lambda x: [x],[4],"SN"),
-              (lambda x: [x],[5],"SN"),
-              (lambda x: [x],[6],"SN"),
-              (lambda x: [x],[7],"SN"),
-              (lambda x: [x],[8],"SN"),
-              (lambda x: [x],[9],"SN"),
-              (lambda x: [x],[10],"SN"),
-              (lambda x: [x],[11],"SN"),
-              (lambda x: [x],[12],"SN"),
-              (lambda x: [x],[13],"SN"),
-              (lambda x: [x],[14],"SN"),
-              (lambda x: [x],[15],"SN"),
-              (lambda x: [x],[16],"SN"),
-              (lambda x: [x],[35],"AN"),
-              (lambda x: [x],[36],"AN"),
-              (lambda x: [x],[37],"AN"),
-              (lambda x: [x],[17],"SN"),
-              (lambda x: [x],[18],"SN"),
-              (lambda x: [x],[19],"SN"),
-              (lambda x: [x],[0],"AN"),
-              (lambda x: [x],[0],"AN"),
-              (lambda x: [x],[0],"AN"),
-          ]
+            ## Offset Name Auflösung
+            ## 0 Betriebswerte 1 
+            ##    1. Bit = Fehler Einstellung Hysterese
+            ##    2. Bit = Speicher 2 auf max. Temperatur
+            ##    3. Bit = Speicher 1 auf max. Temperatur
+            ##    4. Bit = Kollektor auf max. Temperatur
+            ## 1 Betriebswerte 2 
+            ##    1. Bit = Fehler Fühler Anlagenrücklauf Bypass defekt
+            ##    2. Bit = Fehler Fühler Speichermitte Bypass defekt
+            ##    3. Bit = Fehler Volumenstromzähler WZ defekt
+            ##    4. Bit = Fehler Fühler Rücklauf WZ defekt
+            ##    5. Bit = Fehler Fühler Vorlauf WZ defekt
+            ##    6. Bit = Fehler Fühler Speicher-unten 2 defekt
+            ##    7. Bit = Fehler Fühler Speicher-unten 1 defekt
+            ##    8. Bit = Fehler Fühler Kollektor defekt
+            ## 2 Betriebswerte 3 
+            ##    1. Bit = Umschaltventil Speicher 2 zu.
+            ##    2. Bit = Umschaltventil Speicher 2 auf/Speicherladepumpe2.
+            ##    3. Bit = Umschaltventil Bypass zu
+            ##    4. Bit = Umschaltventil Bypass auf
+            ##    5. Bit = Sekundärpumpe Speicher 2 Betrieb
+            ## 3 Kollektortemperatur Byte2 0,1 °C
+            ## 4 Kollektortemperatur Byte1 0,1 °C
+            ## 5 Modulation Pumpe Speicher 1 %
+            ## 6 Warmwassertemperatur Speicher 1 unten 1 °C
+            ## 7 Betriebsstatus Speicher 1
+            ##    Wert = 0: Gesperrt
+            ##    Wert = 1: zu wenig solarer Ertrag
+            ##    Wert = 2: Low Flow
+            ##    Wert = 3: High Flow
+            ##    Wert = 4: HAND ein
+            ##    Wert = 5: Umschalt-Check
+            ## 8 Warmwassertemperatur Speicher 2 unten 1 °C
+            ## 9 Betriebsstatus Speicher 2 Wert = 0: Gesperrt
+            ##    Wert = 1: zu wenig solarer Ertrag
+            ##    Wert = 2: Low Flow
+            ##    Wert = 3: High Flow
+            ##    Wert = 4: HAND ein
+            ##    Wert = 5: Umschalt-Check
+            ## 10 Warmwassertemperatur Speichermitte (Bypass) 1 °C
+            ## 11 Anlagenrücklauftemperatur (Bypass) 1 °C
+            ## 12 Vorlauftemperatur Wärmemengenzähler 1 °C
+            ## 13 Rücklauftemperatur Wärmemengenzähler 1 °C
+            ## 14 Anlagen-Volumenstrom Byte 2 (Byte2 * 256) + Byte1
+            ## 15 Anlagen-Volumenstrom Byte 1 l/h
+            ## 16 Momentan-Leistung Solar Byte 2 (Byte2 * 256) + Byte1
+            ## 17 Momentan-Leistung Solar Byte 1 W
+            ## 18 eingebrachte Wärmemenge (Byte3 * 65536) + (Byte2 * 256) + Byte1 Solar in Speicher 1 Byte 3
+            ## 19 eingeb. Wärmem. Sp. 1 Byte 2
+            ## 20 eingeb. Wärmem. Sp. 1 Byte 1 100 Wh
+            ## 21 eingebrachte Wärmemenge (Byte3 * 65536) + (Byte2 * 256) + Byte1 Solar in Speicher 2 Byte 3
+            ## 22 eingeb. Wärmem. Sp. 2 Byte 2
+            ## 23 eingeb. Wärmem. Sp. 2 Byte 1 100 Wh
+            ## 24 Betriebsstunden Speicher 1 Byte 3 (Byte3 * 65536) + (Byte2 * 256) + Byte1 (Pumpenlaufzeit)
+            ## 25 Betriebsstunden Speicher 1 Byte 2
+            ## 26 Betriebsstunden Speicher 1 Byte 1 min
+            ## 27 Warmwassersolltemperaturabsenkung 1 K durch solaren Ertrag
+            ## 28 Warmwassersolltemperaturabsenkung 1 K durch Wärmekapazität (Speicher unten Temperatur)
+            ## 29 Kollektortemperatur 1 °C
+            ## 30 Betriebsstunden Speicher 2 Byte 3 (Byte3 * 65536) + (Byte2 * 256) + Byte1 (Pumpenlaufzeit)
+            ## 31 Betriebsstunden Speicher 2 Byte 2
+            ## 32 Betriebsstunden Speicher 2 Byte 1 min
+            ## Die mit * gekennzeichneten Werte können nur im "Direkt-Modus" empfangen werden.
 
-          self.get_monitor_data()
+            self.output_functions = [
+                (self.to_bits,[3,4,5,6,0,0,0,0],"AN"),
+                (self.to_bits,[7,8,9,10,11,12,13,14],"AN"),
+                (self.to_bits,[15,16,17,18,19,0,0,0],"AN"),
+                (lambda x: [(float(x)/10)],[2],"SN"),   # Byte2 * 256
+                (lambda x: [(float(x)/10)],[3],"SN"),   # Byte1 + Byte2 * 256 => Kollektor Temperatur ist [21]+256*[20]
+                (lambda x: [x],[21],"AN"),
+                (lambda x: [x],[22],"AN"),
+                (lambda x: [x],[23],"AN"),
+                (lambda x: [x],[24],"AN"),
+                (lambda x: [x],[25],"AN"),
+                (lambda x: [x],[26],"AN"),
+                (lambda x: [x],[27],"AN"),
+                (lambda x: [x],[28],"AN"),
+                (lambda x: [x],[29],"AN"),
+                (lambda x: [x],[4],"SN"),
+                (lambda x: [x],[5],"SN"),
+                (lambda x: [x],[6],"SN"),
+                (lambda x: [x],[7],"SN"),
+                (lambda x: [x],[8],"SN"),
+                (lambda x: [x],[9],"SN"),
+                (lambda x: [x],[10],"SN"),
+                (lambda x: [x],[11],"SN"),
+                (lambda x: [x],[12],"SN"),
+                (lambda x: [x],[13],"SN"),
+                (lambda x: [x],[14],"SN"),
+                (lambda x: [x],[15],"SN"),
+                (lambda x: [x],[16],"SN"),
+                (lambda x: [x],[35],"AN"),
+                (lambda x: [x],[36],"AN"),
+                (lambda x: [x],[37],"AN"),
+                (lambda x: [x],[17],"SN"),
+                (lambda x: [x],[18],"SN"),
+                (lambda x: [x],[19],"SN"),
+                (lambda x: [x],[0],"AN"),
+                (lambda x: [x],[0],"AN"),
+                (lambda x: [x],[0],"AN"),
+            ]
 
-      def get_monitor_data(self):
-          self.send_to_output(1,"A2%s" % self.bus_id)
+            self.get_monitor_data()
 
-      def debug(self,msg):
-          #self.log(msg,severity='debug')
-          print "DEBUG: %r" % (msg,)
+        def get_monitor_data(self):
+            self.send_to_output(1,"A2%s" % self.bus_id)
 
-      def send_to_output(self,out,msg,sbc=False):
-          if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
-              return
-          self.localvars["AN"][out] = msg
-          self.localvars["AC"][out] = 1
+        def debug(self,msg):
+            #self.log(msg,severity='debug')
+            print "DEBUG: %r" % (msg,)
 
-      def log(self,msg,severity='info'):
-          import time
-          try:
-              from hashlib import md5
-          except ImportError:
-              import md5 as md5old
-              md5 = lambda x,md5old=md5old: md5old.md5(x)
-          
-          _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
-          _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
-          self.send_to_output( 2, _msg )
+        def send_to_output(self,out,msg,sbc=False):
+            if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
+                return
+            self.localvars["AN"][out] = msg
+            self.localvars["AC"][out] = 1
 
-      def parse(self,offset, data):
-          # offset von Hex in integer wandeln
-          offset = int(offset,16)
-          #if offset > len(self.current_status):
-          #    self.debug("Daten offset größer als vorhandene Daten")
-          #    return
-          _len = len(data)
-          #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
-          for _x in xrange(_len):
-              _offset = offset + _x
-              _func, _out, _feld = self.output_functions[_offset]
-              _ret = _func( ord(data[_x]) )
-              for _xx in xrange(len(_ret)):
-                  if _feld == "AN":
-                     self.send_to_output(_out[_xx] , _ret[_xx], sbc=True)
-                  else:
-                     self.localvars[_feld][_out[_xx]] = _ret[_xx]
-                     self.localvars["SC"][_out[_xx]] = 1
-              
-          #self.debug("Zustand: %r" % (self.current_status,) )
+        def log(self,msg,severity='info'):
+            import time
+            try:
+                from hashlib import md5
+            except ImportError:
+                import md5 as md5old
+                md5 = lambda x,md5old=md5old: md5old.md5(x)
+            
+            _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
+            _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
+            self.send_to_output( 2, _msg )
 
-      def to_bits(self,byte):
-          return [(byte >> i) & 1 for i in xrange(8)]
+        def parse(self,offset, data):
+            # offset von Hex in integer wandeln
+            offset = int(offset,16)
+            #if offset > len(self.current_status):
+            #    self.debug("Daten offset größer als vorhandene Daten")
+            #    return
+            _len = len(data)
+            #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
+            for _x in xrange(_len):
+                _offset = offset + _x
+                _func, _out, _feld = self.output_functions[_offset]
+                _ret = _func( ord(data[_x]) )
+                for _xx in xrange(len(_ret)):
+                    if _feld == "AN":
+                       self.send_to_output(_out[_xx] , _ret[_xx], sbc=True)
+                    else:
+                       self.localvars[_feld][_out[_xx]] = _ret[_xx]
+                       self.localvars["SC"][_out[_xx]] = 1
+                
+            #self.debug("Zustand: %r" % (self.current_status,) )
 
-      def incomming(self,msg, localvars):
-          import binascii
-          self.localvars = localvars
-          self.debug("incomming message %r" % msg)
-          msg = msg.replace(' ','')
-          _data = self.payload_regex.search(msg)
-          if _data:
-              self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
+        def to_bits(self,byte):
+            return [(byte >> i) & 1 for i in xrange(8)]
 
-      def set_value(self, val, offset, byte,localvars, min=-99999, max=99999, resolution=1):
-          self.localvars = localvars
-          if val < min or val > max:
-              self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
-          _val = val * resolution
-          if _val < 0:
-              (_val * -1) + 128
-          _6bytes = [ "65","65","65","65","65","65" ]
-          _6bytes[byte - 1] = "%.2x" % round(_val)
-          self.send_to_output(1,"%s%s%s" % (self.send_prefix, offset.upper(), "".join(_6bytes).upper() ) )
+        def incomming(self,msg, localvars):
+            import binascii
+            self.localvars = localvars
+            self.debug("incomming message %r" % msg)
+            msg = msg.replace(' ','')
+            _data = self.payload_regex.search(msg)
+            if _data:
+                self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
 
-
+        def set_value(self, val, offset, byte,localvars, min=-99999, max=99999, resolution=1):
+            self.localvars = localvars
+            if val < min or val > max:
+                self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
+            _val = val * resolution
+            if _val < 0:
+                (_val * -1) + 128
+            _6bytes = [ "65","65","65","65","65","65" ]
+            _6bytes[byte - 1] = "%.2x" % round(_val)
+            self.send_to_output(1,"%s%s%s" % (self.send_prefix, offset.upper(), "".join(_6bytes).upper() ) )
 """])
 
-
 debugcode = """
-
 """
 postlogik=[0,"",r"""
 5012|0|"EI"|"buderus_solar(locals())"|""|0|0|1|0
 5012|0|"EC[1]"|"SN[1].incomming(EN[1],locals())"|""|0|0|0|0
 
-#* Betriebsart Stellbereich: 0 – 2 / 0 = Aus / 1 = Auto / 2 = EIN
+#* Betriebsart Stellbereich: 0 - 2 / 0 = Aus / 1 = Auto / 2 = EIN
 5012|0|"EC[3]"|"SN[1].set_value(EN[3], offset='00', byte=5, min=0, max=2, resolution=1, localvars=locals())"|""|0|0|0|0
 
 #* Umschaltung für Verbraucher Stellbereich: 0 - 2 / 0 = Auto / 1 = nur SP1 / 2 = nur SP2

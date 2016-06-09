@@ -250,278 +250,275 @@ code=[]
 
 code.append([3,"EI",r"""
 if EI == 1:
-  class buderus_wandkessel_EMS(object):
-      def __init__(self,localvars):
-          import re
+    class buderus_wandkessel_EMS(object):
+        def __init__(self,localvars):
+            import re
 
-          self.logik = localvars["pItem"]
-          self.MC = self.logik.MC
+            self.logik = localvars["pItem"]
+            self.MC = self.logik.MC
 
-          EN = localvars['EN']
-          
-          self.localvars = localvars
-          
-          self.current_status = [ ]
-          self.status_length = 18
+            EN = localvars['EN']
+            
+            self.localvars = localvars
+            
+            self.current_status = [ ]
+            self.status_length = 18
 
-          ## 2.3.8 Monitorwerte für wandhängende Kessel (UBA)
-          ## Die Monitorwerte für wandhängende Kessel (UBA) setzen sich zur Zeit 
-          ## aus insgesamt 60 Werten zusammen und gehören zu einem der 
-          ## nachfolgenden Typen: (0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99)
-          ## Es werden hier nur die ersten 21 Werte verwendet, da bei UBA Kessel nur diese versorgt werden.
-          ## Wert ab 22 beziehen sich auf EMS Kessel an der Logamatic. Ist nur ein UBA Kessel angeschlossen
-          ## bleiben diese Wert bei 0. Aus diesem Grund werde diese hier ignoriert.
+            ## 2.3.8 Monitorwerte für wandhängende Kessel (UBA)
+            ## Die Monitorwerte für wandhängende Kessel (UBA) setzen sich zur Zeit 
+            ## aus insgesamt 60 Werten zusammen und gehören zu einem der 
+            ## nachfolgenden Typen: (0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99)
+            ## Es werden hier nur die ersten 21 Werte verwendet, da bei UBA Kessel nur diese versorgt werden.
+            ## Wert ab 22 beziehen sich auf EMS Kessel an der Logamatic. Ist nur ein UBA Kessel angeschlossen
+            ## bleiben diese Wert bei 0. Aus diesem Grund werde diese hier ignoriert.
 
-          self.device_types = {
-              "XX" : "kein wandhängender Kessel",
-              "92" : "Kessel 1 wandhängend",
-              "93" : "Kessel 2 wandhängend",
-              "94" : "Kessel 3 wandhängend",
-              "95" : "Kessel 4 wandhängend",
-              "96" : "Kessel 5 wandhängend",
-              "97" : "Kessel 6 wandhängend",
-              "98" : "Kessel 7 wandhängend",
-              "99" : "Kessel 8 wandhängend",
-          }
+            self.device_types = {
+                "XX" : "kein wandhängender Kessel",
+                "92" : "Kessel 1 wandhängend",
+                "93" : "Kessel 2 wandhängend",
+                "94" : "Kessel 3 wandhängend",
+                "95" : "Kessel 4 wandhängend",
+                "96" : "Kessel 5 wandhängend",
+                "97" : "Kessel 6 wandhängend",
+                "98" : "Kessel 7 wandhängend",
+                "99" : "Kessel 8 wandhängend",
+            }
 
-          self.recv_selector = ["XX","92","93","94","95","96","97","98","99"]  
-          self.send_selector = ["16","07","08","09","0A","16","18","1A"] 
-          
-          #self.debug("Kessel %d wandhängend" % EN[3])
-          if EN[3] < 1 or EN[3] > 8:
-              self.debug("Ungültiger Kessel %d wandhängend" % EN[3])
-              _id = "XX"
-              self.send_prefix = None
-          else:
-              _id = self.recv_selector[ int(EN[3]) ]
-              #self.debug("suche nach %r" % repr(_id))
-              self.send_prefix = "B0%.2x%s" % (int(EN[2]),self.send_selector [ int(EN[3]) ])
-          
-          self.bus_id = "%.2X" % int(EN[2])
-          self.id = self.device_types.get(_id)
+            self.recv_selector = ["XX","92","93","94","95","96","97","98","99"]  
+            self.send_selector = ["16","07","08","09","0A","16","18","1A"] 
+            
+            #self.debug("Kessel %d wandhängend" % EN[3])
+            if EN[3] < 1 or EN[3] > 8:
+                self.debug("Ungültiger Kessel %d wandhängend" % EN[3])
+                _id = "XX"
+                self.send_prefix = None
+            else:
+                _id = self.recv_selector[ int(EN[3]) ]
+                #self.debug("suche nach %r" % repr(_id))
+                self.send_prefix = "B0%.2x%s" % (int(EN[2]),self.send_selector [ int(EN[3]) ])
+            
+            self.bus_id = "%.2X" % int(EN[2])
+            self.id = self.device_types.get(_id)
 
-          self.payload_regex = re.compile( "(?P<mode>AB|A7)%s%s(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ,_id) )
+            self.payload_regex = re.compile( "(?P<mode>AB|A7)%s%s(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ,_id) )
 
-            ## Offset Name_______________________________  Auflösung________________________________________________________ Ausgang_____
-            ## 22     Anlagenfehler eines EMS- Kessel      1.Bit = Luftfuehler Feuerungsautomat defekt                      ## Ausgang 3
-            ##                                             2.Bit = Betriebstemperatur wird nicht erreicht                   ## Ausgang 4
-            ##                                             3.Bit = Oelvorwaermer Dauersignal                                ## Ausgang 5
-            ##                                             4.Bit = Oelvorwaermer ohne Signal                                ## Ausgang 6
-            ##                                             5.Bit = frei
-            ##                                             6.Bit = frei
-            ##                                             7.Bit = frei
-            ##                                             8.Bit = frei
-            ## 23      Anlagenfehler von EMS- Warmwasser    1.Bit = 1.Wasserfühler Feuerungsautomat defekt                  ## Ausgang 7
-            ##                                              2.Bit = 2.Wasserfühler Feuerungsautomat defekt                  ## Ausgang 8
-            ##                                              3.Bit = Warmwasser bleibt kalt                                  ## Ausgang 9
-            ##                                              4.Bit = Desinfektion misslungen                                 ## Ausgang 10
-            ##                                              5.Bit = frei
-            ##                                              6.Bit = frei
-            ##                                              7.Bit = frei
-            ##                                              8.Bit = frei
-            ## 24     1.Buchstabe Betriebscode EMS-System  ASCII                                                            ## speicher 2
-            ## 25     2.Buchstabe Betriebscode EMS-System  ASCII                                                            ## speicher 3 -> zusammen Ausgang 11
-            ## 26     Fehlernummer Feuerungsautomat 1.Byte 200-499_UBA-Fehler;500-799_SAFE-Fehler;800-999_EMS-Anlagen-Fehler ## Speicher 4 * 256 +
-            ## 27     Fehlernummer Feuerungsautomat 2.Byte 200-499_UBA-Fehler;500-799_SAFE-Fehler;800-999_EMS-Anlagen-Fehler ## Speicher 5  -> Ausgang 12
-            ## 28     Brennertyp des Kessel                1.Bit = Stufen des Brenners (wenn 0, dann mod. Brenner)             ## Ausgang 13
-            ##                                             2.Bit = Stufen des Brenners (wenn 0, dann mod. Brenner)             ## Ausgang 14
-            ##                                             3.Bit = Stufen des Brenners (wenn 0, dann mod. Brenner)             ## Ausgang 15
-            ##                                             4.Bit = frei
-            ##                                             5.Bit = frei
-            ##                                             6.Bit = frei
-            ##                                             7.Bit = Gasbrenner                                                 ## Ausgang 16
-            ##                                             8.Bit = Oelbrenner                                                 ## Ausgang 17
-            ## 29      max. Leistung des Brenners           (Low-Byte) in kW, High-Byte befindet sich im Offset 54            ## Speicher 6 + 7-> Ausgang 18
-            ## 30     max- Leistung des Brenners           in %                                                               ## Ausgang 19
-            ## 31     Flammenstrom                         in müA (255=Fühler defekt)                                         ## Ausgang 20
-            ## 32     Abgastemperatur über Feuerungsautomat°C (255=Fühler defekt)                                             ## Ausgang 21
-            ## 33     Temperatur Ansaugluft                °C (255=Fühler defekt)                                             ## Ausgang 22
-            ## 34     Wasserdruck in der Anlage            bar (255=Fühler defekt)                                            ## Ausgang 23
-            ## 35      Betriebszustände Brennerautomaten    1.Bit = Heizanforderung liegt an                                  ## Ausgang 24
-            ##                                               2.Bit = Warmwasseranforderung liegt vor                          ## Ausgang 25
-            ##                                               3.Bit = 11kW Jumper wurde entfernt                               ## Ausgang 26
-            ##                                               4.Bit = Kessel wird mit Betriebstemperatur betrieben             ## Ausgang 27
-            ##                                               5.Bit = Kesselschutz zwecks Taupunktüberschreitung               ## Ausgang 28
-            ##                                               6.Bit = Feuerungsautomat ist verrriegelt (Serviceeinsatz)        ## Ausgang 29
-            ##                                               7.Bit = Feuerungsautomat ist blockiert                           ## Ausgang 30
-            ##                                               8.Bit = Servicemeldung vom Feuerungsautomat                      ## Ausgang 31
-            ## 36      Relaiszustände 1 Brennerautomaten     1.Bit = Magnetventil für 1. Stufe                                ## Ausgang 32
-            ##                                               2.Bit = Magnetventil für 2. Stufe                                ## Ausgang 33
-            ##                                               3.Bit = Gebläserelais                                            ## Ausgang 34
-            ##                                               4.Bit = Zündungsrelais                                           ## Ausgang 35
-            ##                                               5.Bit = Ölvorwärmung/ Abgassperrklappe                           ## Ausgang 36
-            ##                                               6.Bit = Kesselkreispumpe/ Heizkreisumwälzpumpe                   ## Ausgang 37
-            ##                                               7.Bit = 3-Wegeventil                                             ## Ausgang 38
-            ##                                               8.Bit = Warmwasser Zirkulationspumpe                             ## Ausgang 39
-            ## 37      Relaiszustände 2 Brennerautomaten    1.Bit = Warmwasserladepumpe                                       ## Ausgang 40
-            ##                                               2.Bit = Flüssiggasventil                                         ## Ausgang 41
-            ##                                               3.Bit = QWP Umwälzpumpe                                          ## Ausgang 42
-            ##                                               4.Bit = frei
-            ##                                               5.Bit = frei
-            ##                                               6.Bit = frei
-            ##                                               7.Bit = frei
-            ##                                               8.Bit = frei
-            ## 38     Vorlaufsolltemp. Feuerungsauto ange. °C                                                                 ## Ausgang 43
-            ## 39     Wie wird Warmwasser geladen          0=keinWarmwa.;1=nach Durchlaufpr;2=Durchlaufpr.kleinem Spei; 3=Speicherpr ## Ausgang 44
-            ## 40     mögli. Fehleinstellu. am EMS-Kessel  1.Bit = 11kW Jumper in Kaskade gezogen                             ## Ausgang 45
-            ##                                               2.Bit = Kessel über BC10 im Notbetrieb                           ## Ausgang 46
-            ##                                               3.Bit = WW- Poti nicht auf Stellung AUT                          ## Ausgang 47
-            ##                                               4.Bit = Kesselpoti nicht auf AUT/ 90°C                           ## Ausgang 48
-            ##                                               5.Bit = Anforderung über Klemme WA                               ## Ausgang 49
-            ##                                               6.Bit = frei
-            ##                                               7.Bit = Kommunikation vorhanden (nur mit FM458)                  ## Ausgang 50
-            ##                                               8.Bit = keine Kommunikation (nur mit FM458)                      ## Ausgang 51
-            ## 41     EMS-Servicemeldungen                   1.Bit = es steht keine Meldung an                                ## Ausgang 52
-            ##                                               2.Bit = Abgastemperatur zu hoch                                  ## Ausgang 53
-            ##                                               3.Bit = Gebläse schwergängig                                     ## Ausgang 54
-            ##                                               4.Bit = Flammstrom ist niedrig                                   ## Ausgang 55
-            ##                                               5.Bit = Flammenverzugszeit ist hoch                              ## Ausgang 56
-            ##                                               6.Bit = häufiger Flammenabriss                                   ## Ausgang 57
-            ##                                               7.Bit = Wasserdruck der Anlage ist niedrig                       ## Ausgang 58
-            ##                                               8.Bit = vorgegebenes Datum überschritten                         ## Ausgang 59
-            ## 42     Betriebszeit 2.Stufe Byte3           (Byte3*65536)+(Byte2*256)+Byte1                                    ## interner Speicher 8
-            ## 43     Betriebszeit 2.Stufe Byte2                                                                              ## interner Speicher 9
-            ## 44     Betriebszeit 2.Stufe Byte1                                                                              ## interner Speicher 10 -> Ausgang 60
-            ## 45     Kennzeich./Identifizi. EMS-Masters   64=Feuerungsautomat...usw.                                         ## Ausgang 61
-            ## 46     Ver. Vorkommastelle des EMS-Master                                                                      ## Speicher 11
-            ## 47     Ver. Nachkommastelle des EMS-Master                                                                     ## Speicher 12 ## Ausgang 62
-            ## 48     Kennung des SAFe                       z.Zt. 75                                                         ## Ausgang 63
-            ## 49     Ver. Vorkommastelle Feuerungsautoma  SAFe                                                               ## interner Speicher 13
-            ## 50     Ver. Nachkommastelle Feuerungsautoma SAFe                                                               ## interner Speicher 14  ## Ausgang 64
-            ## 51     BCM/ BIM- Nummer Byte2                                                                                  ## interner Speicher 15 
-            ## 52     BCM/ BIM- Nummer Byte1               0-255= UBA1; 1000-4999= UBA3; 5000-9999                            ## interner Speicher 16 ## Ausgang 65
-            ## 53     Versions-Nr. des BCM/BIM                                                                                ## Ausgang 66
-            ## 54     Max. Leistung Kessels (High-Byte)    1kW                                                                ## Speicher 7 + 6 -> Ausgang 18
-            ## 55     Betriebstemperatur des Kessel           °C                                                              ## Ausgang 67
-            ## 56     frei
-            ## 57     frei
-            ## 58     frei
-            ## 59     frei
-
-
+              ## Offset Name_______________________________  Auflösung________________________________________________________ Ausgang_____
+              ## 22     Anlagenfehler eines EMS- Kessel      1.Bit = Luftfuehler Feuerungsautomat defekt                      ## Ausgang 3
+              ##                                             2.Bit = Betriebstemperatur wird nicht erreicht                   ## Ausgang 4
+              ##                                             3.Bit = Oelvorwaermer Dauersignal                                ## Ausgang 5
+              ##                                             4.Bit = Oelvorwaermer ohne Signal                                ## Ausgang 6
+              ##                                             5.Bit = frei
+              ##                                             6.Bit = frei
+              ##                                             7.Bit = frei
+              ##                                             8.Bit = frei
+              ## 23      Anlagenfehler von EMS- Warmwasser    1.Bit = 1.Wasserfühler Feuerungsautomat defekt                  ## Ausgang 7
+              ##                                              2.Bit = 2.Wasserfühler Feuerungsautomat defekt                  ## Ausgang 8
+              ##                                              3.Bit = Warmwasser bleibt kalt                                  ## Ausgang 9
+              ##                                              4.Bit = Desinfektion misslungen                                 ## Ausgang 10
+              ##                                              5.Bit = frei
+              ##                                              6.Bit = frei
+              ##                                              7.Bit = frei
+              ##                                              8.Bit = frei
+              ## 24     1.Buchstabe Betriebscode EMS-System  ASCII                                                            ## speicher 2
+              ## 25     2.Buchstabe Betriebscode EMS-System  ASCII                                                            ## speicher 3 -> zusammen Ausgang 11
+              ## 26     Fehlernummer Feuerungsautomat 1.Byte 200-499_UBA-Fehler;500-799_SAFE-Fehler;800-999_EMS-Anlagen-Fehler ## Speicher 4 * 256 +
+              ## 27     Fehlernummer Feuerungsautomat 2.Byte 200-499_UBA-Fehler;500-799_SAFE-Fehler;800-999_EMS-Anlagen-Fehler ## Speicher 5  -> Ausgang 12
+              ## 28     Brennertyp des Kessel                1.Bit = Stufen des Brenners (wenn 0, dann mod. Brenner)             ## Ausgang 13
+              ##                                             2.Bit = Stufen des Brenners (wenn 0, dann mod. Brenner)             ## Ausgang 14
+              ##                                             3.Bit = Stufen des Brenners (wenn 0, dann mod. Brenner)             ## Ausgang 15
+              ##                                             4.Bit = frei
+              ##                                             5.Bit = frei
+              ##                                             6.Bit = frei
+              ##                                             7.Bit = Gasbrenner                                                 ## Ausgang 16
+              ##                                             8.Bit = Oelbrenner                                                 ## Ausgang 17
+              ## 29      max. Leistung des Brenners           (Low-Byte) in kW, High-Byte befindet sich im Offset 54            ## Speicher 6 + 7-> Ausgang 18
+              ## 30     max- Leistung des Brenners           in %                                                               ## Ausgang 19
+              ## 31     Flammenstrom                         in müA (255=Fühler defekt)                                         ## Ausgang 20
+              ## 32     Abgastemperatur über Feuerungsautomat°C (255=Fühler defekt)                                             ## Ausgang 21
+              ## 33     Temperatur Ansaugluft                °C (255=Fühler defekt)                                             ## Ausgang 22
+              ## 34     Wasserdruck in der Anlage            bar (255=Fühler defekt)                                            ## Ausgang 23
+              ## 35      Betriebszustände Brennerautomaten    1.Bit = Heizanforderung liegt an                                  ## Ausgang 24
+              ##                                               2.Bit = Warmwasseranforderung liegt vor                          ## Ausgang 25
+              ##                                               3.Bit = 11kW Jumper wurde entfernt                               ## Ausgang 26
+              ##                                               4.Bit = Kessel wird mit Betriebstemperatur betrieben             ## Ausgang 27
+              ##                                               5.Bit = Kesselschutz zwecks Taupunktüberschreitung               ## Ausgang 28
+              ##                                               6.Bit = Feuerungsautomat ist verrriegelt (Serviceeinsatz)        ## Ausgang 29
+              ##                                               7.Bit = Feuerungsautomat ist blockiert                           ## Ausgang 30
+              ##                                               8.Bit = Servicemeldung vom Feuerungsautomat                      ## Ausgang 31
+              ## 36      Relaiszustände 1 Brennerautomaten     1.Bit = Magnetventil für 1. Stufe                                ## Ausgang 32
+              ##                                               2.Bit = Magnetventil für 2. Stufe                                ## Ausgang 33
+              ##                                               3.Bit = Gebläserelais                                            ## Ausgang 34
+              ##                                               4.Bit = Zündungsrelais                                           ## Ausgang 35
+              ##                                               5.Bit = Ölvorwärmung/ Abgassperrklappe                           ## Ausgang 36
+              ##                                               6.Bit = Kesselkreispumpe/ Heizkreisumwälzpumpe                   ## Ausgang 37
+              ##                                               7.Bit = 3-Wegeventil                                             ## Ausgang 38
+              ##                                               8.Bit = Warmwasser Zirkulationspumpe                             ## Ausgang 39
+              ## 37      Relaiszustände 2 Brennerautomaten    1.Bit = Warmwasserladepumpe                                       ## Ausgang 40
+              ##                                               2.Bit = Flüssiggasventil                                         ## Ausgang 41
+              ##                                               3.Bit = QWP Umwälzpumpe                                          ## Ausgang 42
+              ##                                               4.Bit = frei
+              ##                                               5.Bit = frei
+              ##                                               6.Bit = frei
+              ##                                               7.Bit = frei
+              ##                                               8.Bit = frei
+              ## 38     Vorlaufsolltemp. Feuerungsauto ange. °C                                                                 ## Ausgang 43
+              ## 39     Wie wird Warmwasser geladen          0=keinWarmwa.;1=nach Durchlaufpr;2=Durchlaufpr.kleinem Spei; 3=Speicherpr ## Ausgang 44
+              ## 40     mögli. Fehleinstellu. am EMS-Kessel  1.Bit = 11kW Jumper in Kaskade gezogen                             ## Ausgang 45
+              ##                                               2.Bit = Kessel über BC10 im Notbetrieb                           ## Ausgang 46
+              ##                                               3.Bit = WW- Poti nicht auf Stellung AUT                          ## Ausgang 47
+              ##                                               4.Bit = Kesselpoti nicht auf AUT/ 90°C                           ## Ausgang 48
+              ##                                               5.Bit = Anforderung über Klemme WA                               ## Ausgang 49
+              ##                                               6.Bit = frei
+              ##                                               7.Bit = Kommunikation vorhanden (nur mit FM458)                  ## Ausgang 50
+              ##                                               8.Bit = keine Kommunikation (nur mit FM458)                      ## Ausgang 51
+              ## 41     EMS-Servicemeldungen                   1.Bit = es steht keine Meldung an                                ## Ausgang 52
+              ##                                               2.Bit = Abgastemperatur zu hoch                                  ## Ausgang 53
+              ##                                               3.Bit = Gebläse schwergängig                                     ## Ausgang 54
+              ##                                               4.Bit = Flammstrom ist niedrig                                   ## Ausgang 55
+              ##                                               5.Bit = Flammenverzugszeit ist hoch                              ## Ausgang 56
+              ##                                               6.Bit = häufiger Flammenabriss                                   ## Ausgang 57
+              ##                                               7.Bit = Wasserdruck der Anlage ist niedrig                       ## Ausgang 58
+              ##                                               8.Bit = vorgegebenes Datum überschritten                         ## Ausgang 59
+              ## 42     Betriebszeit 2.Stufe Byte3           (Byte3*65536)+(Byte2*256)+Byte1                                    ## interner Speicher 8
+              ## 43     Betriebszeit 2.Stufe Byte2                                                                              ## interner Speicher 9
+              ## 44     Betriebszeit 2.Stufe Byte1                                                                              ## interner Speicher 10 -> Ausgang 60
+              ## 45     Kennzeich./Identifizi. EMS-Masters   64=Feuerungsautomat...usw.                                         ## Ausgang 61
+              ## 46     Ver. Vorkommastelle des EMS-Master                                                                      ## Speicher 11
+              ## 47     Ver. Nachkommastelle des EMS-Master                                                                     ## Speicher 12 ## Ausgang 62
+              ## 48     Kennung des SAFe                       z.Zt. 75                                                         ## Ausgang 63
+              ## 49     Ver. Vorkommastelle Feuerungsautoma  SAFe                                                               ## interner Speicher 13
+              ## 50     Ver. Nachkommastelle Feuerungsautoma SAFe                                                               ## interner Speicher 14  ## Ausgang 64
+              ## 51     BCM/ BIM- Nummer Byte2                                                                                  ## interner Speicher 15 
+              ## 52     BCM/ BIM- Nummer Byte1               0-255= UBA1; 1000-4999= UBA3; 5000-9999                            ## interner Speicher 16 ## Ausgang 65
+              ## 53     Versions-Nr. des BCM/BIM                                                                                ## Ausgang 66
+              ## 54     Max. Leistung Kessels (High-Byte)    1kW                                                                ## Speicher 7 + 6 -> Ausgang 18
+              ## 55     Betriebstemperatur des Kessel           °C                                                              ## Ausgang 67
+              ## 56     frei
+              ## 57     frei
+              ## 58     frei
+              ## 59     frei
 
 
 
 
 
-          self.output_functions = [
-              (self.to_bits,[3,4,5,6,0,0,0,0],"AN"),
-              (self.to_bits,[7,8,9,10,0,0,0,0],"AN"),
-              (lambda x: [x],[2],"SN"),
-              (lambda x: [x],[3],"SN"),
-              (lambda x: [x],[4],"SN"),
-              (lambda x: [x],[5],"SN"),
-              (self.to_bits,[13,14,15,0,0,0,16,17],"AN"),
-              (lambda x: [x],[6],"SN"),
-              (lambda x: [x],[19],"AN"),
-              (lambda x: [x],[20],"AN"),
-              (lambda x: [x],[21],"AN"),
-              (lambda x: [x],[22],"AN"),
-              (lambda x: x==255 and -1 or [float(x)/10],[23],"AN"),
-              (self.to_bits,[24,25,26,27,28,29,30,31],"AN"),
-              (self.to_bits,[32,33,34,35,36,37,38,39],"AN"),
-              (self.to_bits,[40,41,42,0,0,0,0,0],"AN"),
-              (lambda x: [x],[43],"AN"),
-              (lambda x: [x],[44],"AN"),
-              (self.to_bits,[45,46,47,48,49,0,50,51],"AN"),
-              (self.to_bits,[52,53,54,55,56,57,58,59],"AN"),
-              (lambda x: [x],[8],"SN"),
-              (lambda x: [x],[9],"SN"),
-              (lambda x: [x],[10],"SN"),
-              (lambda x: [x],[61],"AN"),
-              (lambda x: [x],[11],"SN"),
-              (lambda x: [x],[12],"SN"),
-              (lambda x: [x],[63],"AN"),
-              (lambda x: [x],[13],"SN"),
-              (lambda x: [x],[14],"SN"),
-              (lambda x: [x],[15],"SN"),
-              (lambda x: [x],[16],"SN"),
-              (lambda x: [x],[66],"AN"),
-              (lambda x: [x],[7],"SN"),
-              (lambda x: [x],[67],"AN"),
-              (lambda x: [x],[0],"AN"),
-              (lambda x: [x],[0],"AN"),
-              (lambda x: [x],[0],"AN"),
-              (lambda x: [x],[0],"AN"),
-          ]
-
-          self.get_monitor_data()
-
-      def get_monitor_data(self):
-          self.send_to_output(1,"A2%s" % self.bus_id)
 
 
-      def debug(self,msg):
-          self.log(msg,severity='debug')
-          #print "DEBUG-12596: %r" % (msg,)
+            self.output_functions = [
+                (self.to_bits,[3,4,5,6,0,0,0,0],"AN"),
+                (self.to_bits,[7,8,9,10,0,0,0,0],"AN"),
+                (lambda x: [x],[2],"SN"),
+                (lambda x: [x],[3],"SN"),
+                (lambda x: [x],[4],"SN"),
+                (lambda x: [x],[5],"SN"),
+                (self.to_bits,[13,14,15,0,0,0,16,17],"AN"),
+                (lambda x: [x],[6],"SN"),
+                (lambda x: [x],[19],"AN"),
+                (lambda x: [x],[20],"AN"),
+                (lambda x: [x],[21],"AN"),
+                (lambda x: [x],[22],"AN"),
+                (lambda x: x==255 and -1 or [float(x)/10],[23],"AN"),
+                (self.to_bits,[24,25,26,27,28,29,30,31],"AN"),
+                (self.to_bits,[32,33,34,35,36,37,38,39],"AN"),
+                (self.to_bits,[40,41,42,0,0,0,0,0],"AN"),
+                (lambda x: [x],[43],"AN"),
+                (lambda x: [x],[44],"AN"),
+                (self.to_bits,[45,46,47,48,49,0,50,51],"AN"),
+                (self.to_bits,[52,53,54,55,56,57,58,59],"AN"),
+                (lambda x: [x],[8],"SN"),
+                (lambda x: [x],[9],"SN"),
+                (lambda x: [x],[10],"SN"),
+                (lambda x: [x],[61],"AN"),
+                (lambda x: [x],[11],"SN"),
+                (lambda x: [x],[12],"SN"),
+                (lambda x: [x],[63],"AN"),
+                (lambda x: [x],[13],"SN"),
+                (lambda x: [x],[14],"SN"),
+                (lambda x: [x],[15],"SN"),
+                (lambda x: [x],[16],"SN"),
+                (lambda x: [x],[66],"AN"),
+                (lambda x: [x],[7],"SN"),
+                (lambda x: [x],[67],"AN"),
+                (lambda x: [x],[0],"AN"),
+                (lambda x: [x],[0],"AN"),
+                (lambda x: [x],[0],"AN"),
+                (lambda x: [x],[0],"AN"),
+            ]
 
-      def send_to_output(self,out,msg,sbc=False):
-          if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
-              return
-          self.localvars["AN"][out] = msg
-          self.localvars["AC"][out] = 1
+            self.get_monitor_data()
 
-      def log(self,msg,severity='info'):
-          import time
-          try:
-              from hashlib import md5
-          except ImportError:
-              import md5 as md5old
-              md5 = lambda x,md5old=md5old: md5old.md5(x)
-          
-          _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
-          _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
-          self.send_to_output( 2, _msg )
+        def get_monitor_data(self):
+            self.send_to_output(1,"A2%s" % self.bus_id)
 
-      def parse(self,offset, data):
-          offset = int(offset,16)
-          #if offset < 22:
-          #    self.debug("Daten offset: %d kleiner 22" % offset )
-          #    return
-          _len = len(data)
-          #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
-          for _x in xrange(_len):
-              _offset = offset - 22 + _x
-              if (_offset < 0):
-                 #self.debug("Daten offset: %d " % _offset )
-                 continue
-              _func, _out, _feld = self.output_functions[_offset]
-              _ret = _func( ord(data[_x]) )
-              for _xx in xrange(len(_ret)):
-                  if _feld == "AN":
-                     self.send_to_output(_out[_xx] , _ret[_xx], sbc=True)
-                  else:
-                     self.localvars[_feld][_out[_xx]] = _ret[_xx]
-                     self.localvars["SC"][_out[_xx]] = 1
-              
-          #self.debug("Zustand: %r" % (self.current_status,) )
 
-      def to_bits(self,byte):
-          return [(byte >> i) & 1 for i in xrange(8)]
+        def debug(self,msg):
+            self.log(msg,severity='debug')
+            #print "DEBUG-12596: %r" % (msg,)
 
-      def incomming(self,msg, localvars):
-          import binascii
-          self.localvars = localvars
-          #self.debug("incomming message %r" % msg)
-          msg = msg.replace(' ','')
-          _data = self.payload_regex.search(msg)
-          if _data:
-              self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
+        def send_to_output(self,out,msg,sbc=False):
+            if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
+                return
+            self.localvars["AN"][out] = msg
+            self.localvars["AC"][out] = 1
 
-      def set_value(self, val, offset, byte,localvars, min=-99999, max=99999, resolution=1):
-          self.localvars = localvars
-          if val < min or val > max:
-              self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
-          _val = val * resolution
-          if _val < 0:
-              (_val * -1) + 128
-          _6bytes = [ "65","65","65","65","65","65" ]
-          _6bytes[byte - 1] = "%.2x" % round(_val)
-          self.send_to_output(1,"%s%s%s" % (self.send_prefix, offset.upper(), "".join(_6bytes).upper() ) )
-          
+        def log(self,msg,severity='info'):
+            import time
+            try:
+                from hashlib import md5
+            except ImportError:
+                import md5 as md5old
+                md5 = lambda x,md5old=md5old: md5old.md5(x)
+            
+            _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
+            _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
+            self.send_to_output( 2, _msg )
+
+        def parse(self,offset, data):
+            offset = int(offset,16)
+            #if offset < 22:
+            #    self.debug("Daten offset: %d kleiner 22" % offset )
+            #    return
+            _len = len(data)
+            #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
+            for _x in xrange(_len):
+                _offset = offset - 22 + _x
+                if (_offset < 0):
+                   #self.debug("Daten offset: %d " % _offset )
+                   continue
+                _func, _out, _feld = self.output_functions[_offset]
+                _ret = _func( ord(data[_x]) )
+                for _xx in xrange(len(_ret)):
+                    if _feld == "AN":
+                       self.send_to_output(_out[_xx] , _ret[_xx], sbc=True)
+                    else:
+                       self.localvars[_feld][_out[_xx]] = _ret[_xx]
+                       self.localvars["SC"][_out[_xx]] = 1
+                
+            #self.debug("Zustand: %r" % (self.current_status,) )
+
+        def to_bits(self,byte):
+            return [(byte >> i) & 1 for i in xrange(8)]
+
+        def incomming(self,msg, localvars):
+            import binascii
+            self.localvars = localvars
+            #self.debug("incomming message %r" % msg)
+            msg = msg.replace(' ','')
+            _data = self.payload_regex.search(msg)
+            if _data:
+                self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
+
+        def set_value(self, val, offset, byte,localvars, min=-99999, max=99999, resolution=1):
+            self.localvars = localvars
+            if val < min or val > max:
+                self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
+            _val = val * resolution
+            if _val < 0:
+                (_val * -1) + 128
+            _6bytes = [ "65","65","65","65","65","65" ]
+            _6bytes[byte - 1] = "%.2x" % round(_val)
+            self.send_to_output(1,"%s%s%s" % (self.send_prefix, offset.upper(), "".join(_6bytes).upper() ) )
 """])
-
-
 debugcode = """
 """
 postlogik=[0,"",r"""

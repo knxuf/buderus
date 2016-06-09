@@ -195,549 +195,549 @@ code=[]
 
 code.append([3,"EI",r"""
 if EI == 1:
-  class buderus_fehler(object):
-      def __init__(self,localvars):
-          import re
+    class buderus_fehler(object):
+        def __init__(self,localvars):
+            import re
 
-          self.logik = localvars["pItem"]
-          self.MC = self.logik.MC
+            self.logik = localvars["pItem"]
+            self.MC = self.logik.MC
 
-          EN = localvars['EN']
+            EN = localvars['EN']
 
-          self.id = "buderus_fehler"
+            self.id = "buderus_fehler"
 
-          ## Speicher für lokale Variablen (muss eingehend immer wieder aktualisiert werden für AN/AC....
-          self.localvars = localvars
+            ## Speicher für lokale Variablen (muss eingehend immer wieder aktualisiert werden für AN/AC....
+            self.localvars = localvars
 
-          ## Default Konfiguration
-          self.config = {
-              'debug'         : 2,
-              'errormsg'      : 'Störmeldung an Regelgerät %(bus)s: %(msg)s',
-              'errorclearmsg' : 'Störmeldung an Regelgerät %(bus)s: %(msg)s (behoben)',
-              'timeformat'    : '%H:%M:%S %d.%m.%Y',
-              'emerg'    : '',
-              'alert'    : '',
-              'crit'     : '',
-              'error'    : '',
-              'warn'     : '',
-              'info'     : '',
-              'none'     : '',
-              'default'  : 'error',
-          }
-          
-          ## Gerätetypen
-          self.device_types = {
-              "80" : ("Heizkreis 1", 18),
-              "81" : ("Heizkreis 2", 18),
-              "82" : ("Heizkreis 3", 18),
-              "83" : ("Heizkreis 4", 18),
-              "84" : ("Warmwasser", 12),
-              "85" : ("Strategie wandhängend", 12),
-              "87" : ("Fehlerprotokoll", 42),
-              "88" : ("bodenstehender Kessel", 42),
-              "89" : ("Konfiguration", 24),
-              "8A" : ("Heizkreis 5", 18),
-              "8B" : ("Heizkreis 6", 18),
-              "8C" : ("Heizkreis 7", 18),
-              "8D" : ("Heizkreis 8", 18),
-              "8E" : ("Heizkreis 9", 18),
-              "8F" : ("Strategie bodenstehend", 30),
-              "90" : ("LAP", 18),
-              "92" : ("wandhängende Kessel 1", 60),
-              "93" : ("wandhängende Kessel 2", 60),
-              "94" : ("wandhängende Kessel 3", 60),
-              "95" : ("wandhängende Kessel 4", 60),
-              "96" : ("wandhängende Kessel 5", 60),
-              "97" : ("wandhängende Kessel 6", 60),
-              "98" : ("wandhängende Kessel 7", 60),
-              "99" : ("wandhängende Kessel 8", 60),
-              "9B" : ("Wärmemenge", 36),
-              "9C" : ("Störmeldemodul", 6),
-              "9D" : ("Unterstation", 6),
-              "9E" : ("Solarfunktion", 54),
-          }
+            ## Default Konfiguration
+            self.config = {
+                'debug'         : 2,
+                'errormsg'      : 'Störmeldung an Regelgerät %(bus)s: %(msg)s',
+                'errorclearmsg' : 'Störmeldung an Regelgerät %(bus)s: %(msg)s (behoben)',
+                'timeformat'    : '%H:%M:%S %d.%m.%Y',
+                'emerg'    : '',
+                'alert'    : '',
+                'crit'     : '',
+                'error'    : '',
+                'warn'     : '',
+                'info'     : '',
+                'none'     : '',
+                'default'  : 'error',
+            }
+            
+            ## Gerätetypen
+            self.device_types = {
+                "80" : ("Heizkreis 1", 18),
+                "81" : ("Heizkreis 2", 18),
+                "82" : ("Heizkreis 3", 18),
+                "83" : ("Heizkreis 4", 18),
+                "84" : ("Warmwasser", 12),
+                "85" : ("Strategie wandhängend", 12),
+                "87" : ("Fehlerprotokoll", 42),
+                "88" : ("bodenstehender Kessel", 42),
+                "89" : ("Konfiguration", 24),
+                "8A" : ("Heizkreis 5", 18),
+                "8B" : ("Heizkreis 6", 18),
+                "8C" : ("Heizkreis 7", 18),
+                "8D" : ("Heizkreis 8", 18),
+                "8E" : ("Heizkreis 9", 18),
+                "8F" : ("Strategie bodenstehend", 30),
+                "90" : ("LAP", 18),
+                "92" : ("wandhängende Kessel 1", 60),
+                "93" : ("wandhängende Kessel 2", 60),
+                "94" : ("wandhängende Kessel 3", 60),
+                "95" : ("wandhängende Kessel 4", 60),
+                "96" : ("wandhängende Kessel 5", 60),
+                "97" : ("wandhängende Kessel 6", 60),
+                "98" : ("wandhängende Kessel 7", 60),
+                "99" : ("wandhängende Kessel 8", 60),
+                "9B" : ("Wärmemenge", 36),
+                "9C" : ("Störmeldemodul", 6),
+                "9D" : ("Unterstation", 6),
+                "9E" : ("Solarfunktion", 54),
+            }
 
-          ## Buderus Fehlermeldungen
-          self.error_messages = {
-              0 : "kein Fehler",
-              1 : "Strategievorlauffühler defekt !",
-              2 : "Aussenfühler defekt !",
-              3 : "Vorlauffühler HK1 defekt !",
-              4 : "Vorlauffühler HK2 defekt !",
-              5 : "Vorlauffühler HK3 defekt !",
-              6 : "Vorlauffühler HK4 defekt !",
-              7 : "nicht belegt !",
-              8 : "Warmwasserfühler defekt !",
-              9 : "Warmwasser bleibt kalt !",
-              10 : "Störung Therm. Desinfektion !",
-              11 : "Fernbedienung HK 1 defekt !",
-              12 : "Fernbedienung HK 2 defekt !",
-              13 : "Fernbedienung HK 3 defekt !",
-              14 : "Fernbedienung HK 4 defekt !",
-              15 : "keine Kommun. mit Fernbed. HK 1!",
-              16 : "keine Kommun. mit Fernbed. HK 2!",
-              17 : "keine Kommun. mit Fernbed. HK 3!",
-              18 : "keine Kommun. mit Fernbed. HK 4!",
-              19 : "nicht belegt !",
-              20 : "Störung Brenner 1",
-              21 : "Störung Brenner 2",
-              22 : "Störung Brenner 3",
-              23 : "Störung Brenner 4",
-              24 : "keine Verbindung mit Kessel 1 !",
-              25 : "keine Verbindung mit Kessel 2 !",
-              26 : "keine Verbindung mit Kessel 3 !",
-              27 : "nicht belegt !",
-              28 : "nicht belegt !",
-              29 : "nicht belegt !",
-              30 : "Interner Fehler Nr. 1 !",
-              31 : "Interner Fehler Nr. 2 !",
-              32 : "Interner Fehler Nr. 3 !",
-              33 : "Interner Fehler Nr. 4 !",
-              34 : "Vorlauffühler HK5 defekt !",
-              35 : "Vorlauffühler HK6 defekt !",
-              36 : "Vorlauffühler HK7 defekt !",
-              37 : "Vorlauffühler HK8 defekt !",
-              38 : "nicht belegt !",
-              39 : "Fernbedienung HK 5 defekt !",
-              40 : "Fernbedienung HK 6 defekt !",
-              41 : "Fernbedienung HK 7 defekt !",
-              42 : "Fernbedienung HK 8 defekt !",
-              43 : "nicht belegt !",
-              44 : "keine Kommun. mit Fernbed. HK 5!",
-              45 : "keine Kommun. mit Fernbed. HK 6!",
-              46 : "keine Kommun. mit Fernbed. HK 7!",
-              47 : "keine Kommun. mit Fernbed. HK 8!",
-              48 : "nicht belegt !",
-              49 : "Kesselvorlauffühler defekt !",
-              50 : "Kesselzusatzfühler defekt !",
-              51 : "Kessel bleibt kalt !",
-              52 : "Brennerstörung !",
-              53 : "Störung Sicherheitskette !",
-              54 : "Externe Störung Kessel !",
-              55 : "Abgasfühler defekt !",
-              56 : "Abgasgrenze überschritten !",
-              57 : "Externer Störeing. (Pumpe) HK1 !",
-              58 : "Externer Störeing. (Pumpe) HK2 !",
-              59 : "Externer Störeing. (Pumpe) HK3 !",
-              60 : "Externer Störeing. (Pumpe) HK4 !",
-              61 : "Externer Störeing. (Pumpe) HK5 !",
-              62 : "Externer Störeing. (Pumpe) HK6 !",
-              63 : "Externer Störeing. (Pumpe) HK7 !",
-              64 : "Externer Störeing. (Pumpe) HK8 !",
-              65 : "nicht belegt !",
-              66 : "Interner Fehler Nr. 5 !",
-              67 : "Interner Fehler Nr. 6 !",
-              68 : "Interner Fehler Nr. 7 !",
-              69 : "Interner Fehler Nr. 8 !",
-              70 : "Kein Master (Adr. 1) vorhanden !",
-              71 : "Adresskonflikt auf CAN-Bus !",
-              72 : "Adr.konflikt auf Steckplatz 1 !",
-              73 : "Adr.konflikt auf Steckplatz 2 !",
-              74 : "Adr.konflikt auf Steckplatz 3 !",
-              75 : "Adr.konflikt auf Steckplatz 4 !",
-              76 : "Adr.konflikt auf Steckplatz A !",
-              77 : "Falsches Modul auf Steckplatz 1 !",
-              78 : "Falsches Modul auf Steckplatz 2 !",
-              79 : "Falsches Modul auf Steckplatz 3 !",
-              80 : "Falsches Modul auf Steckplatz 4 !",
-              81 : "Falsches Modul auf Steckplatz A !",
-              82 : "Unbekanntes Modul auf Steckplatz 1 !",
-              83 : "Unbekanntes Modul auf Steckplatz 2 !",
-              84 : "Unbekanntes Modul auf Steckplatz 3 !",
-              85 : "Unbekanntes Modul auf Steckplatz 4 !",
-              86 : "Unbekanntes Modul auf Steckplatz A !",
-              87 : "Rücklauffühler defekt !",
-              88 : "Ext. Störeingang (Inertanode) WW !",
-              89 : "Ext. Störeingang (Pumpe) WW !",
-              90 : "Konfig. Rücklauf bei Strategie!",
-              91 : "Konfig. Vorlauf bei Strategie !",
-              92 : "RESET !",
-              93 : "Handschalter Heizkreis 1 !",
-              94 : "Handschalter Heizkreis 2 !",
-              95 : "Handschalter Heizkreis 3 !",
-              96 : "Handschalter Heizkreis 4 !",
-              97 : "Handschalter Heizkreis 5 !",
-              98 : "Handschalter Heizkreis 6 !",
-              99 : "Handschalter Heizkreis 7 !",
-              100 : "Handschalter Heizkreis 8 !",
-              101 : "Handschalter Warmwasser !",
-              102 : "Handschalter Brenner !",
-              103 : "Handschalter Kesselkreis !",
-              104 : "Strategiemodul fehlt !",
-              105 : "Handschalter LAP Primärpumpe !",
-              106 : "Handschalter LAP Sekundärpumpe !",
-              107 : "Wärmetauscherfühler LAP defekt !",
-              108 : "Speicher unten Fühler LAP defekt !",
-              109 : "Warmwasser Solarfühler defekt !",
-              110 : "Kollektorfühler defekt !",
-              111 : "Störung Brenner 5",
-              112 : "Störung Brenner 6",
-              113 : "Störung Brenner 7",
-              114 : "Störung Brenner 8",
-              115 : "keine Verbindung mit Brennerautomat 1",
-              116 : "keine Verbindung mit Brennerautomat 2",
-              117 : "keine Verbindung mit Brennerautomat 3",
-              118 : "keine Verbindung mit Brennerautomat 4",
-              119 : "keine Verbindung mit Brennerautomat 5",
-              120 : "keine Verbindung mit Brennerautomat 6",
-              121 : "keine Verbindung mit Brennerautomat 7",
-              122 : "keine Verbindung mit Brennerautomat 8",
-              123 : "Flaschenvorlauffühler defekt",
-              124 : "3-Wegeumschaltventil defekt",
-              125 : "Füllstand: Grenze unterschritten",
-              126 : "Unterstation Wärme Unterversorgung !",
-              127 : "Unterstation Vorlauffühler defekt !",
-              128 : "Kollektorfühler defekt !",
-              129 : "Bypass-Rücklauffühler defekt !",
-              130 : "Bypass-Vorlauffühler defekt !",
-              131 : "Wärmemengenzähler Vorlauf defekt !",
-              132 : "Wärmemengenzähler Rücklauf defekt !",
-              133 : "Speicher 1 Fühler unten defekt !",
-              134 : "Speicher 2 Fühler unten defekt !",
-              135 : "Wärmemengenzähler Volumenstrommesser !",
-              136 : "Fehlerhafte Einstellung Solarmodul !",
-              137 : "Heizkreis 1 EIB-Fehler !",
-              138 : "Heizkreis 2 EIB-Fehler !",
-              139 : "Heizkreis 3 EIB-Fehler !",
-              140 : "Heizkreis 4 EIB-Fehler !",
-              141 : "Heizkreis 5 EIB-Fehler !",
-              142 : "Heizkreis 6 EIB-Fehler !",
-              143 : "Heizkreis 7 EIB-Fehler !",
-              144 : "Heizkreis 8 EIB-Fehler !",
-              145 : "Heizkreis 9 EIB-Fehler !",
-              146 : "allgemeiner EIB - Fehler !",
-              147 : "Blockierender Fehler UBA !",
-              148 : "Verriegelnder Fehler UBA !",
-              149 : "Handbetrieb Solar Speicher 1 !",
-              150 : "Handbetrieb Solar Speicher 2 !",
-              151 : "Handbetrieb Heizkreis 0 !",
-              152 : "Wartung erforderlich Betriebsstunden !",
-              153 : "Wartung erforderlich Datum !",
-              154 : "Warmwasser ist kalt !",
-              155 : "Handbetrieb Zubringerpumpe (PZB)!",
-              156 : "Handbetrieb EMS - Kessel 1 !",
-              157 : "Handbetrieb EMS - Kessel 2 !",
-              158 : "Handbetrieb EMS - Kessel 3 !",
-              159 : "Handbetrieb EMS - Kessel 4 !",
-              160 : "Handbetrieb EMS - Kessel 5 !",
-              161 : "Handbetrieb EMS - Kessel 6 !",
-              162 : "Handbetrieb EMS - Kessel 7 !",
-              163 : "Handbetrieb EMS - Kessel 8 !",
-              164 : "Störung EMS - Kessel 1 !",
-              165 : "Störung EMS - Kessel 2 !",
-              166 : "Störung EMS - Kessel 3 !",
-              167 : "Störung EMS - Kessel 4 !",
-              168 : "Störung EMS - Kessel 5 !",
-              169 : "Störung EMS - Kessel 6 !",
-              170 : "Störung EMS - Kessel 7 !",
-              171 : "Störung EMS - Kessel 8 !",
-              172 : "Störung EMS - Warmwasser !",
-              173 : "Wartung erforderlich EMS - Kessel 1 !",
-              174 : "Wartung erforderlich EMS - Kessel 2 !",
-              175 : "Wartung erforderlich EMS - Kessel 3 !",
-              176 : "Wartung erforderlich EMS - Kessel 4 !",
-              177 : "Wartung erforderlich EMS - Kessel 5 !",
-              178 : "Wartung erforderlich EMS - Kessel 6 !",
-              179 : "Wartung erforderlich EMS - Kessel 7 !",
-              180 : "Wartung erforderlich EMS - Kessel 8 !",
-              181 : "Alternativer WE Pumpe im Handbetrieb !",
-              182 : "Alternativer WE im Handbetrieb !",
-              183 : "Alternativer WE Rücklauffühler defekt !",
-              184 : "Alternativer WE Vorlauffühler defekt !",
-              185 : "Alternativer WE Fühler Puffer mitte !",
-              186 : "Alternativer WE Fühler Puffer unten !",
-              187 : "Alternativer WE Fühler Puffer oben !",
-              188 : "Alternativer WE Anl. Rücklauffühler !",
-              189 : "Alternativer WE Abgasfühler defekt !",
-              190 : "Alternativer WE Kommunikation Brennerautomat !",
-              191 : "Alternativer WE Brennerautomat verriegelt !",
-              192 : "Alternativer WE Notkühlung ausgelöst !",
-              193 : "FM458 Zuordnung Kessel 1 !",
-              194 : "FM458 Zuordnung Kessel 2 !",
-              195 : "FM458 Zuordnung Kessel 3 !",
-              196 : "FM458 Zuordnung Kessel 4 !",
-              197 : "FM458 Zuordnung Kessel 5 !",
-              198 : "FM458 Zuordnung Kessel 6 !",
-              199 : "FM458 Zuordnung Kessel 7 !",
-              200 : "FM458 Zuordnung Kessel 8 !",
-              201 : "FM458 Keine Verbindung zu Kessel 1 !",
-              202 : "FM458 Keine Verbindung zu Kessel 2 !",
-              203 : "FM458 Keine Verbindung zu Kessel 3 !",
-              204 : "FM458 Keine Verbindung zu Kessel 4 !",
-              205 : "FM458 Keine Verbindung zu Kess",
-              206 : "FM458 Keine Verbindung zu Kessel 6 !",
-              207 : "FM458 Keine Verbindung zu Kessel 7 !",
-              208 : "FM458 Keine Verbindung zu Kessel 8 !",
-              209 : "FM458 Fühler Vorlauf Strategie !",
-              210 : "FM458 Fühler Rücklauf Strategie !",
-              211 : "FM458 Konfiguration Rücklauf Strategie!",
-              212 : "FM458 Konfiguration Vorlauf Strategie !",
-              213 : "FM458 Leistungsangabe für Kessel fehlt !",
-          }
-          
-          ## derzeit aktive Fehler
-          self.active_errors = []
-          
-          ## Status für ausgaben je Bus/Slot/Fehlernummer
-          self.output_bus_error_status = {}
-          
-          ## Konfiguration an Eingang 2 parsen
-          self.readconfig(EN[2])
-          
-          ## Ein Dict für default Severity's je Buderus Fehlermeldung erstellen
-          self.build_severitydict()
-          
-          ## Queue um mehrere Logmeldungen auf den Ausgang zu schreiben
-          self.log_queue = ""
+            ## Buderus Fehlermeldungen
+            self.error_messages = {
+                0 : "kein Fehler",
+                1 : "Strategievorlauffühler defekt !",
+                2 : "Aussenfühler defekt !",
+                3 : "Vorlauffühler HK1 defekt !",
+                4 : "Vorlauffühler HK2 defekt !",
+                5 : "Vorlauffühler HK3 defekt !",
+                6 : "Vorlauffühler HK4 defekt !",
+                7 : "nicht belegt !",
+                8 : "Warmwasserfühler defekt !",
+                9 : "Warmwasser bleibt kalt !",
+                10 : "Störung Therm. Desinfektion !",
+                11 : "Fernbedienung HK 1 defekt !",
+                12 : "Fernbedienung HK 2 defekt !",
+                13 : "Fernbedienung HK 3 defekt !",
+                14 : "Fernbedienung HK 4 defekt !",
+                15 : "keine Kommun. mit Fernbed. HK 1!",
+                16 : "keine Kommun. mit Fernbed. HK 2!",
+                17 : "keine Kommun. mit Fernbed. HK 3!",
+                18 : "keine Kommun. mit Fernbed. HK 4!",
+                19 : "nicht belegt !",
+                20 : "Störung Brenner 1",
+                21 : "Störung Brenner 2",
+                22 : "Störung Brenner 3",
+                23 : "Störung Brenner 4",
+                24 : "keine Verbindung mit Kessel 1 !",
+                25 : "keine Verbindung mit Kessel 2 !",
+                26 : "keine Verbindung mit Kessel 3 !",
+                27 : "nicht belegt !",
+                28 : "nicht belegt !",
+                29 : "nicht belegt !",
+                30 : "Interner Fehler Nr. 1 !",
+                31 : "Interner Fehler Nr. 2 !",
+                32 : "Interner Fehler Nr. 3 !",
+                33 : "Interner Fehler Nr. 4 !",
+                34 : "Vorlauffühler HK5 defekt !",
+                35 : "Vorlauffühler HK6 defekt !",
+                36 : "Vorlauffühler HK7 defekt !",
+                37 : "Vorlauffühler HK8 defekt !",
+                38 : "nicht belegt !",
+                39 : "Fernbedienung HK 5 defekt !",
+                40 : "Fernbedienung HK 6 defekt !",
+                41 : "Fernbedienung HK 7 defekt !",
+                42 : "Fernbedienung HK 8 defekt !",
+                43 : "nicht belegt !",
+                44 : "keine Kommun. mit Fernbed. HK 5!",
+                45 : "keine Kommun. mit Fernbed. HK 6!",
+                46 : "keine Kommun. mit Fernbed. HK 7!",
+                47 : "keine Kommun. mit Fernbed. HK 8!",
+                48 : "nicht belegt !",
+                49 : "Kesselvorlauffühler defekt !",
+                50 : "Kesselzusatzfühler defekt !",
+                51 : "Kessel bleibt kalt !",
+                52 : "Brennerstörung !",
+                53 : "Störung Sicherheitskette !",
+                54 : "Externe Störung Kessel !",
+                55 : "Abgasfühler defekt !",
+                56 : "Abgasgrenze überschritten !",
+                57 : "Externer Störeing. (Pumpe) HK1 !",
+                58 : "Externer Störeing. (Pumpe) HK2 !",
+                59 : "Externer Störeing. (Pumpe) HK3 !",
+                60 : "Externer Störeing. (Pumpe) HK4 !",
+                61 : "Externer Störeing. (Pumpe) HK5 !",
+                62 : "Externer Störeing. (Pumpe) HK6 !",
+                63 : "Externer Störeing. (Pumpe) HK7 !",
+                64 : "Externer Störeing. (Pumpe) HK8 !",
+                65 : "nicht belegt !",
+                66 : "Interner Fehler Nr. 5 !",
+                67 : "Interner Fehler Nr. 6 !",
+                68 : "Interner Fehler Nr. 7 !",
+                69 : "Interner Fehler Nr. 8 !",
+                70 : "Kein Master (Adr. 1) vorhanden !",
+                71 : "Adresskonflikt auf CAN-Bus !",
+                72 : "Adr.konflikt auf Steckplatz 1 !",
+                73 : "Adr.konflikt auf Steckplatz 2 !",
+                74 : "Adr.konflikt auf Steckplatz 3 !",
+                75 : "Adr.konflikt auf Steckplatz 4 !",
+                76 : "Adr.konflikt auf Steckplatz A !",
+                77 : "Falsches Modul auf Steckplatz 1 !",
+                78 : "Falsches Modul auf Steckplatz 2 !",
+                79 : "Falsches Modul auf Steckplatz 3 !",
+                80 : "Falsches Modul auf Steckplatz 4 !",
+                81 : "Falsches Modul auf Steckplatz A !",
+                82 : "Unbekanntes Modul auf Steckplatz 1 !",
+                83 : "Unbekanntes Modul auf Steckplatz 2 !",
+                84 : "Unbekanntes Modul auf Steckplatz 3 !",
+                85 : "Unbekanntes Modul auf Steckplatz 4 !",
+                86 : "Unbekanntes Modul auf Steckplatz A !",
+                87 : "Rücklauffühler defekt !",
+                88 : "Ext. Störeingang (Inertanode) WW !",
+                89 : "Ext. Störeingang (Pumpe) WW !",
+                90 : "Konfig. Rücklauf bei Strategie!",
+                91 : "Konfig. Vorlauf bei Strategie !",
+                92 : "RESET !",
+                93 : "Handschalter Heizkreis 1 !",
+                94 : "Handschalter Heizkreis 2 !",
+                95 : "Handschalter Heizkreis 3 !",
+                96 : "Handschalter Heizkreis 4 !",
+                97 : "Handschalter Heizkreis 5 !",
+                98 : "Handschalter Heizkreis 6 !",
+                99 : "Handschalter Heizkreis 7 !",
+                100 : "Handschalter Heizkreis 8 !",
+                101 : "Handschalter Warmwasser !",
+                102 : "Handschalter Brenner !",
+                103 : "Handschalter Kesselkreis !",
+                104 : "Strategiemodul fehlt !",
+                105 : "Handschalter LAP Primärpumpe !",
+                106 : "Handschalter LAP Sekundärpumpe !",
+                107 : "Wärmetauscherfühler LAP defekt !",
+                108 : "Speicher unten Fühler LAP defekt !",
+                109 : "Warmwasser Solarfühler defekt !",
+                110 : "Kollektorfühler defekt !",
+                111 : "Störung Brenner 5",
+                112 : "Störung Brenner 6",
+                113 : "Störung Brenner 7",
+                114 : "Störung Brenner 8",
+                115 : "keine Verbindung mit Brennerautomat 1",
+                116 : "keine Verbindung mit Brennerautomat 2",
+                117 : "keine Verbindung mit Brennerautomat 3",
+                118 : "keine Verbindung mit Brennerautomat 4",
+                119 : "keine Verbindung mit Brennerautomat 5",
+                120 : "keine Verbindung mit Brennerautomat 6",
+                121 : "keine Verbindung mit Brennerautomat 7",
+                122 : "keine Verbindung mit Brennerautomat 8",
+                123 : "Flaschenvorlauffühler defekt",
+                124 : "3-Wegeumschaltventil defekt",
+                125 : "Füllstand: Grenze unterschritten",
+                126 : "Unterstation Wärme Unterversorgung !",
+                127 : "Unterstation Vorlauffühler defekt !",
+                128 : "Kollektorfühler defekt !",
+                129 : "Bypass-Rücklauffühler defekt !",
+                130 : "Bypass-Vorlauffühler defekt !",
+                131 : "Wärmemengenzähler Vorlauf defekt !",
+                132 : "Wärmemengenzähler Rücklauf defekt !",
+                133 : "Speicher 1 Fühler unten defekt !",
+                134 : "Speicher 2 Fühler unten defekt !",
+                135 : "Wärmemengenzähler Volumenstrommesser !",
+                136 : "Fehlerhafte Einstellung Solarmodul !",
+                137 : "Heizkreis 1 EIB-Fehler !",
+                138 : "Heizkreis 2 EIB-Fehler !",
+                139 : "Heizkreis 3 EIB-Fehler !",
+                140 : "Heizkreis 4 EIB-Fehler !",
+                141 : "Heizkreis 5 EIB-Fehler !",
+                142 : "Heizkreis 6 EIB-Fehler !",
+                143 : "Heizkreis 7 EIB-Fehler !",
+                144 : "Heizkreis 8 EIB-Fehler !",
+                145 : "Heizkreis 9 EIB-Fehler !",
+                146 : "allgemeiner EIB - Fehler !",
+                147 : "Blockierender Fehler UBA !",
+                148 : "Verriegelnder Fehler UBA !",
+                149 : "Handbetrieb Solar Speicher 1 !",
+                150 : "Handbetrieb Solar Speicher 2 !",
+                151 : "Handbetrieb Heizkreis 0 !",
+                152 : "Wartung erforderlich Betriebsstunden !",
+                153 : "Wartung erforderlich Datum !",
+                154 : "Warmwasser ist kalt !",
+                155 : "Handbetrieb Zubringerpumpe (PZB)!",
+                156 : "Handbetrieb EMS - Kessel 1 !",
+                157 : "Handbetrieb EMS - Kessel 2 !",
+                158 : "Handbetrieb EMS - Kessel 3 !",
+                159 : "Handbetrieb EMS - Kessel 4 !",
+                160 : "Handbetrieb EMS - Kessel 5 !",
+                161 : "Handbetrieb EMS - Kessel 6 !",
+                162 : "Handbetrieb EMS - Kessel 7 !",
+                163 : "Handbetrieb EMS - Kessel 8 !",
+                164 : "Störung EMS - Kessel 1 !",
+                165 : "Störung EMS - Kessel 2 !",
+                166 : "Störung EMS - Kessel 3 !",
+                167 : "Störung EMS - Kessel 4 !",
+                168 : "Störung EMS - Kessel 5 !",
+                169 : "Störung EMS - Kessel 6 !",
+                170 : "Störung EMS - Kessel 7 !",
+                171 : "Störung EMS - Kessel 8 !",
+                172 : "Störung EMS - Warmwasser !",
+                173 : "Wartung erforderlich EMS - Kessel 1 !",
+                174 : "Wartung erforderlich EMS - Kessel 2 !",
+                175 : "Wartung erforderlich EMS - Kessel 3 !",
+                176 : "Wartung erforderlich EMS - Kessel 4 !",
+                177 : "Wartung erforderlich EMS - Kessel 5 !",
+                178 : "Wartung erforderlich EMS - Kessel 6 !",
+                179 : "Wartung erforderlich EMS - Kessel 7 !",
+                180 : "Wartung erforderlich EMS - Kessel 8 !",
+                181 : "Alternativer WE Pumpe im Handbetrieb !",
+                182 : "Alternativer WE im Handbetrieb !",
+                183 : "Alternativer WE Rücklauffühler defekt !",
+                184 : "Alternativer WE Vorlauffühler defekt !",
+                185 : "Alternativer WE Fühler Puffer mitte !",
+                186 : "Alternativer WE Fühler Puffer unten !",
+                187 : "Alternativer WE Fühler Puffer oben !",
+                188 : "Alternativer WE Anl. Rücklauffühler !",
+                189 : "Alternativer WE Abgasfühler defekt !",
+                190 : "Alternativer WE Kommunikation Brennerautomat !",
+                191 : "Alternativer WE Brennerautomat verriegelt !",
+                192 : "Alternativer WE Notkühlung ausgelöst !",
+                193 : "FM458 Zuordnung Kessel 1 !",
+                194 : "FM458 Zuordnung Kessel 2 !",
+                195 : "FM458 Zuordnung Kessel 3 !",
+                196 : "FM458 Zuordnung Kessel 4 !",
+                197 : "FM458 Zuordnung Kessel 5 !",
+                198 : "FM458 Zuordnung Kessel 6 !",
+                199 : "FM458 Zuordnung Kessel 7 !",
+                200 : "FM458 Zuordnung Kessel 8 !",
+                201 : "FM458 Keine Verbindung zu Kessel 1 !",
+                202 : "FM458 Keine Verbindung zu Kessel 2 !",
+                203 : "FM458 Keine Verbindung zu Kessel 3 !",
+                204 : "FM458 Keine Verbindung zu Kessel 4 !",
+                205 : "FM458 Keine Verbindung zu Kess",
+                206 : "FM458 Keine Verbindung zu Kessel 6 !",
+                207 : "FM458 Keine Verbindung zu Kessel 7 !",
+                208 : "FM458 Keine Verbindung zu Kessel 8 !",
+                209 : "FM458 Fühler Vorlauf Strategie !",
+                210 : "FM458 Fühler Rücklauf Strategie !",
+                211 : "FM458 Konfiguration Rücklauf Strategie!",
+                212 : "FM458 Konfiguration Vorlauf Strategie !",
+                213 : "FM458 Leistungsangabe für Kessel fehlt !",
+            }
+            
+            ## derzeit aktive Fehler
+            self.active_errors = []
+            
+            ## Status für ausgaben je Bus/Slot/Fehlernummer
+            self.output_bus_error_status = {}
+            
+            ## Konfiguration an Eingang 2 parsen
+            self.readconfig(EN[2])
+            
+            ## Ein Dict für default Severity's je Buderus Fehlermeldung erstellen
+            self.build_severitydict()
+            
+            ## Queue um mehrere Logmeldungen auf den Ausgang zu schreiben
+            self.log_queue = ""
 
-          ## Regex für Fehlermeldungen
-          ## <Kennung Fehlerstatus(0xAE)> <Geräteadresse> < Fehler 1> < Fehler 2> < Fehler 3> < Fehler 4>
-          self.error_regex = re.compile("AE(?P<busnr>[0-9a-fA-F]{2})(?P<slot1>[0-9a-fA-F]{2})(?P<slot2>[0-9a-fA-F]{2})(?P<slot3>[0-9a-fA-F]{2})(?P<slot4>[0-9a-fA-F]{2})")
+            ## Regex für Fehlermeldungen
+            ## <Kennung Fehlerstatus(0xAE)> <Geräteadresse> < Fehler 1> < Fehler 2> < Fehler 3> < Fehler 4>
+            self.error_regex = re.compile("AE(?P<busnr>[0-9a-fA-F]{2})(?P<slot1>[0-9a-fA-F]{2})(?P<slot2>[0-9a-fA-F]{2})(?P<slot3>[0-9a-fA-F]{2})(?P<slot4>[0-9a-fA-F]{2})")
 
-      def readconfig(self,configstring):
-          import re
-          for (option,value) in re.findall("(\w+)=(.*?)(?:\*|$)", configstring ):
-              option = option.lower()
-              _configoption = self.config.get(option)
-              _configtype = type(_configoption)
-              if _configtype == type(None):
-                  self.log("unbekannte Konfig Option %s=%s" % (option,value) )
-                  continue
-              try:
-                  _val = _configtype(value)
-                  self.config[option] = _val
-              except ValueError:
-                  self.log("falscher Wert bei Konfig Option %s=%s (erwartet %r)" % (option,value, _configtype ) )
-                  pass
+        def readconfig(self,configstring):
+            import re
+            for (option,value) in re.findall("(\w+)=(.*?)(?:\*|$)", configstring ):
+                option = option.lower()
+                _configoption = self.config.get(option)
+                _configtype = type(_configoption)
+                if _configtype == type(None):
+                    self.log("unbekannte Konfig Option %s=%s" % (option,value) )
+                    continue
+                try:
+                    _val = _configtype(value)
+                    self.config[option] = _val
+                except ValueError:
+                    self.log("falscher Wert bei Konfig Option %s=%s (erwartet %r)" % (option,value, _configtype ) )
+                    pass
 
-      def get_status_xml(self):
-          import time
-          ## leere List für alle Ausgaben
-          _xml = []
-          
-          ## alle derzeitigen items des dicts durchlaufen (enthalten je busnr ein Dict mit Fehlernummern)
-          for _busnr,_errno_status_dict in self.output_bus_error_status.iteritems():
-              
-              ## leere Liste für ausgaben des Bus
-              _bus_xml = []
-              
-              ## Alle Fehler, Zeit werte des Dicts durchlaufen
-              for _errno,_val in _errno_status_dict.iteritems():
-                  
-                  ## wenn wert(zeit des Fehlers als timestamp) <> 0 dann Fehler aktiv
-                  _bus_xml.append("<errno_%s>%s</errno_%s>" % (_errno, int(_val <> 0), _errno) )
-              
-              ## alle derzeit aktiven Fehler für diesen Bus
-              _active_errors = filter(lambda x,busnr=_busnr: x[0] == busnr, self.active_errors)
-              
-              ## Alle 4 Fehlerslots
-              for _slot in xrange(4):
-                  
-                  ## default status ist alle wert für die xml2test/xml2num Bausteine löschen
-                  _status = "<errno>0</errno><errmsg></errmsg><errtime></errtime>"
-                  
-                  ## Wenn Slotnummer gefüllt
-                  if len(_active_errors) > _slot:
-                      ## nur die Fehlernummer des Slots holen
-                      (_dummy, _err) = _active_errors[_slot]
-                      
-                      ## Fehlertext aus dem Dict dazu
-                      _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
-                      
-                      ## Fehlerzeit steht im dict
-                      _err_time = self.get_error_status(_busnr,_err)
-                      if _err_time > 0:
-                          ## Fehlerzeit als lesbaren Wert wie in Config
-                          _err_time = time.strftime(self.config.get('timeformat'),time.localtime(_err_time) )
-                      else:
-                          _err_time = "unbekannt"
-                      
-                      ## Werte ins XML füllen
-                      _status ="<errno>%s</errno><errmsg>%s</errmsg><errtime>%s</errtime>" % (_err,_err_message,_err_time) 
-                  
-                  ## xml zum jeweiligen Slot dazu schrieben
-                  _bus_xml.append("<slot_%s>%s</slot_%s>" % (_slot,_status ,_slot) )
-              
-              ## List mit Text für den Bus zum allgemeinen xml schreiben
-              _xml.append( "<busnr_%s>%s</busnr_%s>" % (_busnr, "".join(_bus_xml) ,_busnr) )
-          
-          ## Auf Ausgang 3 schreiben
-          self.send_to_output( 3, "".join(_xml) )
-
-      def set_error_status(self,busnr,errno, val):
-          ## wenn es noch keinen Eintrag für das Gerät gibt
-          if not self.output_bus_error_status.get(busnr):
-              ## dict für Bus
-              self.output_bus_error_status[busnr] = {}
-          
-          ## Wert setzen auf Wert 
-          self.output_bus_error_status[busnr][errno] = val
-
-      def get_error_status(self,busnr,errno):
-          ## Wert abfragen leeres dict zurück wenn nicht gefunden für nächstes .get
-          _bus_dict = self.output_bus_error_status.get(busnr,{})
-          ## 0 oder Wert zurück
-          return _bus_dict.get(errno,0)
-
-      def build_severitydict(self):
-          ## dict für severity je Buderus Fehler
-          self.severitydict = {}
-          
-          ## alle Werte von Konfig none auslesen und zum dict
-          for _errno in self.config.get("none").split(","):
-              if _errno:
-                  self.severitydict[_errno] = None
-          
-          ## für genannte Severity die Konfig durchsuchen
-          for _sev in ['emerg','alert','crit','error','warn','info']:
-              
-              ## Konfig splitten mit ,
-              for _errno in self.config.get(_sev).split(","):
-                  ## wenn Wert
-                  if _errno:
-                      ## die jeweilige severity allen Werten in der config zu ordnen
-                      self.severitydict[_errno] = _sev
-          
-          # wenn keine gültiger wert in default dann logging auf None
-          if self.config.get("default") not in ['emerg','alert','crit','error','warn','info','notice','debug']:
-              self.config['default'] = None
-      
-      def get_severity(self,errno):
-          return self.severitydict.get( str(errno), self.config.get("default") )
-
-      def debug(self,msg,lvl=5):
-          if self.config.get("debug") < lvl:
-              return
-          import time
-          
-          self.log(msg,severity='debug')
-          #print "%s DEBUG: %r" % (time.strftime("%H:%M:%S"),msg,)
-
-      def send_to_output(self,out,msg,sbc=False):
-          if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
-              return
-          ## werte fangen bei 0 an also AN[1] == Ausgang[0]#
-          self.localvars["AN"][out] = msg
-          self.localvars["AC"][out] = 1
-
-      def log(self,msg,severity='info'):
-          import time
-          try:
-              from hashlib import md5
-          except ImportError:
-              import md5 as md5old
-              md5 = lambda x,md5old=md5old: md5old.md5(x)
-          
-          _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
-          _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
-          self.log_queue += _msg 
-
-      def parse(self,payload):
-          import time
-          found = 0
-          
-          ## Payload nach Fehlerregex ## <Kennung Fehlerstatus(0xAE)> <Geräteadresse> < Fehler 1> < Fehler 2> < Fehler 3> < Fehler 4> durchsuchen
-          _error = self.error_regex.search( payload )
-          if _error:
-              # 0xAE gefunden
-              found = 1
-              ## Busnr ist Hex wandeln in Int Base 10
-              _busnr = int(_error.group("busnr"),16)
-
-              # Slots auch in Int Base 10 wandeln und nur die mit Fehlerstatus > 0 in die Fehlerliste
-              _error_slots = filter(lambda x: x > 0,[ int(_error.group("slot1"),16), int(_error.group("slot2"),16), int(_error.group("slot3"),16), int(_error.group("slot4"),16) ])
-              
-              ## Derzeit schon bekannte Fehler
-              _active_errors = filter(lambda x,busnr=_busnr: x[0] == busnr, self.active_errors)
-              
-              ## alle Fehler >0 in den Slots durchgehen
-              for _err in _error_slots:
-                  ## wenn jetziger Fehler noch nicht bekannt
-                  if (_busnr,_err) not in self.active_errors:
-                      ## Severity für die Fehlernummer holen
-                      _severity = self.get_severity(_err)
+        def get_status_xml(self):
+            import time
+            ## leere List für alle Ausgaben
+            _xml = []
+            
+            ## alle derzeitigen items des dicts durchlaufen (enthalten je busnr ein Dict mit Fehlernummern)
+            for _busnr,_errno_status_dict in self.output_bus_error_status.iteritems():
+                
+                ## leere Liste für ausgaben des Bus
+                _bus_xml = []
+                
+                ## Alle Fehler, Zeit werte des Dicts durchlaufen
+                for _errno,_val in _errno_status_dict.iteritems():
+                    
+                    ## wenn wert(zeit des Fehlers als timestamp) <> 0 dann Fehler aktiv
+                    _bus_xml.append("<errno_%s>%s</errno_%s>" % (_errno, int(_val <> 0), _errno) )
+                
+                ## alle derzeit aktiven Fehler für diesen Bus
+                _active_errors = filter(lambda x,busnr=_busnr: x[0] == busnr, self.active_errors)
+                
+                ## Alle 4 Fehlerslots
+                for _slot in xrange(4):
+                    
+                    ## default status ist alle wert für die xml2test/xml2num Bausteine löschen
+                    _status = "<errno>0</errno><errmsg></errmsg><errtime></errtime>"
+                    
+                    ## Wenn Slotnummer gefüllt
+                    if len(_active_errors) > _slot:
+                        ## nur die Fehlernummer des Slots holen
+                        (_dummy, _err) = _active_errors[_slot]
                         
-                      if not _severity:
-                        continue
+                        ## Fehlertext aus dem Dict dazu
+                        _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
+                        
+                        ## Fehlerzeit steht im dict
+                        _err_time = self.get_error_status(_busnr,_err)
+                        if _err_time > 0:
+                            ## Fehlerzeit als lesbaren Wert wie in Config
+                            _err_time = time.strftime(self.config.get('timeformat'),time.localtime(_err_time) )
+                        else:
+                            _err_time = "unbekannt"
+                        
+                        ## Werte ins XML füllen
+                        _status ="<errno>%s</errno><errmsg>%s</errmsg><errtime>%s</errtime>" % (_err,_err_message,_err_time) 
+                    
+                    ## xml zum jeweiligen Slot dazu schrieben
+                    _bus_xml.append("<slot_%s>%s</slot_%s>" % (_slot,_status ,_slot) )
+                
+                ## List mit Text für den Bus zum allgemeinen xml schreiben
+                _xml.append( "<busnr_%s>%s</busnr_%s>" % (_busnr, "".join(_bus_xml) ,_busnr) )
+            
+            ## Auf Ausgang 3 schreiben
+            self.send_to_output( 3, "".join(_xml) )
 
-                      ## Fehler zur Liste bereits bekannter Fehler hinzu
-                      self.active_errors.append( (_busnr,_err) )
-                      
-                      ## Die Uhrzeit des Fehlers setzen
-                      self.set_error_status(_busnr,_err, time.time())
-                      
-                      ## Fehlertext suchen
-                      _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
-                      
-                      ## dict für die Textausgabe erstellen im %(nr)s in der Konfig verwenden zu können
-                      _errdict = {
-                          'nr'  : _err,
-                          'msg' : _err_message,
-                          'bus' : _busnr,
-                       }
-                      
-                      ## Wenn diese nicht None ist
-                      if _severity:
-                          ## Auf den Log schreiben
-                          self.log( self.config.get("errormsg") % (_errdict), severity=_severity )
-              
-              ## in den aktiven Fehlern nach Clears suchen
-              for (busnr,_err) in _active_errors:
-                  ## wenn der Fehler nicht mehr im Slot ist
-                  if _err not in _error_slots:
-                      ## Fehlertext holen
-                      _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
-                      ## dict für Textausgabe erstellen
-                      _errdict = {
-                          'nr'  : _err,
-                          'msg' : _err_message,
-                          'bus' : _busnr,
-                       }
-                      ## Severity holen um zu gucken ob überhaupt geloggt werden soll
-                      _severity = self.get_severity(_err)
-                      ## Wenn nicht None
-                      if _severity:
-                          ## Fehler Clear loggen
-                          self.log( self.config.get("errorclearmsg") % (_errdict), severity='info' )
-                      
-                      ## Fehler von der Liste aktiver Fehler entfernen
-                      self.active_errors.remove( (busnr,_err) )
-                      
-                      ## Fehlerstatus auf 0 setzen
-                      self.set_error_status( _busnr,_err, 0 )
-          return found
-    
-      def incomming(self, payload, localvars):
-          ## 3. Auswerten von Fehlerprotokollen des "Normal-Modus"
-          ## Ein Regelgerät am ECOCAN-BUS kann zur Zeit ca. 213 verschiedene Fehler erzeugen. Bei der Zahl von
-          ## 15 Regelgeräten am ECOCAN-BUS müßten somit ca. 1500 Fehlerquellen auf "Kommen" bzw. "Gehen"
-          ## untersucht werden. Da die Verarbeitung einer so großen Zahl von Fehlermeldungen unrealistisch
-          ## erscheint, werden nur die zur Zeit offenen Fehler aus dem Fehlerprotokoll (z. Zt. 4 Stück) an die
-          ## Kommunikationskarte übergeben. Das Protokoll hat folgendes Format:
-          ## <Kennung Fehlerstatus(0xAE)> <Geräteadresse> < Fehler 1> < Fehler 2> < Fehler 3> < Fehler 4>
-          ## Ist der Inhalt von "Fehler 1" bis "Fehler 4" ungleich 0x00, dann ist der entsprechende Fehler offen. (Fehler aktiv)
-          
-          ## locals() der Logik neu übergeben um auf AN/AC zugreifen zu können
-          self.localvars = localvars
-          
-          self.log_queue = ""
-          
-          self.debug("incomming message %r" % payload)
-          
-          ## Die Payload parsen
-          found = self.parse(payload)
-          
-          ## Wenn es Meldungen im log_queue gibt 
-          if self.log_queue:
-              ## log auf AUsgang 1
-              self.send_to_output( 1,self.log_queue)
-          
-          ## Wenn es aktive Fehler gibt dann Ausgang 2 auf 1
-          self.send_to_output( 2, int(len(self.active_errors) >0), sbc=True)
-          
-          ## Status XML für Ausgang 3
-          if found:
-              self.get_status_xml()
+        def set_error_status(self,busnr,errno, val):
+            ## wenn es noch keinen Eintrag für das Gerät gibt
+            if not self.output_bus_error_status.get(busnr):
+                ## dict für Bus
+                self.output_bus_error_status[busnr] = {}
+            
+            ## Wert setzen auf Wert 
+            self.output_bus_error_status[busnr][errno] = val
+
+        def get_error_status(self,busnr,errno):
+            ## Wert abfragen leeres dict zurück wenn nicht gefunden für nächstes .get
+            _bus_dict = self.output_bus_error_status.get(busnr,{})
+            ## 0 oder Wert zurück
+            return _bus_dict.get(errno,0)
+
+        def build_severitydict(self):
+            ## dict für severity je Buderus Fehler
+            self.severitydict = {}
+            
+            ## alle Werte von Konfig none auslesen und zum dict
+            for _errno in self.config.get("none").split(","):
+                if _errno:
+                    self.severitydict[_errno] = None
+            
+            ## für genannte Severity die Konfig durchsuchen
+            for _sev in ['emerg','alert','crit','error','warn','info']:
+                
+                ## Konfig splitten mit ,
+                for _errno in self.config.get(_sev).split(","):
+                    ## wenn Wert
+                    if _errno:
+                        ## die jeweilige severity allen Werten in der config zu ordnen
+                        self.severitydict[_errno] = _sev
+            
+            # wenn keine gültiger wert in default dann logging auf None
+            if self.config.get("default") not in ['emerg','alert','crit','error','warn','info','notice','debug']:
+                self.config['default'] = None
+        
+        def get_severity(self,errno):
+            return self.severitydict.get( str(errno), self.config.get("default") )
+
+        def debug(self,msg,lvl=5):
+            if self.config.get("debug") < lvl:
+                return
+            import time
+            
+            self.log(msg,severity='debug')
+            #print "%s DEBUG: %r" % (time.strftime("%H:%M:%S"),msg,)
+
+        def send_to_output(self,out,msg,sbc=False):
+            if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
+                return
+            ## werte fangen bei 0 an also AN[1] == Ausgang[0]#
+            self.localvars["AN"][out] = msg
+            self.localvars["AC"][out] = 1
+
+        def log(self,msg,severity='info'):
+            import time
+            try:
+                from hashlib import md5
+            except ImportError:
+                import md5 as md5old
+                md5 = lambda x,md5old=md5old: md5old.md5(x)
+            
+            _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
+            _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
+            self.log_queue += _msg 
+
+        def parse(self,payload):
+            import time
+            found = 0
+            
+            ## Payload nach Fehlerregex ## <Kennung Fehlerstatus(0xAE)> <Geräteadresse> < Fehler 1> < Fehler 2> < Fehler 3> < Fehler 4> durchsuchen
+            _error = self.error_regex.search( payload )
+            if _error:
+                # 0xAE gefunden
+                found = 1
+                ## Busnr ist Hex wandeln in Int Base 10
+                _busnr = int(_error.group("busnr"),16)
+
+                # Slots auch in Int Base 10 wandeln und nur die mit Fehlerstatus > 0 in die Fehlerliste
+                _error_slots = filter(lambda x: x > 0,[ int(_error.group("slot1"),16), int(_error.group("slot2"),16), int(_error.group("slot3"),16), int(_error.group("slot4"),16) ])
+                
+                ## Derzeit schon bekannte Fehler
+                _active_errors = filter(lambda x,busnr=_busnr: x[0] == busnr, self.active_errors)
+                
+                ## alle Fehler >0 in den Slots durchgehen
+                for _err in _error_slots:
+                    ## wenn jetziger Fehler noch nicht bekannt
+                    if (_busnr,_err) not in self.active_errors:
+                        ## Severity für die Fehlernummer holen
+                        _severity = self.get_severity(_err)
+                          
+                        if not _severity:
+                          continue
+
+                        ## Fehler zur Liste bereits bekannter Fehler hinzu
+                        self.active_errors.append( (_busnr,_err) )
+                        
+                        ## Die Uhrzeit des Fehlers setzen
+                        self.set_error_status(_busnr,_err, time.time())
+                        
+                        ## Fehlertext suchen
+                        _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
+                        
+                        ## dict für die Textausgabe erstellen im %(nr)s in der Konfig verwenden zu können
+                        _errdict = {
+                            'nr'  : _err,
+                            'msg' : _err_message,
+                            'bus' : _busnr,
+                         }
+                        
+                        ## Wenn diese nicht None ist
+                        if _severity:
+                            ## Auf den Log schreiben
+                            self.log( self.config.get("errormsg") % (_errdict), severity=_severity )
+                
+                ## in den aktiven Fehlern nach Clears suchen
+                for (busnr,_err) in _active_errors:
+                    ## wenn der Fehler nicht mehr im Slot ist
+                    if _err not in _error_slots:
+                        ## Fehlertext holen
+                        _err_message = self.error_messages.get(_err,"unbekannter Fehler %r" % _err)
+                        ## dict für Textausgabe erstellen
+                        _errdict = {
+                            'nr'  : _err,
+                            'msg' : _err_message,
+                            'bus' : _busnr,
+                         }
+                        ## Severity holen um zu gucken ob überhaupt geloggt werden soll
+                        _severity = self.get_severity(_err)
+                        ## Wenn nicht None
+                        if _severity:
+                            ## Fehler Clear loggen
+                            self.log( self.config.get("errorclearmsg") % (_errdict), severity='info' )
+                        
+                        ## Fehler von der Liste aktiver Fehler entfernen
+                        self.active_errors.remove( (busnr,_err) )
+                        
+                        ## Fehlerstatus auf 0 setzen
+                        self.set_error_status( _busnr,_err, 0 )
+            return found
+      
+        def incomming(self, payload, localvars):
+            ## 3. Auswerten von Fehlerprotokollen des "Normal-Modus"
+            ## Ein Regelgerät am ECOCAN-BUS kann zur Zeit ca. 213 verschiedene Fehler erzeugen. Bei der Zahl von
+            ## 15 Regelgeräten am ECOCAN-BUS müßten somit ca. 1500 Fehlerquellen auf "Kommen" bzw. "Gehen"
+            ## untersucht werden. Da die Verarbeitung einer so großen Zahl von Fehlermeldungen unrealistisch
+            ## erscheint, werden nur die zur Zeit offenen Fehler aus dem Fehlerprotokoll (z. Zt. 4 Stück) an die
+            ## Kommunikationskarte übergeben. Das Protokoll hat folgendes Format:
+            ## <Kennung Fehlerstatus(0xAE)> <Geräteadresse> < Fehler 1> < Fehler 2> < Fehler 3> < Fehler 4>
+            ## Ist der Inhalt von "Fehler 1" bis "Fehler 4" ungleich 0x00, dann ist der entsprechende Fehler offen. (Fehler aktiv)
+            
+            ## locals() der Logik neu übergeben um auf AN/AC zugreifen zu können
+            self.localvars = localvars
+            
+            self.log_queue = ""
+            
+            self.debug("incomming message %r" % payload)
+            
+            ## Die Payload parsen
+            found = self.parse(payload)
+            
+            ## Wenn es Meldungen im log_queue gibt 
+            if self.log_queue:
+                ## log auf AUsgang 1
+                self.send_to_output( 1,self.log_queue)
+            
+            ## Wenn es aktive Fehler gibt dann Ausgang 2 auf 1
+            self.send_to_output( 2, int(len(self.active_errors) >0), sbc=True)
+            
+            ## Status XML für Ausgang 3
+            if found:
+                self.get_status_xml()
 
 
 """])

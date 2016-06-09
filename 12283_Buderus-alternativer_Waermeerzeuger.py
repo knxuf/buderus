@@ -179,172 +179,167 @@ code=[]
 
 code.append([3,"EI",r"""
 if EI == 1:
-  class buderus_alternativewaerme(object):
-      def __init__(self,localvars):
-          import re
-		  
-          self.logik = localvars["pItem"]
-          self.MC = self.logik.MC
+    class buderus_alternativewaerme(object):
+        def __init__(self,localvars):
+            import re
 
-          EN = localvars['EN']
-          
-          self.localvars = localvars
-          
-          self.current_status = [ ]
-          self.status_length = 42
-          
-          self.bus_id = "%.2X" % int(EN[2])
-          self.id = "Alternativer Wärmeerzeuger"
-		  
-          ##keine Info über einstellbare Parameter des FM444
-          ##self.send_prefix = "B0%.2x24" % (int(EN[2]))
-          
-          self.payload_regex = re.compile( "(?P<mode>AB|A7)%s9F(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ) )
-          ##
-          ##Buderus FM444 -> Beschreibung aus Bildschirmkopie übernommen
-          ## Offset 	Beschreibung
-          ##  0 - Vorlauf IST (FWV)
-          ##  5 - Rücklauf IST (FWR)
-          ## 36 - Abgas Byte2 (FWG)
-          ## 37	- Abgas Byte1 (FWG)
-          ##  1	- Anl. Rücklauf IST (FWG)
-          ##  2	- Puffer oben IST (FPO)
-          ##  4 - Puffer mitte IST (FPM)
-          ##  3	- Puffer unten IST (FPU)
-          ## 23	- Vorlauf SOLL
-          ##  6	- Sollwert Vorlaufregelung
-          ## 34	- Sollwert Rücklaufregelgung
-          ##  7 - Soll Puffer
-          ## 17	- Soll Anlage
-          ## 27	Bit1	- Brenner AN
-          ## 21	Bit2	- SWE AUF
-          ## 27	Bit4	- Pumpe WE
-          ## 21	Bit3	- ON/Notkühlung
-          ## 21	Bit6	- Öl/Gaskessel gesperrt
-          ## 38	- Stellglied SWR
-          ## 12 - Betriebsstunden Byte3
-          ## 13 - Betriebsstunden Byte2
-          ## 14	- Betriebsstunden Byte1
-          ##
-          ## 
-          self.output_functions = [
-              (lambda x: [float(x)],[3]),
-              (lambda x: [float(x)],[7]),
-              (lambda x: [float(x)],[8]),
-              (lambda x: [x],[10]),
-              (lambda x: [x],[9]),
-              (lambda x: [x],[4]),
-              (lambda x: [x],[12]),
-              (lambda x: [x],[14]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[22]),
-              (lambda x: [x],[23]),
-              (lambda x: [x],[24]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (self.to_bits,[0,17,19,0,0,20,0,0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[11]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (self.to_bits,[16,0,0,18,0,0,0,0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[5]),
-              (lambda x: [x],[6]),
-              (lambda x: [x],[21]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-          ]
+            self.logik = localvars["pItem"]
+            self.MC = self.logik.MC
 
-          self.get_monitor_data()
+            EN = localvars['EN']
+            
+            self.localvars = localvars
+            
+            self.current_status = [ ]
+            self.status_length = 42
+            
+            self.bus_id = "%.2X" % int(EN[2])
+            self.id = "Alternativer Wärmeerzeuger"
 
-      def get_monitor_data(self):
-          self.send_to_output(1,"A2%s" % self.bus_id)
+            ##keine Info über einstellbare Parameter des FM444
+            ##self.send_prefix = "B0%.2x24" % (int(EN[2]))
+            
+            self.payload_regex = re.compile( "(?P<mode>AB|A7)%s9F(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ) )
+            ##
+            ##Buderus FM444 -> Beschreibung aus Bildschirmkopie übernommen
+            ## Offset     Beschreibung
+            ##  0 - Vorlauf IST (FWV)
+            ##  5 - Rücklauf IST (FWR)
+            ## 36 - Abgas Byte2 (FWG)
+            ## 37 - Abgas Byte1 (FWG)
+            ##  1 - Anl. Rücklauf IST (FWG)
+            ##  2 - Puffer oben IST (FPO)
+            ##  4 - Puffer mitte IST (FPM)
+            ##  3 - Puffer unten IST (FPU)
+            ## 23- Vorlauf SOLL
+            ##  6- Sollwert Vorlaufregelung
+            ## 34- Sollwert Rücklaufregelgung
+            ##  7 - Soll Puffer
+            ## 17- Soll Anlage
+            ## 27 Bit1 - Brenner AN
+            ## 21 Bit2 - SWE AUF
+            ## 27 Bit4 - Pumpe WE
+            ## 21 Bit3 - ON/Notkühlung
+            ## 21 Bit6 - Öl/Gaskessel gesperrt
+            ## 38 - Stellglied SWR
+            ## 12 - Betriebsstunden Byte3
+            ## 13 - Betriebsstunden Byte2
+            ## 14- Betriebsstunden Byte1
+            ##
+            ## 
+            self.output_functions = [
+                (lambda x: [float(x)],[3]),
+                (lambda x: [float(x)],[7]),
+                (lambda x: [float(x)],[8]),
+                (lambda x: [x],[10]),
+                (lambda x: [x],[9]),
+                (lambda x: [x],[4]),
+                (lambda x: [x],[12]),
+                (lambda x: [x],[14]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[22]),
+                (lambda x: [x],[23]),
+                (lambda x: [x],[24]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (self.to_bits,[0,17,19,0,0,20,0,0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[11]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (self.to_bits,[16,0,0,18,0,0,0,0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[5]),
+                (lambda x: [x],[6]),
+                (lambda x: [x],[21]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+            ]
 
-      def debug(self,msg):
-          #self.log(msg,severity='debug')
-          print "DEBUG: %r" % (msg,)
+            self.get_monitor_data()
 
-      def send_to_output(self,out,msg,sbc=False):
-          if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
-              return
-          self.localvars["AN"][out] = msg
-          self.localvars["AC"][out] = 1
+        def get_monitor_data(self):
+            self.send_to_output(1,"A2%s" % self.bus_id)
 
-      def log(self,msg,severity='info'):
-          import time
-          try:
-              from hashlib import md5
-          except ImportError:
-              import md5 as md5old
-              md5 = lambda x,md5old=md5old: md5old.md5(x)
-          
-          _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
-          _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
-          self.send_to_output( 2, _msg )
+        def debug(self,msg):
+            #self.log(msg,severity='debug')
+            print "DEBUG: %r" % (msg,)
 
-      def parse(self,offset, data):
-          offset = int(offset,16)
-          #if offset > len(self.current_status):
-          #    self.debug("Daten offset größer als vorhandene Daten")
-          #    return
-          _len = len(data)
-          #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
-          for _x in xrange(_len):
-              _offset = offset + _x
-              _func, _out = self.output_functions[_offset]
-              _ret = _func( ord(data[_x]) )
-              for _xx in xrange(len(_ret)):
-                  self.send_to_output(_out[_xx] , _ret[_xx], sbc=True)
-              
-          #self.debug("Zustand: %r" % (self.current_status,) )
+        def send_to_output(self,out,msg,sbc=False):
+            if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
+                return
+            self.localvars["AN"][out] = msg
+            self.localvars["AC"][out] = 1
 
-      def to_bits(self,byte):
-          return [(byte >> i) & 1 for i in xrange(8)]
+        def log(self,msg,severity='info'):
+            import time
+            try:
+                from hashlib import md5
+            except ImportError:
+                import md5 as md5old
+                md5 = lambda x,md5old=md5old: md5old.md5(x)
+            
+            _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
+            _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
+            self.send_to_output( 2, _msg )
 
-      def incomming(self,msg, localvars):
-          import binascii
-          self.localvars = localvars
-          self.debug("incomming message %r" % msg)
-          msg = msg.replace(' ','')
-          _data = self.payload_regex.search(msg)
-          if _data:
-              self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
+        def parse(self,offset, data):
+            offset = int(offset,16)
+            #if offset > len(self.current_status):
+            #    self.debug("Daten offset größer als vorhandene Daten")
+            #    return
+            _len = len(data)
+            #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
+            for _x in xrange(_len):
+                _offset = offset + _x
+                _func, _out = self.output_functions[_offset]
+                _ret = _func( ord(data[_x]) )
+                for _xx in xrange(len(_ret)):
+                    self.send_to_output(_out[_xx] , _ret[_xx], sbc=True)
+                
+            #self.debug("Zustand: %r" % (self.current_status,) )
 
-      def set_value(self, val, offset, byte,localvars, min=-99999, max=99999, resolution=1):
-          self.localvars = localvars
-          if val < min or val > max:
-              self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
-          _val = val * resolution
-          if _val < 0:
-              (_val * -1) + 128
-          _6bytes = [ "65","65","65","65","65","65" ]
-          _6bytes[byte - 1] = "%.2x" % round(_val)
-          self.send_to_output(1,"%s%s%s" % (self.send_prefix, offset.upper(), "".join(_6bytes).upper() ) )
+        def to_bits(self,byte):
+            return [(byte >> i) & 1 for i in xrange(8)]
 
+        def incomming(self,msg, localvars):
+            import binascii
+            self.localvars = localvars
+            self.debug("incomming message %r" % msg)
+            msg = msg.replace(' ','')
+            _data = self.payload_regex.search(msg)
+            if _data:
+                self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
 
+        def set_value(self, val, offset, byte,localvars, min=-99999, max=99999, resolution=1):
+            self.localvars = localvars
+            if val < min or val > max:
+                self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
+            _val = val * resolution
+            if _val < 0:
+                (_val * -1) + 128
+            _6bytes = [ "65","65","65","65","65","65" ]
+            _6bytes[byte - 1] = "%.2x" % round(_val)
+            self.send_to_output(1,"%s%s%s" % (self.send_prefix, offset.upper(), "".join(_6bytes).upper() ) )
 """])
-
-
 debugcode = """
-
 """
 postlogik=[0,"",r"""
 5012|0|"EI"|"buderus_alternativewaerme(locals())"|""|0|0|1|0

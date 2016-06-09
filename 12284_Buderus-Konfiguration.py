@@ -178,222 +178,222 @@ code=[]
 
 code.append([3,"EI",r"""
 if EI == 1:
-  class buderus_konfiguration(object):
-      def __init__(self,localvars):
-          import re
+    class buderus_konfiguration(object):
+        def __init__(self,localvars):
+            import re
 
-          self.logik = localvars["pItem"]
-          self.MC = self.logik.MC
+            self.logik = localvars["pItem"]
+            self.MC = self.logik.MC
 
-          EN = localvars['EN']
-          
-          self.localvars = localvars
-          
-          self.current_status = [ ]
-          self.status_length = 18
-          
-          self.bus_id = "%.2X" % int(EN[2])
-          self.id = "Konfiguration"
-          self.send_prefix = "B0%.2x0C" % (int(EN[2]))
+            EN = localvars['EN']
+            
+            self.localvars = localvars
+            
+            self.current_status = [ ]
+            self.status_length = 18
+            
+            self.bus_id = "%.2X" % int(EN[2])
+            self.id = "Konfiguration"
+            self.send_prefix = "B0%.2x0C" % (int(EN[2]))
 
-          self.payload_regex = re.compile( "(?P<mode>AB|A7)%s89(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ) )
+            self.payload_regex = re.compile( "(?P<mode>AB|A7)%s89(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ) )
 
-          ## Offset   Name    Auflösung
-          ##  0 Außentemperatur 1 °C (Werte größer 128 = negativ)                ## Ausgang 3
-          ##  1 gedämpfte Außentemperatur 1 °C (Werte größer 128 = negativ)        ## Ausgang 4
-          ##  2 Version Vorkomma *                                                ## Ausgang 5
-          ##  3 Version Nachkomma *                                                ## Ausgang 5
-          ##  4 FREI *
-          ##  5 FREI *
-          ##  6 Modul in Slot 1   Die Bedeutung der Werte :                        ## Ausgang 6
-          ##                      0 = defekt
-          ##                      1 = frei
-          ##                      2 = ZM432 (Kessel für 4311)
-          ##                      3 = FM442 (2x Heizkreis)
-          ##                      4 = FM441 (1x Heizkreis + 1x Warmwasser)
-          ##                      5 = FM447 (Strategie)
-          ##                      6 = ZM432 (Kessel für 4211, Warmwasser +
-          ##                                 1x ungemischter Heizkreis)
-          ##                      7 = FM445 (LAP - Modul)
-          ##                      8 = FM451 (KSE1)
-          ##                      9 = FM454 (KSE4)
-          ##                      10 = ZM424 (Kessel für 4111,Heizkreise,WW)
-          ##                      11 = UBA
-          ##                      12 = FM452 (KSE2)
-          ##                      13 = FM448 (Störmeldemodul)
-          ##                      14 = ZM433 (Unterstation mit Pumpe und
-          ##                                 1 x gemischter Heizkreis)
-          ##                      15 = FM446 EIB - Modul
-          ##                      16 = FM443 Solarmodul
-          ##                      17 = FM455 (KSE5 ?)
-          ##                      21 = FM444 Alternativer Wärmeerzeuger - Modul
-          ##  7 Modul in Slot 2                                                    ## Ausgang 7
-          ##  8 Modul in Slot 3                                                    ## Ausgang 8
-          ##  9 Modul in Slot 4                                                    ## Ausgang 9
-          ##  10 Modul in Slot A                                                   ## Ausgang 10
-          ##  11 FREI
-          ##  12 Fehler bei Slot 1 *   Bedeutung der Werte:                        ## Ausgang 11
-          ##                           0 = kein Fehler 
-          ##                           1 = unbekanntes Modul
-          ##                           2 = Fehler bei CAN - Adresse
-          ##                           3 = SOLL // IST - Fehler
-          ##                           4 = keine Antwort
-          ##                           5 = Handbetrieb
-          ##  13 Fehler bei Slot 2 *                                            ## Ausgang 12
-          ##  14 Fehler bei Slot 3 *                                            ## Ausgang 13
-          ##  15 Fehler bei Slot 4 *                                            ## Ausgang 14
-          ##  16 Fehler bei Slot A *                                            ## Ausgang 15
-          ##  17 FREI *
-          ##  18 Anlagenvorlaufsolltemperatur 1 °C                              ## Ausgang 16
-          ##  19 Anlagenvorlaufisttemperatur 1 °C                               ## Ausgang 17
-          ##  20 Betriebsflags der Anlage     Bedeutung der Werte               ## Ausgang 18
-          ##                                  1 = Pufferspeicher bleibt kalt        
-          ##                                  2 = Fühler UST-FK defekt
-          ##                                  3 = Wartezeit läuft
-          ##  21 Max. Ansteuerung für Heizkreispumpe 1 %                        ## Ausgang 19
-          ##  22 max. Ansteuerung für Stellglied 1 %                            ## Ausgang 20
-          ##  23 Regelgerätevorlaufisttemperatur 1 °C                           ## Ausgang 21
+            ## Offset   Name    Auflösung
+            ##  0 Außentemperatur 1 °C (Werte größer 128 = negativ)                ## Ausgang 3
+            ##  1 gedämpfte Außentemperatur 1 °C (Werte größer 128 = negativ)        ## Ausgang 4
+            ##  2 Version Vorkomma *                                                ## Ausgang 5
+            ##  3 Version Nachkomma *                                                ## Ausgang 5
+            ##  4 FREI *
+            ##  5 FREI *
+            ##  6 Modul in Slot 1   Die Bedeutung der Werte :                        ## Ausgang 6
+            ##                      0 = defekt
+            ##                      1 = frei
+            ##                      2 = ZM432 (Kessel für 4311)
+            ##                      3 = FM442 (2x Heizkreis)
+            ##                      4 = FM441 (1x Heizkreis + 1x Warmwasser)
+            ##                      5 = FM447 (Strategie)
+            ##                      6 = ZM432 (Kessel für 4211, Warmwasser +
+            ##                                 1x ungemischter Heizkreis)
+            ##                      7 = FM445 (LAP - Modul)
+            ##                      8 = FM451 (KSE1)
+            ##                      9 = FM454 (KSE4)
+            ##                      10 = ZM424 (Kessel für 4111,Heizkreise,WW)
+            ##                      11 = UBA
+            ##                      12 = FM452 (KSE2)
+            ##                      13 = FM448 (Störmeldemodul)
+            ##                      14 = ZM433 (Unterstation mit Pumpe und
+            ##                                 1 x gemischter Heizkreis)
+            ##                      15 = FM446 EIB - Modul
+            ##                      16 = FM443 Solarmodul
+            ##                      17 = FM455 (KSE5 ?)
+            ##                      21 = FM444 Alternativer Wärmeerzeuger - Modul
+            ##  7 Modul in Slot 2                                                    ## Ausgang 7
+            ##  8 Modul in Slot 3                                                    ## Ausgang 8
+            ##  9 Modul in Slot 4                                                    ## Ausgang 9
+            ##  10 Modul in Slot A                                                   ## Ausgang 10
+            ##  11 FREI
+            ##  12 Fehler bei Slot 1 *   Bedeutung der Werte:                        ## Ausgang 11
+            ##                           0 = kein Fehler 
+            ##                           1 = unbekanntes Modul
+            ##                           2 = Fehler bei CAN - Adresse
+            ##                           3 = SOLL // IST - Fehler
+            ##                           4 = keine Antwort
+            ##                           5 = Handbetrieb
+            ##  13 Fehler bei Slot 2 *                                            ## Ausgang 12
+            ##  14 Fehler bei Slot 3 *                                            ## Ausgang 13
+            ##  15 Fehler bei Slot 4 *                                            ## Ausgang 14
+            ##  16 Fehler bei Slot A *                                            ## Ausgang 15
+            ##  17 FREI *
+            ##  18 Anlagenvorlaufsolltemperatur 1 °C                              ## Ausgang 16
+            ##  19 Anlagenvorlaufisttemperatur 1 °C                               ## Ausgang 17
+            ##  20 Betriebsflags der Anlage     Bedeutung der Werte               ## Ausgang 18
+            ##                                  1 = Pufferspeicher bleibt kalt        
+            ##                                  2 = Fühler UST-FK defekt
+            ##                                  3 = Wartezeit läuft
+            ##  21 Max. Ansteuerung für Heizkreispumpe 1 %                        ## Ausgang 19
+            ##  22 max. Ansteuerung für Stellglied 1 %                            ## Ausgang 20
+            ##  23 Regelgerätevorlaufisttemperatur 1 °C                           ## Ausgang 21
 
-          ## Buderus Fehlermeldungen
-          self.slot_module = {
-              0 : "defekt",
-              1 : "frei",
-              2 : "ZM432", #(Kessel für 4311)",
-              3 : "FM442", #(2x Heizkreis)",
-              4 : "FM441", #(1x Heizkreis + 1x Warmwasser)",
-              5 : "FM447", #(Strategie)",
-              6 : "ZM432", #(Kessel für 4211, WW + 1x ungem. Heizkreis)",
-              7 : "FM445", #(LAP - Modul)",
-              8 : "FM451", #(KSE1)",
-              9 : "FM454", #(KSE4)",
-             10 : "ZM424", #(Kessel für 4111,Heizkreise,WW)",
-             11 : "UBA",
-             12 : "FM452", #(KSE2)",
-             13 : "FM448", #(Störmeldemodul)",
-             14 : "ZM433", #(Unterstation m. Pumpe u. 1 x gem. Heizkreis)",
-             15 : "FM446", #EIB - Modul",
-             16 : "FM443", #Solarmodul",
-             17 : "FM455", #KSE5 ?",
-             21 : "FM444", #Alternativer Wärmeerzeuger Modul",
-          }
-          
-          self.slot_error = {
-              0 : "kein Fehler",
-              1 : "unbekanntes Modul",
-              2 : "Fehler bei CAN - Adresse",
-              3 : "SOLL // IST - Fehler",
-              4 : "keine Antwort",
-              5 : "Handbetrieb",
-          }
+            ## Buderus Fehlermeldungen
+            self.slot_module = {
+                0 : "defekt",
+                1 : "frei",
+                2 : "ZM432", #(Kessel für 4311)",
+                3 : "FM442", #(2x Heizkreis)",
+                4 : "FM441", #(1x Heizkreis + 1x Warmwasser)",
+                5 : "FM447", #(Strategie)",
+                6 : "ZM432", #(Kessel für 4211, WW + 1x ungem. Heizkreis)",
+                7 : "FM445", #(LAP - Modul)",
+                8 : "FM451", #(KSE1)",
+                9 : "FM454", #(KSE4)",
+               10 : "ZM424", #(Kessel für 4111,Heizkreise,WW)",
+               11 : "UBA",
+               12 : "FM452", #(KSE2)",
+               13 : "FM448", #(Störmeldemodul)",
+               14 : "ZM433", #(Unterstation m. Pumpe u. 1 x gem. Heizkreis)",
+               15 : "FM446", #EIB - Modul",
+               16 : "FM443", #Solarmodul",
+               17 : "FM455", #KSE5 ?",
+               21 : "FM444", #Alternativer Wärmeerzeuger Modul",
+            }
+            
+            self.slot_error = {
+                0 : "kein Fehler",
+                1 : "unbekanntes Modul",
+                2 : "Fehler bei CAN - Adresse",
+                3 : "SOLL // IST - Fehler",
+                4 : "keine Antwort",
+                5 : "Handbetrieb",
+            }
 
-          self.output_functions = [
-              (self.to_128,[3],"AN"),
-              (self.to_128,[4],"AN"),
-              (lambda x: [x],[2],"SN"),
-              (lambda x: [x],[3],"SN"),
-              (lambda x: [x],[0],"AN"),
-              (lambda x: [x],[0],"AN"),
-              (lambda x: [self.slot_module.get(x,"unbekannt {0}".format(x))],[6],"AN"),
-              (lambda x: [self.slot_module.get(x,"unbekannt {0}".format(x))],[7],"AN"),
-              (lambda x: [self.slot_module.get(x,"unbekannt {0}".format(x))],[8],"AN"),
-              (lambda x: [self.slot_module.get(x,"unbekannt {0}".format(x))],[9],"AN"),
-              (lambda x: [self.slot_module.get(x,"unbekannt {0}".format(x))],[10],"AN"),
-              (lambda x: [x],[0],"AN"),
-              (lambda x: [self.slot_error.get(x,"unbekannt {0}".format(x))],[11],"AN"),
-              (lambda x: [self.slot_error.get(x,"unbekannt {0}".format(x))],[12],"AN"),
-              (lambda x: [self.slot_error.get(x,"unbekannt {0}".format(x))],[13],"AN"),
-              (lambda x: [self.slot_error.get(x,"unbekannt {0}".format(x))],[14],"AN"),
-              (lambda x: [self.slot_error.get(x,"unbekannt {0}".format(x))],[15],"AN"),
-              (lambda x: [x],[0],"AN"),
-              (lambda x: [x],[16],"AN"),
-              (lambda x: [x],[17],"AN"),
-              (lambda x: [x],[18],"AN"),
-              (lambda x: [x],[19],"AN"),
-              (lambda x: [x],[20],"AN"),
-              (lambda x: [x],[21],"AN"),
-              (lambda x: [x],[0],"AN"),
-              (lambda x: [x],[0],"AN"),
-              (lambda x: [x],[0],"AN"),
-              (lambda x: [x],[0],"AN"),
-              (lambda x: [x],[0],"AN"),
-              (lambda x: [x],[0],"AN"),
-          ]
+            self.output_functions = [
+                (self.to_128,[3],"AN"),
+                (self.to_128,[4],"AN"),
+                (lambda x: [x],[2],"SN"),
+                (lambda x: [x],[3],"SN"),
+                (lambda x: [x],[0],"AN"),
+                (lambda x: [x],[0],"AN"),
+                (lambda x: [self.slot_module.get(x,"unbekannt {0}".format(x))],[6],"AN"),
+                (lambda x: [self.slot_module.get(x,"unbekannt {0}".format(x))],[7],"AN"),
+                (lambda x: [self.slot_module.get(x,"unbekannt {0}".format(x))],[8],"AN"),
+                (lambda x: [self.slot_module.get(x,"unbekannt {0}".format(x))],[9],"AN"),
+                (lambda x: [self.slot_module.get(x,"unbekannt {0}".format(x))],[10],"AN"),
+                (lambda x: [x],[0],"AN"),
+                (lambda x: [self.slot_error.get(x,"unbekannt {0}".format(x))],[11],"AN"),
+                (lambda x: [self.slot_error.get(x,"unbekannt {0}".format(x))],[12],"AN"),
+                (lambda x: [self.slot_error.get(x,"unbekannt {0}".format(x))],[13],"AN"),
+                (lambda x: [self.slot_error.get(x,"unbekannt {0}".format(x))],[14],"AN"),
+                (lambda x: [self.slot_error.get(x,"unbekannt {0}".format(x))],[15],"AN"),
+                (lambda x: [x],[0],"AN"),
+                (lambda x: [x],[16],"AN"),
+                (lambda x: [x],[17],"AN"),
+                (lambda x: [x],[18],"AN"),
+                (lambda x: [x],[19],"AN"),
+                (lambda x: [x],[20],"AN"),
+                (lambda x: [x],[21],"AN"),
+                (lambda x: [x],[0],"AN"),
+                (lambda x: [x],[0],"AN"),
+                (lambda x: [x],[0],"AN"),
+                (lambda x: [x],[0],"AN"),
+                (lambda x: [x],[0],"AN"),
+                (lambda x: [x],[0],"AN"),
+            ]
 
-          self.get_monitor_data()
+            self.get_monitor_data()
 
-      def get_monitor_data(self):
-          self.send_to_output(1,"A2%s" % self.bus_id)
+        def get_monitor_data(self):
+            self.send_to_output(1,"A2%s" % self.bus_id)
 
-      def debug(self,msg):
-          self.log(msg,severity='debug')
-          #print "DEBUG-12284: %r" % (msg,)
+        def debug(self,msg):
+            self.log(msg,severity='debug')
+            #print "DEBUG-12284: %r" % (msg,)
 
-      def send_to_output(self,out,msg,sbc=False):
-          if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
-              return
-          self.localvars["AN"][out] = msg
-          self.localvars["AC"][out] = 1
+        def send_to_output(self,out,msg,sbc=False):
+            if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
+                return
+            self.localvars["AN"][out] = msg
+            self.localvars["AC"][out] = 1
 
-      def log(self,msg,severity='info'):
-          import time
-          try:
-              from hashlib import md5
-          except ImportError:
-              import md5 as md5old
-              md5 = lambda x,md5old=md5old: md5old.md5(x)
-          
-          _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
-          _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
-          self.send_to_output( 2, _msg )
+        def log(self,msg,severity='info'):
+            import time
+            try:
+                from hashlib import md5
+            except ImportError:
+                import md5 as md5old
+                md5 = lambda x,md5old=md5old: md5old.md5(x)
+            
+            _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
+            _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
+            self.send_to_output( 2, _msg )
 
-      def parse(self,offset, data):
-          offset = int(offset,16)
-          #if offset > len(self.current_status):
-          #    self.debug("Daten offset größer als vorhandene Daten")
-          #    return
-          _len = len(data)
-          #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
-          for _x in xrange(_len):
-              _offset = offset + _x
-              _func, _out, _feld = self.output_functions[_offset]
-              _ret = _func( ord(data[_x]) )
-              for _xx in xrange(len(_ret)):
-                  if _feld == "AN":
-                     self.send_to_output(_out[_xx] , _ret[_xx], sbc=True)
-                  else:
-                     self.localvars[_feld][_out[_xx]] = _ret[_xx]
-                     self.localvars["SC"][_out[_xx]] = 1
-              
-          #self.debug("Zustand: %r" % (self.current_status,) )
+        def parse(self,offset, data):
+            offset = int(offset,16)
+            #if offset > len(self.current_status):
+            #    self.debug("Daten offset größer als vorhandene Daten")
+            #    return
+            _len = len(data)
+            #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
+            for _x in xrange(_len):
+                _offset = offset + _x
+                _func, _out, _feld = self.output_functions[_offset]
+                _ret = _func( ord(data[_x]) )
+                for _xx in xrange(len(_ret)):
+                    if _feld == "AN":
+                       self.send_to_output(_out[_xx] , _ret[_xx], sbc=True)
+                    else:
+                       self.localvars[_feld][_out[_xx]] = _ret[_xx]
+                       self.localvars["SC"][_out[_xx]] = 1
+                
+            #self.debug("Zustand: %r" % (self.current_status,) )
 
-      def to_bits(self,byte):
-          return [(byte >> i) & 1 for i in xrange(8)]
+        def to_bits(self,byte):
+            return [(byte >> i) & 1 for i in xrange(8)]
 
-      def to_128(self,value):
-          if (value > 128): 
-             return [(int((value)^2**7)-128)]
-          else:
-             return [value]
+        def to_128(self,value):
+            if (value > 128): 
+               return [(int((value)^2**7)-128)]
+            else:
+               return [value]
 
-      def incomming(self,msg, localvars):
-          import binascii
-          self.localvars = localvars
-          #self.debug("incomming message %r" % msg)
-          msg = msg.replace(' ','')
-          _data = self.payload_regex.search(msg)
-          if _data:
-              self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
+        def incomming(self,msg, localvars):
+            import binascii
+            self.localvars = localvars
+            #self.debug("incomming message %r" % msg)
+            msg = msg.replace(' ','')
+            _data = self.payload_regex.search(msg)
+            if _data:
+                self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
 
-      def set_value(self, val, offset, byte,localvars, min=-99999, max=99999, resolution=1):
-          self.localvars = localvars
-          if val < min or val > max:
-              self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
-          _val = val * resolution
-          if _val < 0:
-              (_val * -1) + 128
-          _6bytes = [ "65","65","65","65","65","65" ]
-          _6bytes[byte - 1] = "%.2x" % round(_val)
-          self.send_to_output(1,"%s%s%s" % (self.send_prefix, offset.upper(), "".join(_6bytes).upper() ) )
+        def set_value(self, val, offset, byte,localvars, min=-99999, max=99999, resolution=1):
+            self.localvars = localvars
+            if val < min or val > max:
+                self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
+            _val = val * resolution
+            if _val < 0:
+                (_val * -1) + 128
+            _6bytes = [ "65","65","65","65","65","65" ]
+            _6bytes[byte - 1] = "%.2x" % round(_val)
+            self.send_to_output(1,"%s%s%s" % (self.send_prefix, offset.upper(), "".join(_6bytes).upper() ) )
 
 
 """])

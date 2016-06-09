@@ -220,246 +220,219 @@ code=[]
 
 code.append([3,"EI",r"""
 if EI == 1:
-  class buderus_wandkessel_UBA(object):
-      def __init__(self,localvars):
-          import re
+    class buderus_wandkessel_UBA(object):
+        def __init__(self,localvars):
+            import re
 
-          self.logik = localvars["pItem"]
-          self.MC = self.logik.MC
+            self.logik = localvars["pItem"]
+            self.MC = self.logik.MC
 
-          EN = localvars['EN']
-          
-          self.localvars = localvars
-          
-          self.current_status = [ ]
-          self.status_length = 18
+            EN = localvars['EN']
+            
+            self.localvars = localvars
+            
+            self.current_status = [ ]
+            self.status_length = 18
 
-          ## 2.3.8 Monitorwerte für wandhängende Kessel (UBA)
-          ## Die Monitorwerte für wandhängende Kessel (UBA) setzen sich zur Zeit 
-          ## aus insgesamt 60 Werten zusammen und gehören zu einem der 
-          ## nachfolgenden Typen: (0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99)
-          ## Es werden hier nur die ersten 21 Werte verwendet, da bei UBA Kessel nur diese versorgt werden.
-          ## Wert ab 22 beziehen sich auf EMS Kessel an der Logamatic. Ist nur ein UBA Kessel angeschlossen
-          ## bleiben diese Wert bei 0. Aus diesem Grund werde diese hier ignoriert.
+            ## 2.3.8 Monitorwerte für wandhängende Kessel (UBA)
+            ## Die Monitorwerte für wandhängende Kessel (UBA) setzen sich zur Zeit 
+            ## aus insgesamt 60 Werten zusammen und gehören zu einem der 
+            ## nachfolgenden Typen: (0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99)
+            ## Es werden hier nur die ersten 21 Werte verwendet, da bei UBA Kessel nur diese versorgt werden.
+            ## Wert ab 22 beziehen sich auf EMS Kessel an der Logamatic. Ist nur ein UBA Kessel angeschlossen
+            ## bleiben diese Wert bei 0. Aus diesem Grund werde diese hier ignoriert.
 
-          self.device_types = {
-              "XX" : "kein wandhängender Kessel",
-              "92" : "Kessel 1 wandhängend",
-              "93" : "Kessel 2 wandhängend",
-              "94" : "Kessel 3 wandhängend",
-              "95" : "Kessel 4 wandhängend",
-              "96" : "Kessel 5 wandhängend",
-              "97" : "Kessel 6 wandhängend",
-              "98" : "Kessel 7 wandhängend",
-              "99" : "Kessel 8 wandhängend",
-          }
+            self.device_types = {
+                "XX" : "kein wandhängender Kessel",
+                "92" : "Kessel 1 wandhängend",
+                "93" : "Kessel 2 wandhängend",
+                "94" : "Kessel 3 wandhängend",
+                "95" : "Kessel 4 wandhängend",
+                "96" : "Kessel 5 wandhängend",
+                "97" : "Kessel 6 wandhängend",
+                "98" : "Kessel 7 wandhängend",
+                "99" : "Kessel 8 wandhängend",
+            }
 
-          self.recv_selector = ["XX","92","93","94","95","96","97","98","99"]  
-          self.send_selector = ["16","07","08","09","0A","16","18","1A"] 
-          
-          #self.debug("Kessel %d wandhängend" % EN[3])
-          if EN[3] < 1 or EN[3] > 8:
-              self.debug("Ungültiger Kessel %d wandhängend" % EN[3])
-              _id = "XX"
-              self.send_prefix = None
-          else:
-              _id = self.recv_selector[ int(EN[3]) ]
-              #self.debug("suche nach %r" % repr(_id))
-              self.send_prefix = "B0%.2x%s" % (int(EN[2]),self.send_selector [ int(EN[3]) ])
-          
-          self.bus_id = "%.2X" % int(EN[2])
-          self.id = self.device_types.get(_id)
+            self.recv_selector = ["XX","92","93","94","95","96","97","98","99"]  
+            self.send_selector = ["16","07","08","09","0A","16","18","1A"] 
+            
+            #self.debug("Kessel %d wandhängend" % EN[3])
+            if EN[3] < 1 or EN[3] > 8:
+                self.debug("Ungültiger Kessel %d wandhängend" % EN[3])
+                _id = "XX"
+                self.send_prefix = None
+            else:
+                _id = self.recv_selector[ int(EN[3]) ]
+                #self.debug("suche nach %r" % repr(_id))
+                self.send_prefix = "B0%.2x%s" % (int(EN[2]),self.send_selector [ int(EN[3]) ])
+            
+            self.bus_id = "%.2X" % int(EN[2])
+            self.id = self.device_types.get(_id)
 
-          self.payload_regex = re.compile( "(?P<mode>AB|A7)%s%s(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ,_id) )
+            self.payload_regex = re.compile( "(?P<mode>AB|A7)%s%s(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ,_id) )
 
-            ## Offset Name            Auflösung
-            ## 0 Sollmodulationswert des Brenners in %                          ## Ausgang 3
-            ## 1 Istmodulationswert 1 %                                         ## Ausgang 4
-            ## 2 Brennerstunden Byte 3 (Byte3 * 65536) + (Byte2 * 256) + Byte1  ## interner Speicher 2
-            ## 3 Brennerstunden Byte 2                                          ## interner Speicher 3
-            ## 4 Brennerstunden Byte 1                                          ## interner Speicher 4  ## Ausgang 5
-            ## 5 Brennerminuten 1 min                                           ## Ausgang 6
-            ## 6 Vorlaufsolltemperatur des Kessels 1 °C                         ## Ausgang 7
-            ## 7 Vorlaufisttempeartur 1 °C                                      ## Ausgang 8
-            ## 8 WW - Solltemperatur 1 °C                                       ## Ausgang 9
-            ## 9 WW - Isttemperatur 1 °C                                        ## Ausgang 10
-            ## 10 Antipendeltimer 1 min                                         ## Ausgang 11
-            ## 11 Betriebsflag aus 1.Bit = Antipendel Regelgerät                ## Ausgang 12
-            ##                     2.Bit = keine Kommunikation mit KSE          ## Ausgang 13
-            ##                     3.Bit = frei
-            ##                     4.Bit = frei
-            ##                     5.Bit = frei
-            ##                     6.Bit = frei
-            ##                     7.Bit = frei
-            ##                     8.Bit = frei
-            ## 12 Betriebsflags UBA 1.Bit = Umwälzpumpe aus KSE                 ## Ausgang 14
-            ##                      2.Bit = Schornsteinfeger                    ## Ausgang 15
-            ##                      3.Bit = keine Kommunikation mit UBA         ## Ausgang 16
-            ##                      4.Bit = keine Kommunikation mit KSE         ## Ausgang 17
-            ##                      5.Bit = Antipendel                          ## Ausgang 18
-            ##                      6.Bit = Umschaltventil WW                   ## Ausgang 19
-            ##                      7.Bit = Abgaswächter                        ## Ausgang 2ß
-            ##                      8.Bit = Pumpenschalter                      ## Ausgang 21
-            ## 13 Status der UBA 1.Bit = Untergruppe Bit 0                      ## Ausgang 22
-            ##                   2.Bit = Untergruppe Bit 1                      ## Ausgang 23
-            ##                   3.Bit = Untergruppe Bit 2                      ## Ausgang 24
-            ##                   4.Bit = Hauptgruppe Bit 0                      ## Ausgang 25
-            ##                   5.Bit = Hauptgruppe Bit 1                      ## Ausgang 26
-            ##                   6.Bit = Hauptgruppe Bit 2                      ## Ausgang 27
-            ##                   7.Bit = Hauptgruppe Bit 3                      ## Ausgang 28
-            ##                   8.Bit = Blockierender Fehler UBA               ## Ausgang 29
-            ## 14 HD-Mode der UBA 1.Bit = WW-Anforderung                        ## Ausgang 30
-            ##                    2.Bit = EIN/AUS von Raumthermostat            ## Ausgang 31
-            ##                    3.Bit = Anforderung über Schnittstelle        ## Ausgang 32
-            ##                    4.Bit = Frostschutz                           ## Ausgang 33
-            ##                    5.Bit = Pumpennachlauf wegen WW-Anforderung   ## Ausgang 34
-            ##                    6.Bit = WW-Anforderung über Fühler            ## Ausgang 35
-            ##                    7.Bit = WW-Anforderung über Durchfluß         ## Ausgang 36
-            ##                    8.Bit = Brenner an                            ## Ausgang 37
-            ## 15 Brennerstarts Byte 3 (Byte3 * 65536) + (Byte2 * 256) + Byte1  ## interner Speicher 5
-            ## 16 Brennerstarts Byte 2                                          ## interner Speicher 6
-            ## 17 Brennerstarts Byte 1                                          ## interner Speicher 7  ## Ausgang 38
-            ## 18 Versionsnummer der UBA-Software                               ## Ausgang 39
-            ## 19 Nummer der KIM                                                ## Ausgang 40
-            ## 20 Rücklauftemperatur der UBA 1 °C                               ## Ausgang 41
-            ## 21 Modulationswert der UBA-Pumpe 1 %                             ## Ausgang 42
-            ## 22 und höher sind Monitordaten von EMS Kesseln diese werde indm Baustein hier ignoriert.
-            ##    Soll ein EMS Kessel ausgewertet werden sollte ein neuer Baustein geschrieben werden.
-
-
+              ## Offset Name            Auflösung
+              ## 0 Sollmodulationswert des Brenners in %                          ## Ausgang 3
+              ## 1 Istmodulationswert 1 %                                         ## Ausgang 4
+              ## 2 Brennerstunden Byte 3 (Byte3 * 65536) + (Byte2 * 256) + Byte1  ## interner Speicher 2
+              ## 3 Brennerstunden Byte 2                                          ## interner Speicher 3
+              ## 4 Brennerstunden Byte 1                                          ## interner Speicher 4  ## Ausgang 5
+              ## 5 Brennerminuten 1 min                                           ## Ausgang 6
+              ## 6 Vorlaufsolltemperatur des Kessels 1 °C                         ## Ausgang 7
+              ## 7 Vorlaufisttempeartur 1 °C                                      ## Ausgang 8
+              ## 8 WW - Solltemperatur 1 °C                                       ## Ausgang 9
+              ## 9 WW - Isttemperatur 1 °C                                        ## Ausgang 10
+              ## 10 Antipendeltimer 1 min                                         ## Ausgang 11
+              ## 11 Betriebsflag aus 1.Bit = Antipendel Regelgerät                ## Ausgang 12
+              ##                     2.Bit = keine Kommunikation mit KSE          ## Ausgang 13
+              ##                     3.Bit = frei
+              ##                     4.Bit = frei
+              ##                     5.Bit = frei
+              ##                     6.Bit = frei
+              ##                     7.Bit = frei
+              ##                     8.Bit = frei
+              ## 12 Betriebsflags UBA 1.Bit = Umwälzpumpe aus KSE                 ## Ausgang 14
+              ##                      2.Bit = Schornsteinfeger                    ## Ausgang 15
+              ##                      3.Bit = keine Kommunikation mit UBA         ## Ausgang 16
+              ##                      4.Bit = keine Kommunikation mit KSE         ## Ausgang 17
+              ##                      5.Bit = Antipendel                          ## Ausgang 18
+              ##                      6.Bit = Umschaltventil WW                   ## Ausgang 19
+              ##                      7.Bit = Abgaswächter                        ## Ausgang 2ß
+              ##                      8.Bit = Pumpenschalter                      ## Ausgang 21
+              ## 13 Status der UBA 1.Bit = Untergruppe Bit 0                      ## Ausgang 22
+              ##                   2.Bit = Untergruppe Bit 1                      ## Ausgang 23
+              ##                   3.Bit = Untergruppe Bit 2                      ## Ausgang 24
+              ##                   4.Bit = Hauptgruppe Bit 0                      ## Ausgang 25
+              ##                   5.Bit = Hauptgruppe Bit 1                      ## Ausgang 26
+              ##                   6.Bit = Hauptgruppe Bit 2                      ## Ausgang 27
+              ##                   7.Bit = Hauptgruppe Bit 3                      ## Ausgang 28
+              ##                   8.Bit = Blockierender Fehler UBA               ## Ausgang 29
+              ## 14 HD-Mode der UBA 1.Bit = WW-Anforderung                        ## Ausgang 30
+              ##                    2.Bit = EIN/AUS von Raumthermostat            ## Ausgang 31
+              ##                    3.Bit = Anforderung über Schnittstelle        ## Ausgang 32
+              ##                    4.Bit = Frostschutz                           ## Ausgang 33
+              ##                    5.Bit = Pumpennachlauf wegen WW-Anforderung   ## Ausgang 34
+              ##                    6.Bit = WW-Anforderung über Fühler            ## Ausgang 35
+              ##                    7.Bit = WW-Anforderung über Durchfluß         ## Ausgang 36
+              ##                    8.Bit = Brenner an                            ## Ausgang 37
+              ## 15 Brennerstarts Byte 3 (Byte3 * 65536) + (Byte2 * 256) + Byte1  ## interner Speicher 5
+              ## 16 Brennerstarts Byte 2                                          ## interner Speicher 6
+              ## 17 Brennerstarts Byte 1                                          ## interner Speicher 7  ## Ausgang 38
+              ## 18 Versionsnummer der UBA-Software                               ## Ausgang 39
+              ## 19 Nummer der KIM                                                ## Ausgang 40
+              ## 20 Rücklauftemperatur der UBA 1 °C                               ## Ausgang 41
+              ## 21 Modulationswert der UBA-Pumpe 1 %                             ## Ausgang 42
+              ## 22 und höher sind Monitordaten von EMS Kesseln diese werde indm Baustein hier ignoriert.
+              ##    Soll ein EMS Kessel ausgewertet werden sollte ein neuer Baustein geschrieben werden.
 
 
 
 
 
-          self.output_functions = [
-              (lambda x: [x],[3],"AN"),
-              (lambda x: [x],[4],"AN"),
-              (lambda x: [x],[2],"SN"),
-              (lambda x: [x],[3],"SN"),
-              (lambda x: [x],[4],"SN"),
-              (lambda x: [x],[6],"AN"),
-              (lambda x: [x],[7],"AN"),
-              (lambda x: [x],[8],"AN"),
-              (lambda x: [x],[9],"AN"),
-              (lambda x: [x],[10],"AN"),
-              (lambda x: [x],[11],"AN"),
-              (self.to_bits,[12,13,0,0,0,0,0,0],"AN"),
-              (self.to_bits,[14,15,16,17,18,19,20,21],"AN"),
-              (self.to_bits,[22,23,24,25,26,27,28,29],"AN"),
-              (self.to_bits,[30,31,32,33,34,35,36,37],"AN"),
-              (lambda x: [x],[5],"SN"),
-              (lambda x: [x],[6],"SN"),
-              (lambda x: [x],[7],"SN"),
-              (lambda x: ["%.2X" % x],[8],"SN"),
-              (lambda x: [x],[40],"AN"),
-              (lambda x: [x],[41],"AN"),
-              (lambda x: [x],[42],"AN"),
-              (lambda x: [x],[0],"AN"),
-              (lambda x: [x],[0],"AN"),
-          ]
-
-          self.get_monitor_data()
-
-      def get_monitor_data(self):
-          self.send_to_output(1,"A2%s" % self.bus_id)
 
 
-      def debug(self,msg):
-          self.log(msg,severity='debug')
-          #print "DEBUG: %r" % (msg,)
+            self.output_functions = [
+                (lambda x: [x],[3],"AN"),
+                (lambda x: [x],[4],"AN"),
+                (lambda x: [x],[2],"SN"),
+                (lambda x: [x],[3],"SN"),
+                (lambda x: [x],[4],"SN"),
+                (lambda x: [x],[6],"AN"),
+                (lambda x: [x],[7],"AN"),
+                (lambda x: [x],[8],"AN"),
+                (lambda x: [x],[9],"AN"),
+                (lambda x: [x],[10],"AN"),
+                (lambda x: [x],[11],"AN"),
+                (self.to_bits,[12,13,0,0,0,0,0,0],"AN"),
+                (self.to_bits,[14,15,16,17,18,19,20,21],"AN"),
+                (self.to_bits,[22,23,24,25,26,27,28,29],"AN"),
+                (self.to_bits,[30,31,32,33,34,35,36,37],"AN"),
+                (lambda x: [x],[5],"SN"),
+                (lambda x: [x],[6],"SN"),
+                (lambda x: [x],[7],"SN"),
+                (lambda x: ["%.2X" % x],[8],"SN"),
+                (lambda x: [x],[40],"AN"),
+                (lambda x: [x],[41],"AN"),
+                (lambda x: [x],[42],"AN"),
+                (lambda x: [x],[0],"AN"),
+                (lambda x: [x],[0],"AN"),
+            ]
 
-      def send_to_output(self,out,msg,sbc=False):
-          if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
-              return
-          self.localvars["AN"][out] = msg
-          self.localvars["AC"][out] = 1
+            self.get_monitor_data()
 
-      def log(self,msg,severity='info'):
-          import time
-          try:
-              from hashlib import md5
-          except ImportError:
-              import md5 as md5old
-              md5 = lambda x,md5old=md5old: md5old.md5(x)
-          
-          _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
-          _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
-          self.send_to_output( 2, _msg )
+        def get_monitor_data(self):
+            self.send_to_output(1,"A2%s" % self.bus_id)
 
-      def parse(self,offset, data):
-          offset = int(offset,16)
-          if offset > 21:
-              #self.debug("Daten offset: %d groesser 21" % offset )
-              return
-          _len = len(data)
-          #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
-          for _x in xrange(_len):
-              _offset = offset + _x
-              #if (_offset > 21):
-              #   continue
-              _func, _out, _feld = self.output_functions[_offset]
-              _ret = _func( ord(data[_x]) )
-              for _xx in xrange(len(_ret)):
-                  if _feld == "AN":
-                     self.send_to_output(_out[_xx] , _ret[_xx], sbc=True)
-                  else:
-                     self.localvars[_feld][_out[_xx]] = _ret[_xx]
-                     self.localvars["SC"][_out[_xx]] = 1
-              
-          #self.debug("Zustand: %r" % (self.current_status,) )
 
-      def to_bits(self,byte):
-          return [(byte >> i) & 1 for i in xrange(8)]
+        def debug(self,msg):
+            self.log(msg,severity='debug')
+            #print "DEBUG: %r" % (msg,)
 
-      def incomming(self,msg, localvars):
-          import binascii
-          self.localvars = localvars
-          #self.debug("incomming message %r" % msg)
-          msg = msg.replace(' ','')
-          _data = self.payload_regex.search(msg)
-          if _data:
-              self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
+        def send_to_output(self,out,msg,sbc=False):
+            if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
+                return
+            self.localvars["AN"][out] = msg
+            self.localvars["AC"][out] = 1
 
-      def set_value(self, val, offset, byte,localvars, min=-99999, max=99999, resolution=1):
-          self.localvars = localvars
-          if val < min or val > max:
-              self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
-          _val = val * resolution
-          if _val < 0:
-              (_val * -1) + 128
-          _6bytes = [ "65","65","65","65","65","65" ]
-          _6bytes[byte - 1] = "%.2x" % round(_val)
-          self.send_to_output(1,"%s%s%s" % (self.send_prefix, offset.upper(), "".join(_6bytes).upper() ) )
-          
+        def log(self,msg,severity='info'):
+            import time
+            try:
+                from hashlib import md5
+            except ImportError:
+                import md5 as md5old
+                md5 = lambda x,md5old=md5old: md5old.md5(x)
+            
+            _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
+            _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
+            self.send_to_output( 2, _msg )
+
+        def parse(self,offset, data):
+            offset = int(offset,16)
+            if offset > 21:
+                #self.debug("Daten offset: %d groesser 21" % offset )
+                return
+            _len = len(data)
+            #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
+            for _x in xrange(_len):
+                _offset = offset + _x
+                #if (_offset > 21):
+                #   continue
+                _func, _out, _feld = self.output_functions[_offset]
+                _ret = _func( ord(data[_x]) )
+                for _xx in xrange(len(_ret)):
+                    if _feld == "AN":
+                       self.send_to_output(_out[_xx] , _ret[_xx], sbc=True)
+                    else:
+                       self.localvars[_feld][_out[_xx]] = _ret[_xx]
+                       self.localvars["SC"][_out[_xx]] = 1
+                
+            #self.debug("Zustand: %r" % (self.current_status,) )
+
+        def to_bits(self,byte):
+            return [(byte >> i) & 1 for i in xrange(8)]
+
+        def incomming(self,msg, localvars):
+            import binascii
+            self.localvars = localvars
+            #self.debug("incomming message %r" % msg)
+            msg = msg.replace(' ','')
+            _data = self.payload_regex.search(msg)
+            if _data:
+                self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
+
+        def set_value(self, val, offset, byte,localvars, min=-99999, max=99999, resolution=1):
+            self.localvars = localvars
+            if val < min or val > max:
+                self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
+            _val = val * resolution
+            if _val < 0:
+                (_val * -1) + 128
+            _6bytes = [ "65","65","65","65","65","65" ]
+            _6bytes[byte - 1] = "%.2x" % round(_val)
+            self.send_to_output(1,"%s%s%s" % (self.send_prefix, offset.upper(), "".join(_6bytes).upper() ) )
+            
 """])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 debugcode = """
 """
