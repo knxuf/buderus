@@ -871,10 +871,13 @@ if EI == 1:
                 try:
                     _ip,_port = self.device_connector.split(":")
                     self.sock.connect( ( _ip, int(_port) ) )
-                    self.debug("connect zu moxa an %s:%s" % (_ip,_port),lvl=5)
+                    self.log("Verbindung zu Netzwerkschnittstelle %s:%s hergestellt" % (_ip,_port))
                 except (TypeError,ValueError):
                     self.log("ungültige IP:Port Kombination %r an Eingang 1" % self.device_connector, severity="error")
                     return
+                except socket.error as error:
+                    self.log("Verbindung zu Netzwerkschnittstelle %s:%s fehlgeschlagen" % (_ip,_port),severity="error")
+                    raise
 
                 while True:
                     # wenn keine Verbindung dann abbruch
