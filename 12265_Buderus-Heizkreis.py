@@ -208,190 +208,190 @@ code=[]
 
 code.append([3,"EI",r"""
 if EI == 1:
-  class buderus_heizkreis(object):
-      def __init__(self,localvars):
-          import re
+    class buderus_heizkreis(object):
+        def __init__(self,localvars):
+            import re
 
-          self.logik = localvars["pItem"]
-          self.MC = self.logik.MC
+            self.logik = localvars["pItem"]
+            self.MC = self.logik.MC
 
-          EN = localvars['EN']
-          
-          self.localvars = localvars
-          
-          self.current_status = [ ]
-          self.status_length = 18
+            EN = localvars['EN']
+            
+            self.localvars = localvars
+            
+            self.current_status = [ ]
+            self.status_length = 18
 
-          ## 2.3.1 Monitorwerte für Heizkreise
-          ## Die Monitorwerte für einen Heizkreis setzen sich aus zur Zeit insgesamt 18 Werte zusammen
-          ## und gehören zu einem der nachfolgenden Typen:
-          ## (0x80, 0x81, 0x82, 0x83, 0x8A, 0x8B, 0x8C, 0x8D; 0x8E)
-          ## Achtung:
-          ## Bei dem Regelgerät Logamatic 4211 (4221) werden die Monitorwerte für den
-          ## Heizkreis 0 unter der Kennung des Heizkreises 5 (0x8A) gesendet.
+            ## 2.3.1 Monitorwerte für Heizkreise
+            ## Die Monitorwerte für einen Heizkreis setzen sich aus zur Zeit insgesamt 18 Werte zusammen
+            ## und gehören zu einem der nachfolgenden Typen:
+            ## (0x80, 0x81, 0x82, 0x83, 0x8A, 0x8B, 0x8C, 0x8D; 0x8E)
+            ## Achtung:
+            ## Bei dem Regelgerät Logamatic 4211 (4221) werden die Monitorwerte für den
+            ## Heizkreis 0 unter der Kennung des Heizkreises 5 (0x8A) gesendet.
 
-          self.device_types = {
-              "XX" : "kein Heizkreis",
-              "80" : "Heizkreis 1",
-              "81" : "Heizkreis 2",
-              "82" : "Heizkreis 3",
-              "83" : "Heizkreis 4",
-              "8A" : "Heizkreis 5",
-              "8B" : "Heizkreis 6",
-              "8C" : "Heizkreis 7",
-              "8D" : "Heizkreis 8",
-              "8E" : "Heizkreis 9",
-          }
+            self.device_types = {
+                "XX" : "kein Heizkreis",
+                "80" : "Heizkreis 1",
+                "81" : "Heizkreis 2",
+                "82" : "Heizkreis 3",
+                "83" : "Heizkreis 4",
+                "8A" : "Heizkreis 5",
+                "8B" : "Heizkreis 6",
+                "8C" : "Heizkreis 7",
+                "8D" : "Heizkreis 8",
+                "8E" : "Heizkreis 9",
+            }
 
-          self.recv_selector = ["8A","80","81","82","83","8A","8B","8C","8D","8E"] ## Heizkreis 0 bei 4221 ist Heizkreis 5 
-          self.send_selector = ["16","07","08","09","0A","16","18","1A","1C","1E"] ## Heizkreis 0 bei 4221 ist 5 ##FIXME: Heizkreis 9 1E??? DOKU ??
-          
-          if EN[3] < 0 or EN[3] > 9:
-              self.debug("Ungültige Heizkreisnummer %d" % EN[3])
-              _id = "XX"
-              self.send_prefix = None
-          else:
-              _id = self.recv_selector[ int(EN[3]) ]
-              self.send_prefix = "B0%.2x%s" % (int(EN[2]),self.send_selector [ int(EN[3]) ])
-          
-          self.bus_id = "%.2X" % int(EN[2])
-          self.id = self.device_types.get(_id)
+            self.recv_selector = ["8A","80","81","82","83","8A","8B","8C","8D","8E"] ## Heizkreis 0 bei 4221 ist Heizkreis 5 
+            self.send_selector = ["16","07","08","09","0A","16","18","1A","1C","1E"] ## Heizkreis 0 bei 4221 ist 5 ##FIXME: Heizkreis 9 1E??? DOKU ??
+            
+            if EN[3] < 0 or EN[3] > 9:
+                self.debug("Ungültige Heizkreisnummer %d" % EN[3])
+                _id = "XX"
+                self.send_prefix = None
+            else:
+                _id = self.recv_selector[ int(EN[3]) ]
+                self.send_prefix = "B0%.2x%s" % (int(EN[2]),self.send_selector [ int(EN[3]) ])
+            
+            self.bus_id = "%.2X" % int(EN[2])
+            self.id = self.device_types.get(_id)
 
-          self.payload_regex = re.compile( "(?P<mode>AB|A7)%s%s(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ,_id) )
+            self.payload_regex = re.compile( "(?P<mode>AB|A7)%s%s(?P<offset>[0-9A-F]{2})(?P<data>(?:[0-9A-F]{2})+)" % ( self.bus_id ,_id) )
 
-          ## Offset Name Auflösung
-          ## 0     Betriebswerte 1 
-          ##           1. Bit = Ausschaltoptimierung ## Ausgang 3
-          ##           2. Bit = Einschaltoptimierung ## Ausgang 4
-          ##           3. Bit = Automatik            ## Ausgang 5
-          ##           4. Bit = Warmwasservorrang    ## Ausgang 6
-          ##           5. Bit = Estrichtrocknung     ## Ausgang 7
-          ##           6. Bit = Ferien               ## Ausgang 8
-          ##           7. Bit = Frostschutz          ## Ausgang 9
-          ##           8. Bit = Manuell              ## Ausgang 10
-          ## 1     Betriebswerte 2 
-          ##           1. Bit = Sommer                      ## Ausgang 11
-          ##           2. Bit = Tag                         ## Ausgang 12
-          ##           3. Bit = keine Kommunikation mit FB  ## Ausgang 13
-          ##           4. Bit = FB fehlerhaft               ## Ausgang 14
-          ##           5. Bit = Fehler Vorlauffühler        ## Ausgang 15
-          ##           6. Bit = maximaler Vorlauf           ## Ausgang 16 
-          ##           7. Bit = externer Störeingang        ## Ausgang 17 
-          ##           8. Bit = Party / Pause               ## Ausgang 18
-          ## 2     Vorlaufsolltemperatur 1 °C  ## Ausgang 19
-          ## 3     Vorlaufistwert 1 °C         ## Ausgang 20
-          ## 4     Raumsollwert 0,5 °C         ## Ausgang 21
-          ## 5     Raumistwert 0,5 °C          ## Ausgang 22
-          ## 6     Einschaltoptimierung 1 min  ## Ausgang 23
-          ## 7     Ausschaltoptimierung 1 min  ## Ausgang 24
-          ## 8     Pumpe 1%                    ## Ausgang 25
-          ## 9     Stellglied 1% * (Puls-Pausen Ansteuerung)   ## Ausgang 26
-          ## 10    HK- Eingang
-          ##           1. Bit = Eingang WF2    ## Ausgang 27
-          ##           2. Bit = Eingang WF3    ## Ausgang 28
-          ##           3. Bit = frei           
-          ##           4. Bit = frei  
-          ##           5. Bit = frei
-          ##           6. Bit = Schalter 0     ## Ausgang 29
-          ##           7. Bit = Schalter Hand  ## Ausgang 30
-          ##           8. Bit = Schalter AUT   ## Ausgang 31
-          ## 11    FREI *
-          ## 12    Heizkennlinie + 10 °C 1 °C *  ## Ausgang 32
-          ## 13    Heizkennlinie 0 °C 1 °C *     ## Ausgang 33
-          ## 14    Heizkennlinie - 10 °C 1 °C *  ## Ausgang 34
-          ## 15    FREI *
-          ## 16    FREI *
-          ## 17    FREI 
-          ##
-          ## Die mit * gekennzeichneten Werte können nur im "Direkt-Modus" empfangen werden.
-          self.output_functions = [
-              (self.to_bits,[3,4,5,6,7,8,9,10]),
-              (self.to_bits,[11,12,13,14,15,16,17,18]),
-              (lambda x: [x],[19]),
-              (lambda x: [x],[20]),
-              (lambda x: [float(x)/2],[21]),
-              (lambda x: [float(x)/2],[22]),
-              (lambda x: [x],[23]),
-              (lambda x: [x],[24]),
-              (lambda x: [x],[25]),
-              (lambda x: [x],[26]),
-              (self.to_bits,[27,28,0,0,0,29,30,31]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[32]),
-              (lambda x: [x],[33]),
-              (lambda x: [x],[34]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-              (lambda x: [x],[0]),
-          ]
+            ## Offset Name Auflösung
+            ## 0     Betriebswerte 1 
+            ##           1. Bit = Ausschaltoptimierung ## Ausgang 3
+            ##           2. Bit = Einschaltoptimierung ## Ausgang 4
+            ##           3. Bit = Automatik            ## Ausgang 5
+            ##           4. Bit = Warmwasservorrang    ## Ausgang 6
+            ##           5. Bit = Estrichtrocknung     ## Ausgang 7
+            ##           6. Bit = Ferien               ## Ausgang 8
+            ##           7. Bit = Frostschutz          ## Ausgang 9
+            ##           8. Bit = Manuell              ## Ausgang 10
+            ## 1     Betriebswerte 2 
+            ##           1. Bit = Sommer                      ## Ausgang 11
+            ##           2. Bit = Tag                         ## Ausgang 12
+            ##           3. Bit = keine Kommunikation mit FB  ## Ausgang 13
+            ##           4. Bit = FB fehlerhaft               ## Ausgang 14
+            ##           5. Bit = Fehler Vorlauffühler        ## Ausgang 15
+            ##           6. Bit = maximaler Vorlauf           ## Ausgang 16 
+            ##           7. Bit = externer Störeingang        ## Ausgang 17 
+            ##           8. Bit = Party / Pause               ## Ausgang 18
+            ## 2     Vorlaufsolltemperatur 1 °C  ## Ausgang 19
+            ## 3     Vorlaufistwert 1 °C         ## Ausgang 20
+            ## 4     Raumsollwert 0,5 °C         ## Ausgang 21
+            ## 5     Raumistwert 0,5 °C          ## Ausgang 22
+            ## 6     Einschaltoptimierung 1 min  ## Ausgang 23
+            ## 7     Ausschaltoptimierung 1 min  ## Ausgang 24
+            ## 8     Pumpe 1%                    ## Ausgang 25
+            ## 9     Stellglied 1% * (Puls-Pausen Ansteuerung)   ## Ausgang 26
+            ## 10    HK- Eingang
+            ##           1. Bit = Eingang WF2    ## Ausgang 27
+            ##           2. Bit = Eingang WF3    ## Ausgang 28
+            ##           3. Bit = frei           
+            ##           4. Bit = frei  
+            ##           5. Bit = frei
+            ##           6. Bit = Schalter 0     ## Ausgang 29
+            ##           7. Bit = Schalter Hand  ## Ausgang 30
+            ##           8. Bit = Schalter AUT   ## Ausgang 31
+            ## 11    FREI *
+            ## 12    Heizkennlinie + 10 °C 1 °C *  ## Ausgang 32
+            ## 13    Heizkennlinie 0 °C 1 °C *     ## Ausgang 33
+            ## 14    Heizkennlinie - 10 °C 1 °C *  ## Ausgang 34
+            ## 15    FREI *
+            ## 16    FREI *
+            ## 17    FREI 
+            ##
+            ## Die mit * gekennzeichneten Werte können nur im "Direkt-Modus" empfangen werden.
+            self.output_functions = [
+                (self.to_bits,[3,4,5,6,7,8,9,10]),
+                (self.to_bits,[11,12,13,14,15,16,17,18]),
+                (lambda x: [x],[19]),
+                (lambda x: [x],[20]),
+                (lambda x: [float(x)/2],[21]),
+                (lambda x: [float(x)/2],[22]),
+                (lambda x: [x],[23]),
+                (lambda x: [x],[24]),
+                (lambda x: [x],[25]),
+                (lambda x: [x],[26]),
+                (self.to_bits,[27,28,0,0,0,29,30,31]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[32]),
+                (lambda x: [x],[33]),
+                (lambda x: [x],[34]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+                (lambda x: [x],[0]),
+            ]
 
-          self.get_monitor_data()
+            self.get_monitor_data()
 
-      def get_monitor_data(self):
-          self.send_to_output(1,"A2%s" % self.bus_id)
+        def get_monitor_data(self):
+            self.send_to_output(1,"A2%s" % self.bus_id)
 
-      def debug(self,msg):
-          #self.log(msg,severity='debug')
-          #print "DEBUG-12265: %r" % (msg,)
-          pass
+        def debug(self,msg):
+            #self.log(msg,severity='debug')
+            #print "DEBUG-12265: %r" % (msg,)
+            pass
 
-      def send_to_output(self,out,msg,sbc=False):
-          if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
-              return
-          self.localvars["AN"][out] = msg
-          self.localvars["AC"][out] = 1
+        def send_to_output(self,out,msg,sbc=False):
+            if sbc and msg == self.localvars["AN"][out] and not self.localvars["EI"] == 1:
+                return
+            self.localvars["AN"][out] = msg
+            self.localvars["AC"][out] = 1
 
-      def log(self,msg,severity='info'):
-          import time
-          try:
-              from hashlib import md5
-          except ImportError:
-              import md5 as md5old
-              md5 = lambda x,md5old=md5old: md5old.md5(x)
-          
-          _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
-          _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
-          self.send_to_output( 2, _msg )
+        def log(self,msg,severity='info'):
+            import time
+            try:
+                from hashlib import md5
+            except ImportError:
+                import md5 as md5old
+                md5 = lambda x,md5old=md5old: md5old.md5(x)
+            
+            _msg_uid = md5( "%s%s" % ( self.id, time.time() ) ).hexdigest()
+            _msg = '<log><id>%s</id><facility>buderus</facility><severity>%s</severity><message>%s</message></log>' % (_msg_uid,severity,msg)
+            self.send_to_output( 2, _msg )
 
-      def parse(self,offset, data):
-          offset = int(offset,16)
-          #if offset > len(self.current_status):
-          #    self.debug("Daten offset größer als vorhandene Daten")
-          #    return
-          _len = len(data)
-          #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
-          for _x in xrange(_len):
-              _offset = offset + _x
-              _func, _out = self.output_functions[_offset]
-              _ret = _func( ord(data[_x]) )
-              for _xx in xrange(len(_ret)):
-                  self.send_to_output(_out[_xx] , _ret[_xx], sbc=True)
-              
-          #self.debug("Zustand: %r" % (self.current_status,) )
+        def parse(self,offset, data):
+            offset = int(offset,16)
+            #if offset > len(self.current_status):
+            #    self.debug("Daten offset größer als vorhandene Daten")
+            #    return
+            _len = len(data)
+            #self.current_status = self.current_status[:offset] + [ _x for _x in data ] + self.current_status[offset + _len:]
+            for _x in xrange(_len):
+                _offset = offset + _x
+                _func, _out = self.output_functions[_offset]
+                _ret = _func( ord(data[_x]) )
+                for _xx in xrange(len(_ret)):
+                    self.send_to_output(_out[_xx] , _ret[_xx], sbc=True)
+                
+            #self.debug("Zustand: %r" % (self.current_status,) )
 
-      def to_bits(self,byte):
-          return [(byte >> i) & 1 for i in xrange(8)]
+        def to_bits(self,byte):
+            return [(byte >> i) & 1 for i in xrange(8)]
 
-      def incomming(self,msg, localvars):
-          import binascii
-          self.localvars = localvars
-          self.debug("incomming message %r" % msg)
-          msg = msg.replace(' ','')
-          _data = self.payload_regex.search(msg)
-          if _data:
-              self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
+        def incomming(self,msg, localvars):
+            import binascii
+            self.localvars = localvars
+            self.debug("incomming message %r" % msg)
+            msg = msg.replace(' ','')
+            _data = self.payload_regex.search(msg)
+            if _data:
+                self.parse( _data.group("offset"), binascii.unhexlify(_data.group("data")) )
 
-      def set_value(self, val, offset, byte,localvars, min=-99999, max=99999, resolution=1):
-          self.localvars = localvars
-          if val < min or val > max:
-              self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
-          _val = val * resolution
-          if _val < 0:
-              (_val * -1) + 128
-          _6bytes = [ "65","65","65","65","65","65" ]
-          _6bytes[byte - 1] = "%.2x" % round(_val)
-          self.send_to_output(1,"%s%s%s" % (self.send_prefix, offset.upper(), "".join(_6bytes).upper() ) )
-          
+        def set_value(self, val, offset, byte,localvars, min=-99999, max=99999, resolution=1):
+            self.localvars = localvars
+            if val < min or val > max:
+                self.log("ungültiger Wert %r (%s-%s)" % (val,min,max) )
+            _val = val * resolution
+            if _val < 0:
+                (_val * -1) + 128
+            _6bytes = [ "65","65","65","65","65","65" ]
+            _6bytes[byte - 1] = "%.2x" % round(_val)
+            self.send_to_output(1,"%s%s%s" % (self.send_prefix, offset.upper(), "".join(_6bytes).upper() ) )
+            
 """])
 
 debugcode = """
