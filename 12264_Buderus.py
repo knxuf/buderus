@@ -226,7 +226,7 @@ LOGIK = '''# -*- coding: iso8859-1 -*-
 
 # EN[x]
 5002|1|"192.168.2.17:5208"|1 #* IP-Adresse:Port <BR>des Moxa
-5002|2|"debug=5*readonly=1*writetime=0"|1 #* config <BR>(mit debug=5 wird diese Konfiguration auf SystemLog ausgegeben, readonly=1 weist schreibende Kommandos ab, und writetime=1 erlaubt die BUS Zeit zu setzen) Der * ist das Trennzeichen.
+5002|2|""|1 #* config <BR>(mit debug=5 wird diese Konfiguration auf SystemLog ausgegeben, readonly=1 weist schreibende Kommandos ab, und writetime=1 erlaubt die BUS Zeit zu setzen) Der * ist das Trennzeichen.
 5002|3|""|1 #* Senden <BR>(Hier werden die Kommandos an den ECOCAN Bus gesendet)
 
 # Speicher
@@ -1175,6 +1175,7 @@ debugcode = """
 postlogik=[0,"",r"""
 
 5012|0|"EI"|"buderus_connect(locals())"|""|0|0|1|0
+5012|0|"EC[2]"|"SN[1].readconfig(EN[2])"|""|0|0|0|0
 5012|0|"EC[3]"|"SN[1].incomming(EN[3].upper())"|""|0|0|0|0
 
 """]
