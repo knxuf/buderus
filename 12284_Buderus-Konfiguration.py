@@ -406,7 +406,7 @@ postlogik=[0,"",r"""
 5012|0|"EC[1]"|"SN[1].incomming(EN[1],locals())"|""|0|0|0|0
 
 #* Version Vorkomma.Nachkomma
-5012|0|"SC[2] or SC[3]"|"str(SN[2])+"."+str(SN[3])"|""|5|0|0|0
+5012|0|"SC[2] or SC[3]"|"'{2:.0f}.{3:02.0f}'.format(*SN)"|""|5|0|0|0
 
 """]
 
