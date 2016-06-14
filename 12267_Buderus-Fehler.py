@@ -226,7 +226,7 @@ if EI == 1:
             }
             
             ## Gerätetypen
-            self.device_types = {
+            self.data_types = {
                 "07" : ("Heizkreis 1", 18),
                 "08" : ("Heizkreis 2", 18),
                 "09" : ("Heizkreis 3", 18),
