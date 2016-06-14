@@ -371,14 +371,15 @@ if EI == 1:
             ## Datenblock können im Direkt-Modus einstellbare Parameter die für ein Regelgerät bestimmt sind an die 
             ## Schnittstelle geschickt werden. Die Schnittstelle schickt diese Daten dann weiter an das entsprechende 
             ## Regelgerät. 
-            ## B1 und B2 sind lesen und schreiben der ECOCAN Bus Zeit und Datum
-            self.directmode_B1_regex = re.compile("(?P<id>B1)") ## Datum/Uhrzeit vom ECOBUS anfordern ##FIXME##
-            self.directmode_B2_regex = re.compile("(?P<id>B2)[0-9a-fA-F]{12}") ## Datum/Uhrzeit auf ECOBUS schreiben ##FIXME##
-            ##Alle andere Abfragen
+
             self.directmode_regex = re.compile("(?P<id>A0|A1|A2|B3|B4)(?P<busnr>[0-9a-fA-F]{2})")
-            self.directmode_A3_regex = re.compile("(?P<id>A3)(?P<busnr>[0-9a-fA-F]{2})(?P<Data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})")
-            ## das sind die schreibenden Kommandos
-            self.directmode_B0_regex = re.compile("(?P<id>B0)(?P<busnr>[0-9a-fA-F]{2})(?P<Data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})[0-9a-fA-F]{12}")
+
+            self.directmode_regexes = {
+                "A3" : re.compile("(?P<id>A3)(?P<busnr>[0-9a-fA-F]{2})(?P<Data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})"),
+                "B0" : re.compile("(?P<id>B0)(?P<busnr>[0-9a-fA-F]{2})(?P<Data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})[0-9a-fA-F]{12}"),
+                "B1" : re.compile("(?P<id>B1)"), ## Datum/Uhrzeit vom ECOBUS anfordern
+                "B2" : re.compile("(?P<id>B2)[0-9a-fA-F]{12}"), ## Datum/Uhrzeit auf ECOBUS schreiben
+            }
 
             ## Im "Normal-Modus" werden die Monitordaten nach folgendem Muster übertragen: 
             ## 0xA7 <ECOCAN-BUS-Adresse> <TYP> <OFFSET> <DATUM> 
@@ -406,11 +407,13 @@ if EI == 1:
             ## im Regelgerät eingebaut ist. 
             ## OFFSET = Offset zur Einsortierung der Daten eines Typ´s
 
-            self.payload_regex = re.compile("(?P<id>B8|B9|A9|AB|A7|B7)(?P<busnr>[0-9a-fA-F]{2})(?P<data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{12})+)")
-            self.payload_A8_regex = re.compile("(?P<id>A8)(?P<busnr>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{12}))$")
-            ## Uhrzeit Datum
-            self.payload_AF_regex = re.compile("AF(?P<bustime>[0-9a-fA-F]{12}|FF)")
-
+            self.payload_regex = re.compile("(?P<id>B8|B9|A9|AB|B7)(?P<busnr>[0-9a-fA-F]{2})(?P<data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{12})+)")
+            
+            self.payload_regexes = {
+                "A7" : re.compile("(?P<id>A7)(?P<busnr>[0-9a-fA-F]{2})(?P<data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{2}))"),
+                "A8" : re.compile("(?P<id>A8)(?:(?P<busnr>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{12}))$|[8-9a-fA-F][0-9a-fA-F]{13}(?P<version_vk>[0-9a-fA-F]{2})(?P<version_nk>[0-9a-fA-F]{2}))"),
+                "AF" : re.compile("AF(?P<bustime>[0-9a-fA-F]{12}|FF)") ## Uhrzeit Datum
+            }
 
             ## Als Endekennung für das abgefragte Regelgerät oder falls keine Daten vorhanden sind, wird der 
             ## nachfolgende String 
@@ -418,9 +421,8 @@ if EI == 1:
             ## 0xAA <ECOCAN-BUS-Adresse> gesendet  Endekennung bei A1<busnr>
             ## 0xA8 0x80+adr < Seriennummer > <version vorkomma> <version nachkomma> Endekennung bei A100 
             ##  Da A8 auch als normale Antwort kommt, muß auf A8[89a-fA-F]? abgefragt werden
-            self.directmode_finish_regex = re.compile("(AC|AA|AD)(?P<busnr>[0-9a-fA-F]{2}$)")
-            self.directmode_finish_A8_regex = re.compile("A8[8-9a-fA-F][0-9a-fA-F]{13}(?P<version_vk>[0-9a-fA-F]{2})(?P<version_nk>[0-9a-fA-F]{2})") 
-            self.directmode_finish_AD_regex = re.compile("AD(?P<busnr>[0-9a-fA-F]{2})(?P<data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{12}))")
+            self.directmode_finish_regex = re.compile("(AC|AA|AD)(?P<busnr>[0-9a-fA-F]{2})")
+            #self.directmode_finish_AD_regex = re.compile("AD(?P<busnr>[0-9a-fA-F]{2})(?P<data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{12}))")
             
             ## 
             ## 1.Byte Sekunden (0-59)
@@ -466,10 +468,10 @@ if EI == 1:
                     pass
 
         def time_to_bustime(self,set_time,funkuhr=0):
-            return ("B2{0:02x}{1:02x}{2:02x}{3:02x}{4:02x}{5:02x}".format(
+            return ("{0:02x}{1:02x}{2:02x}{3:02x}{4:02x}{5:02x}".format(
                 set_time[5], ## Sekunden
                 set_time[4], ## Minuten
-                set_time[3] + (set_time[8] << 6) + (funkuhr *128) , ## Stunden + Bit 7 Sommerzeit + Bit 8 (Funkuhr)
+                set_time[3] + (set_time[8] << 6) + (funkuhr << 7) , ## Stunden + Bit 7 Sommerzeit + Bit 8 Funkuhr
                 set_time[2], ## Tag
                 set_time[1] + ((set_time[6] + 1) << 4), ## Bit 1-4 Monat + Bit 5-7 (Wochentag +1)
                 set_time[0] - 1900 ## Jahr -1900
@@ -477,6 +479,7 @@ if EI == 1:
 
         def bustime_to_time(self,bustime):
             import binascii
+            bustime = bustime.lstrip("AF")
             _bustime = [ ord(x) for x in binascii.unhexlify(bustime) ]
             return [
                 (_bustime[5] + 1900), ## Jahr
@@ -533,32 +536,31 @@ if EI == 1:
                 ## nächste payload aus der Queue holen
                 msg = self._buderus_message_queue.get()
                 ## nach gültigen zu sendener payload suchen
-                _direct_mode = self.directmode_regex.search(msg)
-                if not _direct_mode:
-                    _direct_mode = self.directmode_A3_regex.search(msg)
-                    if not _direct_mode:
-                       _direct_mode = self.directmode_B1_regex.search(msg)
-                       if (not _direct_mode and self.config.get("writetime") == 1):
-                          _direct_mode = self.directmode_B2_regex.search(msg)
-                       if (not _direct_mode and not self.config.get("readonly")):
-                          _direct_mode = self.directmode_B0_regex.search(msg)
+
+                _cmdid = msg[:2]
+                _direct_mode_regex = self.directmode_regexes.get(_cmdid,self.directmode_regex)
+                _direct_mode = _direct_mode_regex.search(msg)
+
                 ## wenn keine gültige SENDE payload
                 if not _direct_mode:
                     self.log("ungültige sende Nachricht %r" % (msg,) )
                     continue
 
-                _cmdid = _direct_mode.group("id")
-                if (_cmdid == "B1"):
-                    _busnr = "B1"
-                elif (_cmdid == "B2"):
-                    _busnr = "B2"
-#                elif (_cmdid == "B0"):
-#                    _busnr = "B0"
+                if _cmdid in [ "B1","B2"]:
+                    _busnr = _cmdid
                 else:
                     _busnr = _direct_mode.group("busnr")
 
+                if self.config.get("readonly"):
+                    if _cmdid == "B0":
+                        self.log("schreiben auf den Bus deaktiviert, Payload verworfen",severity="warn")
+                        continue
+                    if _cmdid == "B2" and not self.config.get("writetime"):
+                        self.log("schreiben der Uhrzeit deaktiviert, Payload verworfen",severity="warn")
+                        continue
+
                 ## Wenn eine direct-mode anfrage
-                if (_cmdid == "A3" or _cmdid == "A2" or _cmdid == "A1" or _cmdid == "A0" or _cmdid == "B3" or _cmdid == "B4"):
+                if _cmdid in ["A0","A1","A2","A3","B3","B4"]:
                     if _busnr not in self.waiting_direct_bus:
                         ## busnr zur liste auf Antwort wartender hinzu
                         self.add_direct_waiting(_busnr)
@@ -630,15 +632,19 @@ if EI == 1:
             ## Die Abfrage der gesamten Monitordaten braucht nur zu Beginn oder nach einem Reset zu erfolgen. 
             ## Nach erfolgter Abfrage der Monitordaten sollte wieder mit dem Kommando 0xDC in den "Normal-Modus" 
             ## zurückgeschaltet werden. 
-
+            self.debug("check Directmode",lvl=7)
             ## wenn direct mode nicht an ist, dann gleich zurück
             if not self.is_directmode():
+                self.debug("kein Directmode",lvl=7)
                 return
 
             ## wenn die Sendewarteschlange leer ist und keine Antworten(AC<busnr>) mehr von einem A2<busnr> erwartet werden,
             ## dann directmode ausschalten
-            if (self._buderus_message_queue.empty() and not self.get_direct_waiting()):    
+            if (self._buderus_message_queue.empty() and not self.get_direct_waiting()):
+                self.debug("deaktiviere Directmode",lvl=7)
                 self.set_directmode(False)
+            else:
+                self.debug("check nicht Directmode",lvl=7)
 
         def set_directmode(self,mode):
             ## Bei dem Kommunikationsmodul wird zwischen einem "Normal-Modus" und einem "Direkt-Modus"
@@ -752,40 +758,50 @@ if EI == 1:
                 ## _msg in die sende Warteschlange
                 self._buderus_message_queue.put( _msg )
 
+        def busnr_4byte_to_list(self,bytes):
+            return (lambda addr: [x for x in xrange(len(addr)) if addr[x] ])(map(lambda x: x=="1",bin(int(bytes,16))[2:])[::-1])
+
         def parse_payload(self,payload):
             import time,binascii
+            
+            _cmdid = payload[:2]
+            
+            if _cmdid in ["A5","A6"]:
+                self.debug("%s in Busgeräte: %r" % (_cmdid,self.busnr_4byte_to_list(payload[2:10])),lvl=6)
+                return True
+                
+            _payload_regex = self.payload_regexes.get(_cmdid,self.payload_regex)
+
             ## nach gültiger payload suchen
-            _payload = self.payload_regex.search(payload)
+            _payload = _payload_regex.search(payload)
 
             ## wenn normal-mode oder direct mode antwort 
             if _payload:
-
+                if _cmdid == "A5":
+                    pass
+                    
+                if _cmdid == "A6":
+                    pass
+                    
                 ## wenn einen normal mode antwort mit Typ A7 kommt und der direktmode gerade an ist, 
                 ## dann ist der 60 Sekunden Timeout abgelaufen ohne die Daten rechtzeitig erhalten zu haben
-                if (_payload.group("id") == "A7" or _payload.group("id") == "B7") and self.is_directmode():
+                if _cmdid in ["A7", "B7"] and self.is_directmode():
                     self.remove_direct_waiting()
                     ## Der "Direkt-Modus" kann durch das Kommando 0xDC wieder verlassen werden. 
                     ## Außerdem wird vom "Direkt-Modus" automatisch in den "Normal-Modus" zurückgeschaltet, wenn für die 
                     ## Zeit von 60 sec kein Protokoll des "Direkt-Modus" mehr gesendet wird. 
                     self.log("Directmode timeout")
 
-                ## Datentype
-                _type = _payload.group("data_type")
-
-                ## wenn wir das Gerät noch nicht gefunden hatten kurze Info über den Fund loggen
-                if _type not in self.found_devices:
-                    self.found_devices.append( _type )
-                    (_devicename, _datalen) = self.data_types.get( _type, ("unbekannter Datentyp (%s)" % _type, 0) )
-                    self.log("Datentyp '%s' an Regelgerät %d gefunden" % ( _devicename, int(_payload.group("busnr")) ) , severity="info")
-                return
-            else:
-                _payload = self.payload_A8_regex.search(payload)
-                if _payload and self.is_directmode():
-                  self.log("Regelgerät %s an ECOCAN BUS gefunden" % (  _payload.group("busnr") ) , severity="info")
-                  return
-
-                _payload = self.payload_AF_regex.search(payload)
-                if _payload:
+                if _cmdid == "A8" and self.is_directmode():
+                    if _payload.groupdict().get("busnr"):
+                        self.log("Regelgerät %s an ECOCAN BUS gefunden" % (  _payload.group("busnr") ) , severity="info")
+                    else:
+                        self.log("ECOCAN BUS Version %r.%r gefunden" % ( ord(binascii.unhexlify(_payload.group("version_vk"))), ord(binascii.unhexlify(_payload.group("version_nk"))) ) ,severity="info")
+                        self.remove_direct_waiting("00") # da mit "A000" eingeleitet ist, dann ist die Busnr "00", diese muß nun wieder gelöscht werden
+                        time.sleep( self.config.get('delaydirectendtime') )
+                        self.check_directmode_needed()
+                
+                if _cmdid == "AF":
                     _bustime = _payload.group("bustime")
                     if _bustime == "FF":
                         self.log("Keine ECOBUS-Uhrzeit vorhanden")
@@ -793,37 +809,35 @@ if EI == 1:
                         _time = self.bustime_to_time(_bustime)
                         _diff = time.mktime(_time) - time.time()
                         self.log("ECOBUS-Uhrzeit empfangen: {0} (Differenz {1:.1f}sec)".format(time.strftime("%a %d.%m.%Y %H:%M:%S",_time),_diff))
+                
+                if _cmdid in ["A7","A9","AB","B7","B8","B9"]:
+                    ## Datentype
+                    _type = _payload.group("data_type")
 
-            ## wenn eine Endekennung AC|AA<busnr> empfangen wurde, dann die busnr aus der liste für direct Daten entfernen und evtl direct_mode beenden
-            _direct = self.directmode_finish_regex.search(payload)
-            if _direct:
-                _busnr = _direct.group("busnr")
-                ## bus von der liste auf antwort wartender im direct mode entfernen
-                self.remove_direct_waiting(_busnr)
-                #self.log("BusNr %s gelöscht" % ( repr(_busnr) ) ,severity="info")
-                ## Wenn ein AC<busnr> gekommen ist, wird ggf. die Sende Richtung geändert, was zu Initialisierungskonflikten führen kann
-                time.sleep( self.config.get('delaydirectendtime') )
-                self.check_directmode_needed()
+                    ## wenn wir das Gerät noch nicht gefunden hatten kurze Info über den Fund loggen
+                    if _type not in self.found_devices:
+                        self.found_devices.append( _type )
+                        (_devicename, _datalen) = self.data_types.get( _type, ("unbekannter Datentyp (%s)" % _type, 0) )
+                        self.log("Datentyp '%s' an Regelgerät %d gefunden" % ( _devicename, int(_payload.group("busnr")) ) , severity="info")
+
+                return True
             else:
-                _direct = self.directmode_finish_A8_regex.search(payload)
+                ## wenn eine Endekennung AC|AA|AD<busnr> empfangen wurde, dann die busnr aus der liste für direct Daten entfernen und evtl direct_mode beenden
+                _direct = self.directmode_finish_regex.search(payload)
                 if _direct:
-                    _busnr = "00"  # da mit "A000" eingeleitet ist, dann ist die Busnr "00", diese muß nun wieder gelöscht werden 
+                    _busnr = _direct.group("busnr")
+                    ## bus von der liste auf antwort wartender im direct mode entfernen
                     self.remove_direct_waiting(_busnr)
-                    #self.log("Bus-Nr %s gelöscht" % ( _busnr ) ,severity="info")
-                    self.log("ECOCAN BUS Version %r.%r gefunden" % ( ord(binascii.unhexlify(_direct.group("version_vk"))), ord(binascii.unhexlify(_direct.group("version_nk"))) ) ,severity="info")
+                    #self.log("BusNr %s gelöscht" % ( repr(_busnr) ) ,severity="info")
                     ## Wenn ein AC<busnr> gekommen ist, wird ggf. die Sende Richtung geändert, was zu Initialisierungskonflikten führen kann
                     time.sleep( self.config.get('delaydirectendtime') )
                     self.check_directmode_needed()
+                    if _cmdid == "AD":
+                        return True
                 else:
-                    _direct = self.directmode_finish_AD_regex.search(payload)
-                    if _direct:
-                        _busnr = _direct.group("busnr")
-                        ## bus von der liste auf antwort wartender im direct mode entfernen
-                        self.remove_direct_waiting(_busnr)
-                        #self.log("BusNr AD %s gelöscht" % ( repr(_busnr) ) ,severity="info")
-                        ## Wenn ein AC<busnr> gekommen ist, wird ggf. die Sende Richtung geändert, was zu Initialisierungskonflikten führen kann
-                        time.sleep( self.config.get('delaydirectendtime') )
-                        self.check_directmode_needed()
+                    self.debug("NO Payload found",lvl=5)
+
+            return False
 
         def wait_for_ready_to_receive(self):
             import select,time
@@ -1123,10 +1137,9 @@ if EI == 1:
                             self.sock.send( self._constants['DLE'] )
 
                             ## empfangene Payload analysieren
-                            self.parse_payload( _hexpayload )
-
-                            ## payload an Ausgang 1 senden
-                            self.send_to_output(1, _hexpayload)
+                            if self.parse_payload( _hexpayload ):
+                                ## payload an Ausgang 1 senden
+                                self.send_to_output(1, _hexpayload)
 
                             return
 
