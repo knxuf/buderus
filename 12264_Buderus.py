@@ -412,6 +412,7 @@ if EI == 1:
             self.payload_regexes = {
                 "A7" : re.compile("(?P<id>A7)(?P<busnr>[0-9a-fA-F]{2})(?P<data_type>[0-9a-fA-F]{2})(?P<offset>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{2}))"),
                 "A8" : re.compile("(?P<id>A8)(?:(?P<busnr>[0-9a-fA-F]{2})(?P<data>(?:[0-9A-F]{12}))$|[8-9a-fA-F][0-9a-fA-F]{13}(?P<version_vk>[0-9a-fA-F]{2})(?P<version_nk>[0-9a-fA-F]{2}))"),
+                "AE" : re.compile("(?P<id>AE)(?P<busnr>[0-9a-fA-F]{2})(?P<data>[0-9A-F]{8})"), ## Fehlerstatus
                 "AF" : re.compile("AF(?P<bustime>[0-9a-fA-F]{12}|FF)") ## Uhrzeit Datum
             }
 
@@ -490,7 +491,7 @@ if EI == 1:
                 _bustime[0], ## Sekunden
                 (_bustime[4] >> 4 & 0x7) -1 , ## Wochentag
                 0,
-                _bustime[2] >> 6 & 0x1 ## Sommerzeit
+                -1 ##_bustime[2] >> 6 & 0x1 ## Sommerzeit ##FIXME## Time unknown
             ]
 
         def device_addresses(self,msg):
